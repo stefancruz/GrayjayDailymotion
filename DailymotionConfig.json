@@ -5,7 +5,7 @@
   "authorUrl": "https://craftwithstefan.com/",
   "platformUrl": "dailymotion.com",
   "sourceUrl": "https://stefancruz.github.io/GrayjayDailymotion/DailymotionConfig.json",
-  "repositoryUrl": "https://github.com/stefancruz",
+  "repositoryUrl": "https://github.com/stefancruz/GrayjayDailymotion",
   "scriptUrl": "./DailymotionScript.js",
   "version": 1,
   "iconUrl": "./dailymotion.png",
