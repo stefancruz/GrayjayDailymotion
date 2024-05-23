@@ -75,9 +75,9 @@ source.searchChannelContents = function (channelUrl, query, type, order, filters
 
 };
 
-// source.searchChannels = function (query) {
-// 	{}
-// };
+source.searchChannels = function (query) {
+	return getSearchChannelPager({ q: query, page: 1 })
+}
 
 //Channel
 source.isChannelUrl = function (url) {
@@ -405,22 +405,22 @@ function getChannelPager(context) {
 				bestAvailableQuality
 				duration
 				createdAt
-						  creator {
-							  id
-							  name
-							  displayName
-							  avatar(height:SQUARE_480) {
-								  url
-							  }
-							  
-						  }
-						  metrics {
-							  engagement {
-								  likes {
-									  totalCount
-								  }
-							  }
-						  }
+				creator {
+					id
+					name
+					displayName
+					avatar(height:SQUARE_480) {
+						url
+					}
+					
+				}
+				metrics {
+					engagement {
+						likes {
+							totalCount
+						}
+					}
+				}
 						  
 				__typename
 			  }
@@ -1374,6 +1374,84 @@ function getSavedVideo(url) {
 	})
 }
 
+function getSearchChannelPager(context) {
+
+	const gqlQuery = `		
+	query SEARCH_QUERY($query: String!, $page: Int, $limit: Int) {
+		search {
+			id
+			channels(query: $query, first: $limit, page: $page) {
+				pageInfo {
+					hasNextPage
+					nextPage
+				}
+				totalCount
+				edges {
+					node {
+						id
+						accountType
+						id
+						xid
+						name
+						displayName
+						isFollowed
+						description
+						avatar(height: SQUARE_720) {
+							url
+							height
+							width
+						}
+						metrics {
+							engagement {
+								followers {
+									edges {
+										node {
+											total
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	
+		`
+
+	const variables = {
+		query: context.q,
+		page: context.page ?? 1,
+		limit: 20
+	};
+
+	const json = executeGqlQuery({
+		operationName: "SEARCH_QUERY",
+		variables,
+		query: gqlQuery
+	}, true);
+
+	const results = json?.data?.search?.channels?.edges.map(edge => {
+		const c = edge.node;
+		return new PlatformChannel({
+			id: new PlatformID(PLATFORM, c.id, config.id, PLATFORM_CLAIMTYPE),
+			name: c.displayName,
+			thumbnail: c?.avatar?.url,
+			subscribers: c?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
+			url: `${BASE_URL}/${c.name}`,
+			links: [],
+		});
+	});
+
+	var params = {
+		query: context.q,
+	}
+
+	return new SearchChannelPager(results, json?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page);
+
+}
+
 //Pagers
 
 class SearchPagerAll extends VideoPager {
@@ -1392,6 +1470,18 @@ class SearchPagerAll extends VideoPager {
 		return getSearchPagerAll(opts);
 	}
 }
+
+class SearchChannelPager extends ChannelPager {
+	constructor(results, hasNextPage, params, page,) {
+		super(results, hasNextPage, { params, page })
+	}
+
+	nextPage() {
+		const opts = { q: this.context.params.query, page: this.context.page += 1 };
+		return getSearchChannelPager(opts)
+	}
+}
+
 
 
 class ChannelVideoPager extends VideoPager {

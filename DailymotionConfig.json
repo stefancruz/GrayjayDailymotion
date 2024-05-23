@@ -1,16 +1,16 @@
 {
   "name": "Dailymotion (Alpha)",
+  "platformUrl": "dailymotion.com",
   "description": "The latest news, sports, music and entertainment videos on Dailymotion",
   "author": "Stefan Cruz",
   "authorUrl": "https://craftwithstefan.com/",
-  "platformUrl": "dailymotion.com",
   "sourceUrl": "https://stefancruz.github.io/GrayjayDailymotion/DailymotionConfig.json",
-  "repositoryUrl": "https://github.com/stefancruz/GrayjayDailymotion",
   "scriptUrl": "./DailymotionScript.js",
-  "version": 1,
+  "repositoryUrl": "https://github.com/stefancruz/GrayjayDailymotion",
+  "version": 2,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "vComgqFSVyHFYujRoqTS8pzb480YeNDgjy8pXEQswDlu8P497RFXesCycYEWTSN6C3SQpn0x3WlUnTL8PdN2UFUYnrM0KrcVsIuvrdZ9vIkGaHZerkWcYyvIP4qVwvRtyJxWKBvafTXDp6W34Am3rEI4IOxCqRJrFCg5RTDTqT7ToXJVDTJuI5vHHCVhh27/j/TKrG4iAMTUgcnsUsCo+qTx55uXHc2UDhAbg4FmkVWqdsQOlFQt/AiUz+579NxGabNv2TOFPZ/GO9Sb3PwErSYSJPhVYbYiRp7W+iPPWtWOx+xTq4w7yw+3QFxetny6XuzTNU2p8vNxXLDk9hF9sQ==",
+  "scriptSignature": "UY0EYocKewxekb/JAFA2BukNIexuxFwMKu6nl61WCsx7i1tY6r0nfVmAYokcRqfuYAkv2badFXMGCQcDTuYXNmzvgBjc/gZKLTcabJpdj47yH1GtB+Pzx5Zyf9EeaIoiywYpPKLUCyaE1uVONnENpBJGAfYPT9ZuQuZm7c1fQaqLGaAuPNm31y3StaQgnCS8SWq2mxi7yK2cxQHho7DwKe6SuOdEIqfiurSpzVPV2NdQOb8XCcfCcFVHvwqEQdVejPe/1cqXDAJwRrqBkmKBurrmGRXbhwf07Lc1V94ETxYW/UjFWz8Aqo6JNjM5+DcGf0FIvYtAotfRUgfHIcQsRQ==",
   "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
@@ -20,8 +20,10 @@
     "dailymotion.com",
     "www.dailymotion.com",
     "graphql.api.dailymotion.com",
+    "vod.cf.dmcdn.net",
     "s1.dmcdn.net",
-    "vod.cf.dmcdn.net"
+    "s2.dmcdn.net",
+    "s3.dmcdn.net"
   ],
   "settings": [
     {
