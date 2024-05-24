@@ -184,13 +184,11 @@ source.getChannel = function (url) {
 		  __typename
 		}
 		externalLinks {
-		  id
 		  facebookURL
 		  twitterURL
 		  websiteURL
 		  instagramURL
 		  pinterestURL
-		  __typename
 		}
 		__typename
 	  }
@@ -218,6 +216,18 @@ source.getChannel = function (url) {
 
 	const banner = user?.coverURL1024x ?? user?.coverURL1920x;
 
+	const externalLinks = user?.externalLinks ?? {};
+	
+	const links = {};
+
+	Object
+		.keys(externalLinks)
+		.forEach(key => {
+			if(externalLinks[key]) {
+				links[key.replace('URL', '')] = externalLinks[key];
+			}
+		});
+
 	return new PlatformChannel({
 		id: new PlatformID(PLATFORM, user?.id, config?.id, PLATFORM_CLAIMTYPE),
 		name: user?.displayName,
@@ -227,7 +237,7 @@ source.getChannel = function (url) {
 		subscribers: user?.metrics?.engagement?.followers?.edges[0]?.node?.total,
 		description: user?.description,
 		url,
-		links: [],
+		links,
 	})
 
 };
