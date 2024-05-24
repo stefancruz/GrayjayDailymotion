@@ -55,7 +55,39 @@ source.getHome = function () {
 };
 
 source.searchSuggestions = function (query) {
-	return [];
+	const gqlQuery = `
+	query AUTOCOMPLETE_QUERY($query: String!) {
+		search {
+		  id
+		  suggestedVideos: autosuggestions(
+			query: {eq: $query}
+			filter: {story: {eq: VIDEO}}
+		  ) {
+			edges {
+			  node {
+				name
+			  }
+			}
+		  }
+		}
+	  }`;
+
+	const variables = {
+		"query": query
+	}
+
+	try {
+		const jsonResponse = executeGqlQuery({
+			operationName: 'AUTOCOMPLETE_QUERY',
+			variables: variables,
+			query: gqlQuery
+		}, true);
+
+		return jsonResponse?.data?.search?.suggestedVideos?.edges?.map(edge => edge?.node?.name);
+	} catch (error) {
+		log('Failed to get search suggestions', error);
+		return [];
+	}
 };
 
 
