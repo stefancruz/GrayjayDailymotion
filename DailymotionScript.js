@@ -25,7 +25,8 @@ const X_DM_Preferred_Country = "";//TODO check how to get this from Grayjay
 const PLATFORM = "Dailymotion";
 const PLATFORM_CLAIMTYPE = 3;
 
-let AUTHORIZATION_TOKEN;
+let AUTHORIZATION_TOKEN_ANONYMOUS_USER = null;
+let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = null;
 
 
 // search capabilities - upload date
@@ -57,7 +58,7 @@ source.enable = function (conf, settings, saveStateStr) {
 
 	http.GET(BASE_URL, {}, true);
 
-	AUTHORIZATION_TOKEN = getToken();
+	AUTHORIZATION_TOKEN_ANONYMOUS_USER = getAnonymousUserTokenSingleton();
 
 	//log(config);
 }
@@ -346,17 +347,27 @@ function objectToUrlEncodedString(obj) {
 	return encodedParams.join('&');
 }
 
-function getToken() {
+function getAnonymousUserTokenSingleton() {
+	// Check if the anonymous user token is available and not expired
+	if (AUTHORIZATION_TOKEN_ANONYMOUS_USER) {
 
-	var body = objectToUrlEncodedString({
+		const isTokenValid = AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE && new Date().getTime() < AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE;
+
+		if (isTokenValid) {
+			return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
+		}
+	}
+
+	// Prepare the request body for obtaining a new token
+	const body = objectToUrlEncodedString({
 		client_id: CLIENT_ID,
 		client_secret: CLIENT_SECRET,
 		grant_type: 'client_credentials'
-	})
+	});
 
-	const res = http.POST(`${BASE_URL_API_AUTH}?`, body, {
+	// Make the HTTP POST request to the authorization API
+	const res = http.POST(`${BASE_URL_API_AUTH}`, body, {
 		'User-Agent': USER_AGENT,
-		// 'Accept-Language': Accept_Language,
 		'Content-Type': 'application/x-www-form-urlencoded',
 		'Origin': BASE_URL,
 		'DNT': '1',
@@ -368,16 +379,28 @@ function getToken() {
 		'Priority': 'u=4',
 		'Pragma': 'no-cache',
 		'Cache-Control': 'no-cache'
-	}, true)
+	}, true);
 
-	if (res.code != 200) {
+	// Check if the response code indicates success
+	if (res.code !== 200) {
 		console.error('Failed to get token', res);
-		throw new ScriptException("Failed to get token", res);
+		throw new ScriptException("Failed to get token: " + res.code + " - " + res.body);
 	}
 
+	// Parse the response JSON to extract the token information
 	const json = JSON.parse(res.body);
 
-	return `${json.token_type} ${json.access_token}`;
+	// Ensure the response contains the necessary token information
+	if (!json.token_type || !json.access_token) {
+		console.error('Invalid token response', res);
+		throw new ScriptException('Invalid token response: ' + res.body);
+	}
+
+	// Store the token and its expiration date
+	AUTHORIZATION_TOKEN_ANONYMOUS_USER = `${json.token_type} ${json.access_token}`;
+	AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = new Date().getTime() + (json.expires_in * 1000);
+
+	return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
 }
 
 function getPreferredCountry() {
@@ -1084,7 +1107,7 @@ function executeGqlQuery(opts, addAuthorization) {
 	}
 
 	if (addAuthorization) {
-		headersToAdd.Authorization = getToken();
+		headersToAdd.Authorization = getAnonymousUserTokenSingleton();
 	}
 
 	const gql = JSON.stringify({
@@ -1168,7 +1191,7 @@ function getSavedVideo(url) {
 		"Priority": "u=4",
 		"Pragma": "no-cache",
 		"Cache-Control": "no-cache",
-		"Authorization": AUTHORIZATION_TOKEN
+		"Authorization": getAnonymousUserTokenSingleton()
 	};
 
 	const videoDetailsGqlQuery = `
