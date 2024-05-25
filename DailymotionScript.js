@@ -28,6 +28,22 @@ const PLATFORM_CLAIMTYPE = 3;
 let AUTHORIZATION_TOKEN;
 
 
+// search capabilities - upload date
+const LESS_THAN_MINUTE = "LESS_THAN_MINUTE"
+const ONE_TO_FIVE_MINUTES = "ONE_TO_FIVE_MINUTES"
+const FIVE_TO_THIRTY_MINUTES = "FIVE_TO_THIRTY_MINUTES"
+const THIRTY_TO_ONE_HOUR = "THIRTY_TO_ONE_HOUR"
+const MORE_THAN_ONE_HOUR = "MORE_THAN_ONE_HOUR"
+
+
+const DURATION_THRESHOLDS = {}
+DURATION_THRESHOLDS[LESS_THAN_MINUTE] = { min: 0, max: 60 };
+DURATION_THRESHOLDS[ONE_TO_FIVE_MINUTES] = { min: 60, max: 300 };
+DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
+DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
+DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
+
+
 
 source.setSettings = function (settings) {
 	_settings = settings;
@@ -92,12 +108,50 @@ source.searchSuggestions = function (query) {
 
 
 source.getSearchCapabilities = () => {
-	return { types: [Type.Feed.Mixed], sorts: [], filters: [] }
+	//TODO: refact this to use more constants
+	return {
+		types: [
+			Type.Feed.Videos,
+			Type.Feed.Live,
+			Type.Feed.Mixed
+		],
+		sorts: [
+			"Most Recent",
+			"Most Viewed",
+			"Most Relevant"
+		],
+		filters: [
+			{
+				id: "uploaddate",
+				name: "Upload Date",
+				isMultiSelect: false,
+				filters: [
+					{ name: "Today", value: "today" },
+					{ name: "Past week", value: "thisweek" },
+					{ name: "Past month", value: "thismonth" },
+					{ name: "Past year", value: "thisyear" }
+				]
+			},
+			{
+				id: "duration",
+				name: "Duration",
+				isMultiSelect: false,
+				filters: [
+					{ name: "< 1 min", value: LESS_THAN_MINUTE },
+					{ name: "1 - 5 min", value: ONE_TO_FIVE_MINUTES },
+					{ name: "5 - 30 min", value: FIVE_TO_THIRTY_MINUTES },
+					{ name: "30 min - 1 hour", value: THIRTY_TO_ONE_HOUR },
+					{ name: "> 1 hour", value: MORE_THAN_ONE_HOUR }
+				]
+			}
+		]
+	};
+
 }
 
 
-source.search = function (query, type, order, filters) {
-	return getSearchPagerAll({ q: query, page: 1 });
+source.search = function (query, type, order, filters, continuationToken) {
+	return getSearchPagerAll({ q: query, page: 1, type, order, filters, continuationToken });
 }
 
 source.getSearchChannelContentsCapabilities = function () {
@@ -217,13 +271,13 @@ source.getChannel = function (url) {
 	const banner = user?.coverURL1024x ?? user?.coverURL1920x;
 
 	const externalLinks = user?.externalLinks ?? {};
-	
+
 	const links = {};
 
 	Object
 		.keys(externalLinks)
 		.forEach(key => {
-			if(externalLinks[key]) {
+			if (externalLinks[key]) {
 				links[key.replace('URL', '')] = externalLinks[key];
 			}
 		});
@@ -566,8 +620,74 @@ function ToPlatformVideo(resource) {
 
 }
 
+function parseSort(order) {
+	let sort;
+	switch (order) {
+		//TODO: refact this to use constants
+		case "Most Recent":
+			sort = "RECENT";
+			break;
+		case "Most Viewed":
+			sort = "VIEW_COUNT";
+			break;
+		case "Most Relevant":
+			sort = "RELEVANCE";
+			break;
+		default:
+			sort = order; // Default to the original order if no match
+	}
+	return sort
+}
+
+function parseUploadDateFilter(filter) {
+	let createdAfterVideos;
+
+	const now = new Date();
+
+	switch (filter) {
+		case "today":
+			// Last 24 hours from now
+			const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+			createdAfterVideos = yesterday.toISOString();
+			break;
+		case "thisweek":
+			// Adjusts to the start of the current week (assuming week starts on Sunday)
+			const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+			createdAfterVideos = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()).toISOString();
+			break;
+		case "thismonth":
+			// Adjusts to the start of the month
+			createdAfterVideos = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+			break;
+		case "thisyear":
+			// Adjusts to the start of the year
+			createdAfterVideos = new Date(now.getFullYear(), 0, 1).toISOString();
+			break;
+		default:
+			createdAfterVideos = null;
+	}
+	return createdAfterVideos;
+}
 
 function getSearchPagerAll(context) {
+
+	context.sort = parseSort(context.order);
+
+	if (!context.filters) {
+		context.filters = {};
+	}
+
+	if (context?.filters.duration) {
+		context.filters.durationMinVideos = DURATION_THRESHOLDS[context.filters.duration].min;
+		context.filters.durationMaxVideos = DURATION_THRESHOLDS[context.filters.duration].max;
+	} else {
+		context.filters.durationMinVideos = null;
+		context.filters.durationMaxVideos = null;
+	}
+
+	if (context.filters.uploaddate) {
+		context.filters.createdAfterVideos = parseUploadDateFilter(context.filters.uploaddate[0]);
+	}
 
 	const gqlQuery = `
 	fragment VIDEO_BASE_FRAGMENT on Video {
@@ -883,7 +1003,10 @@ function getSearchPagerAll(context) {
 
 	const variables = {
 		"query": context.q,
-		// "sortByVideos": "RECENT",
+		"sortByVideos": context.sort,
+		"durationMaxVideos": context.filters?.durationMaxVideos,
+		"durationMinVideos": context.filters?.durationMinVideos,
+		"createdAfterVideos": context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
 		"shouldIncludeChannels": false,
 		"shouldIncludePlaylists": false,
 		"shouldIncludeTopics": false,
@@ -937,6 +1060,8 @@ function getSearchPagerAll(context) {
 	//results, hasMore, path, params, page
 	var params = {
 		query: context.q,
+		sort: context.sort,
+		filters: context.filters,
 	}
 	return new SearchPagerAll(results, jsonResponse.data.search.videos.pageInfo.hasNextPage, params, context.page);
 }
@@ -1508,7 +1633,14 @@ class SearchPagerAll extends VideoPager {
 	nextPage() {
 
 		this.context.page = this.context.page + 1
-		const opts = { q: this.context.params.query, page: this.context.page };
+
+		const opts = {
+			q: this.context.params.query,
+			sort: this.context.params.sort,
+			page: this.context.page,
+			filters: this.context.params.filters
+		};
+
 		return getSearchPagerAll(opts);
 	}
 }
