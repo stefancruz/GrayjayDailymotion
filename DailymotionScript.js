@@ -25,7 +25,46 @@ const X_DM_Preferred_Country = "";//TODO check how to get this from Grayjay
 const PLATFORM = "Dailymotion";
 const PLATFORM_CLAIMTYPE = 3;
 
-let AUTHORIZATION_TOKEN;
+let AUTHORIZATION_TOKEN_ANONYMOUS_USER = null;
+let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = null;
+
+
+// search capabilities - upload date
+const LESS_THAN_MINUTE = "LESS_THAN_MINUTE"
+const ONE_TO_FIVE_MINUTES = "ONE_TO_FIVE_MINUTES"
+const FIVE_TO_THIRTY_MINUTES = "FIVE_TO_THIRTY_MINUTES"
+const THIRTY_TO_ONE_HOUR = "THIRTY_TO_ONE_HOUR"
+const MORE_THAN_ONE_HOUR = "MORE_THAN_ONE_HOUR"
+
+
+const DURATION_THRESHOLDS = {}
+DURATION_THRESHOLDS[LESS_THAN_MINUTE] = { min: 0, max: 60 };
+DURATION_THRESHOLDS[ONE_TO_FIVE_MINUTES] = { min: 60, max: 300 };
+DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
+DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
+DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
+
+
+const errorTypes = {
+	"DM001": "No video has been specified, you need to specify one.",
+	"DM002": "Content has been deleted.",
+	"DM003": "Live content is not available, i.e. it may not have started yet.",
+	"DM004": "Copyrighted content, access forbidden.",
+	"DM005": "Content rejected (this video may have been removed due to a breach of the terms of use, a copyright claim or an infringement upon third party rights).",
+	"DM006": "Publishing in progress…",
+	"DM007": "Video geo-restricted by its owner.",
+	"DM008": "Explicit content. Explicit content can be enabled using the plugin settings",
+	"DM009": "Explicit content (offsite embed)",
+	"DM010": "Private content",
+	"DM011": "An encoding error occurred",
+	"DM012": "Encoding in progress",
+	"DM013": "This video has no preset (no video stream)",
+	"DM014": "This video has not been made available on your device by its owner",
+	"DM015": "Kids host error",
+	"DM016": "Content not available on this website, it can only be watched on Dailymotion",
+	"DM019": "This content has been uploaded by an inactive channel and its access is limited"
+}
+
 
 
 
@@ -41,17 +80,13 @@ source.enable = function (conf, settings, saveStateStr) {
 
 	http.GET(BASE_URL, {}, true);
 
-	AUTHORIZATION_TOKEN = getToken();
+	AUTHORIZATION_TOKEN_ANONYMOUS_USER = getAnonymousUserTokenSingleton();
 
-	//log(config);
 }
 
 
 source.getHome = function () {
-
-	return getVideoPager({
-		sort: "best"
-	}, 0);
+	return getVideoPager({}, 0);
 };
 
 source.searchSuggestions = function (query) {
@@ -92,12 +127,50 @@ source.searchSuggestions = function (query) {
 
 
 source.getSearchCapabilities = () => {
-	return { types: [Type.Feed.Mixed], sorts: [], filters: [] }
+	//TODO: refact this to use more constants
+	return {
+		types: [
+			Type.Feed.Videos,
+			Type.Feed.Live,
+			Type.Feed.Mixed
+		],
+		sorts: [
+			"Most Recent",
+			"Most Viewed",
+			"Most Relevant"
+		],
+		filters: [
+			{
+				id: "uploaddate",
+				name: "Upload Date",
+				isMultiSelect: false,
+				filters: [
+					{ name: "Today", value: "today" },
+					{ name: "Past week", value: "thisweek" },
+					{ name: "Past month", value: "thismonth" },
+					{ name: "Past year", value: "thisyear" }
+				]
+			},
+			{
+				id: "duration",
+				name: "Duration",
+				isMultiSelect: false,
+				filters: [
+					{ name: "< 1 min", value: LESS_THAN_MINUTE },
+					{ name: "1 - 5 min", value: ONE_TO_FIVE_MINUTES },
+					{ name: "5 - 30 min", value: FIVE_TO_THIRTY_MINUTES },
+					{ name: "30 min - 1 hour", value: THIRTY_TO_ONE_HOUR },
+					{ name: "> 1 hour", value: MORE_THAN_ONE_HOUR }
+				]
+			}
+		]
+	};
+
 }
 
 
-source.search = function (query, type, order, filters) {
-	return getSearchPagerAll({ q: query, page: 1 });
+source.search = function (query, type, order, filters, continuationToken) {
+	return getSearchPagerAll({ q: query, page: 1, type, order, filters, continuationToken });
 }
 
 source.getSearchChannelContentsCapabilities = function () {
@@ -127,21 +200,15 @@ source.getChannel = function (url) {
 		name
 		displayName
 		description
-		accountType
-		isArtist
 		avatar(height: SQUARE_120) {
-		  id
 		  url
-		  __typename
 		}
 		coverURL1024x: coverURL(size: "1024x")
 		coverURL1920x: coverURL(size: "1920x")
-		isFollowed
 		tagline
 		country {
 		  id
 		  codeAlpha2
-		  __typename
 		}
 		metrics {
 		  engagement {
@@ -149,57 +216,42 @@ source.getChannel = function (url) {
 			  edges {
 				node {
 				  total
-				  __typename
 				}
-				__typename
 			  }
-			  __typename
 			}
 			followings {
 			  edges {
 				node {
 				  total
-				  __typename
 				}
-				__typename
 			  }
-			  __typename
 			}
-			__typename
 		  }
-		  __typename
 		}
 		stats {
 		  id
 		  views {
 			id
 			total
-			__typename
 		  }
 		  videos {
 			id
 			total
-			__typename
 		  }
-		  __typename
 		}
 		externalLinks {
-		  id
 		  facebookURL
 		  twitterURL
 		  websiteURL
 		  instagramURL
 		  pinterestURL
-		  __typename
 		}
-		__typename
 	  }
 	  
 	  query CHANNEL_QUERY_DESKTOP($channel_name: String!) {
 		channel(name: $channel_name) {
 		  id
 		  ...CHANNEL_MAIN_FRAGMENT
-		  __typename
 		}
 	  }
 	  
@@ -218,6 +270,18 @@ source.getChannel = function (url) {
 
 	const banner = user?.coverURL1024x ?? user?.coverURL1920x;
 
+	const externalLinks = user?.externalLinks ?? {};
+
+	const links = {};
+
+	Object
+		.keys(externalLinks)
+		.forEach(key => {
+			if (externalLinks[key]) {
+				links[key.replace('URL', '')] = externalLinks[key];
+			}
+		});
+
 	return new PlatformChannel({
 		id: new PlatformID(PLATFORM, user?.id, config?.id, PLATFORM_CLAIMTYPE),
 		name: user?.displayName,
@@ -227,7 +291,7 @@ source.getChannel = function (url) {
 		subscribers: user?.metrics?.engagement?.followers?.edges[0]?.node?.total,
 		description: user?.description,
 		url,
-		links: [],
+		links,
 	})
 
 };
@@ -282,17 +346,27 @@ function objectToUrlEncodedString(obj) {
 	return encodedParams.join('&');
 }
 
-function getToken() {
+function getAnonymousUserTokenSingleton() {
+	// Check if the anonymous user token is available and not expired
+	if (AUTHORIZATION_TOKEN_ANONYMOUS_USER) {
 
-	var body = objectToUrlEncodedString({
+		const isTokenValid = AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE && new Date().getTime() < AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE;
+
+		if (isTokenValid) {
+			return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
+		}
+	}
+
+	// Prepare the request body for obtaining a new token
+	const body = objectToUrlEncodedString({
 		client_id: CLIENT_ID,
 		client_secret: CLIENT_SECRET,
 		grant_type: 'client_credentials'
-	})
+	});
 
-	const res = http.POST(`${BASE_URL_API_AUTH}?`, body, {
+	// Make the HTTP POST request to the authorization API
+	const res = http.POST(`${BASE_URL_API_AUTH}`, body, {
 		'User-Agent': USER_AGENT,
-		// 'Accept-Language': Accept_Language,
 		'Content-Type': 'application/x-www-form-urlencoded',
 		'Origin': BASE_URL,
 		'DNT': '1',
@@ -304,24 +378,33 @@ function getToken() {
 		'Priority': 'u=4',
 		'Pragma': 'no-cache',
 		'Cache-Control': 'no-cache'
-	}, true)
+	}, true);
 
-	if (res.code != 200) {
+	// Check if the response code indicates success
+	if (res.code !== 200) {
 		console.error('Failed to get token', res);
-		throw new ScriptException("Failed to get token", res);
+		throw new ScriptException("Failed to get token: " + res.code + " - " + res.body);
 	}
 
+	// Parse the response JSON to extract the token information
 	const json = JSON.parse(res.body);
 
-	return `${json.token_type} ${json.access_token}`;
+	// Ensure the response contains the necessary token information
+	if (!json.token_type || !json.access_token) {
+		console.error('Invalid token response', res);
+		throw new ScriptException('Invalid token response: ' + res.body);
+	}
+
+	// Store the token and its expiration date
+	AUTHORIZATION_TOKEN_ANONYMOUS_USER = `${json.token_type} ${json.access_token}`;
+	AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = new Date().getTime() + (json.expires_in * 1000);
+
+	return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
 }
 
 function getPreferredCountry() {
-	log('preferred country: ' + _settings?.preferredCountry)
 	const countryName = countryNames[_settings?.preferredCountry];
-	log('countryName: ' + countryName)
 	const code = countryNamesToCode[countryName];
-	log('code:' + code)
 	const preferredCountry = (code || X_DM_Preferred_Country || '').toLowerCase();
 	return preferredCountry;
 }
@@ -356,8 +439,97 @@ function getVideoPager(params, page) {
 		"Cache-Control": "no-cache"
 	};
 
-	const gqlQuery = "fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {\n  id\n  xid\n  title\n  isPublished\n  embedURL\n  thumbnailx240: thumbnailURL(size: \"x240\")\n  createdAt\n  channel {\n    id\n    xid\n    name\n    displayName\n    logoURLx25: logoURL(size: \"x25\")\n    accountType\n    isFollowed\n    __typename\n  }\n  duration\n  aspectRatio\n  __typename\n}\n\nquery SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!) {\n  home: views {\n    id\n    neon {\n      id\n      sections(space: \"home\") {\n        edges {\n          node {\n            id\n            name\n            title\n            description\n            components {\n              edges {\n                node {\n                  __typename\n                  ... on Media {\n                    __typename\n                    ...SEARCH_DISCOVERY_VIDEO_FRAGMENT\n                  }\n                }\n                __typename\n              }\n              __typename\n            }\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  featuredContent {\n    id\n    channels(first: 10) {\n      edges {\n        node {\n          id\n          xid\n          displayName\n          name\n          accountType\n          logoURL(size: \"x120\")\n          isFollowed\n          stats {\n            id\n            followers {\n              id\n              total\n              __typename\n            }\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n  conversations(\n    filter: {story: {eq: HASHTAG}, algorithm: {eq: SPONSORED}}\n    first: 1\n  ) @include(if: $shouldQueryPromotedHashtag) {\n    edges {\n      node {\n        id\n        story {\n          ... on Hashtag {\n            id\n            name\n            __typename\n          }\n          __typename\n        }\n        dailymotionAd {\n          id\n          channel {\n            id\n            name\n            avatar(height: SQUARE_120) {\n              id\n              url\n              __typename\n            }\n            __typename\n          }\n          __typename\n        }\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n";
-
+	const gqlQuery = `	
+	fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
+		id
+		xid
+		title
+		isPublished
+		embedURL
+		thumbnail(height: PORTRAIT_720) {
+			url
+		}
+		createdAt
+		creator {
+			id
+			xid
+			name
+			displayName
+			avatar(height: SQUARE_240) {
+				url
+			}
+		}
+		duration
+		
+	}
+	
+	query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!) {
+		home: views {
+			id
+			neon {
+				id
+				sections(space: "home") {
+					edges {
+						node {
+							id
+							name
+							title
+							description
+							components {
+								edges {
+									node {
+										__typename
+										... on Media {
+											...SEARCH_DISCOVERY_VIDEO_FRAGMENT
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		featuredContent {
+			id
+			channels(first: 10) {
+				edges {
+					node {
+						id
+						xid
+						displayName
+						name
+						logoURL(size: "x120")
+						stats {
+							id
+							followers {
+								id
+								total
+							}
+						}
+					}
+				}
+			}
+		}
+		conversations(
+			filter: { story: { eq: HASHTAG }, algorithm: { eq: SPONSORED } }
+			first: 1
+		) @include(if: $shouldQueryPromotedHashtag) {
+			edges {
+				node {
+					id
+					story {
+						... on Hashtag {
+							id
+							name
+						}
+					}
+				}
+			}
+		}
+	}
+			
+`
 	let obj;
 
 	try {
@@ -382,13 +554,13 @@ function getVideoPager(params, page) {
 			return ToPlatformVideo({
 				id: v.id,
 				name: v.title ?? "",
-				thumbnail: v.thumbnailx240,
+				thumbnail: v.thumbnail?.url ?? "",
 				createdAt: v.createdAt,
-				creatorId: v?.channel?.id,
-				creatorName: v?.channel?.name,
-				creatorDisplayName: v.channel?.displayName,
-				creatorAvatar: v?.channel?.logoURLx25,
-				creatorUrl: `${BASE_URL}/${v.channel?.name}`,
+				creatorId: v?.creator?.id,
+				creatorName: v?.creator?.name,
+				creatorDisplayName: v.creator?.displayName,
+				creatorAvatar: v?.creator?.avatar?.url ?? "",
+				creatorUrl: `${BASE_URL}/${v.creator?.name}`,
 				duration: v.duration,
 				viewCount: 0,
 				url: `${BASE_URL_VIDEO}/${v.xid}`,
@@ -423,7 +595,6 @@ function getChannelPager(context) {
 			pageInfo {
 			  hasNextPage
 			  nextPage
-			  __typename
 			}
 			edges {
 			  node {
@@ -441,7 +612,7 @@ function getChannelPager(context) {
 					id
 					name
 					displayName
-					avatar(height:SQUARE_480) {
+					avatar(height:SQUARE_240) {
 						url
 					}
 					
@@ -454,13 +625,9 @@ function getChannelPager(context) {
 					}
 				}
 						  
-				__typename
 			  }
-			  __typename
 			}
-			__typename
 		  }
-		  __typename
 		}
 	  }
 		
@@ -556,8 +723,74 @@ function ToPlatformVideo(resource) {
 
 }
 
+function parseSort(order) {
+	let sort;
+	switch (order) {
+		//TODO: refact this to use constants
+		case "Most Recent":
+			sort = "RECENT";
+			break;
+		case "Most Viewed":
+			sort = "VIEW_COUNT";
+			break;
+		case "Most Relevant":
+			sort = "RELEVANCE";
+			break;
+		default:
+			sort = order; // Default to the original order if no match
+	}
+	return sort
+}
+
+function parseUploadDateFilter(filter) {
+	let createdAfterVideos;
+
+	const now = new Date();
+
+	switch (filter) {
+		case "today":
+			// Last 24 hours from now
+			const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+			createdAfterVideos = yesterday.toISOString();
+			break;
+		case "thisweek":
+			// Adjusts to the start of the current week (assuming week starts on Sunday)
+			const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+			createdAfterVideos = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()).toISOString();
+			break;
+		case "thismonth":
+			// Adjusts to the start of the month
+			createdAfterVideos = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+			break;
+		case "thisyear":
+			// Adjusts to the start of the year
+			createdAfterVideos = new Date(now.getFullYear(), 0, 1).toISOString();
+			break;
+		default:
+			createdAfterVideos = null;
+	}
+	return createdAfterVideos;
+}
 
 function getSearchPagerAll(context) {
+
+	context.sort = parseSort(context.order);
+
+	if (!context.filters) {
+		context.filters = {};
+	}
+
+	if (context?.filters.duration) {
+		context.filters.durationMinVideos = DURATION_THRESHOLDS[context.filters.duration].min;
+		context.filters.durationMaxVideos = DURATION_THRESHOLDS[context.filters.duration].max;
+	} else {
+		context.filters.durationMinVideos = null;
+		context.filters.durationMaxVideos = null;
+	}
+
+	if (context.filters.uploaddate) {
+		context.filters.createdAfterVideos = parseUploadDateFilter(context.filters.uploaddate[0]);
+	}
 
 	const gqlQuery = `
 	fragment VIDEO_BASE_FRAGMENT on Video {
@@ -565,101 +798,91 @@ function getSearchPagerAll(context) {
 		xid
 		title
 		createdAt
+		metrics {
+			engagement {
+				likes {
+					edges {
+						node {
+							rating
+							total
+						}
+					}
+				}
+			}
+		}
 		stats {
 			id
 			views {
 				id
 				total
-				__typename
 			}
-			__typename
 		}
-		channel {
+		creator {
 			id
 			xid
 			name
 			displayName
-			accountType
 			description
-			avatar (height:SQUARE_480) {
+			avatar(height: SQUARE_240) {
 				url
 			}
-			__typename
-			
 		}
 		duration
-		thumbnailx60: thumbnailURL(size: "x60")
-		thumbnailx120: thumbnailURL(size: "x120")
-		thumbnailx240: thumbnailURL(size: "x240")
-		thumbnailx720: thumbnailURL(size: "x720")
-		aspectRatio
-		__typename
+		thumbnail(height: PORTRAIT_720) {
+			url
+		}
+		
 	}
 	
 	fragment VIDEO_FAVORITES_FRAGMENT on Media {
-		__typename
 		... on Video {
 			id
 			viewerEngagement {
 				id
 				favorited
-				__typename
 			}
-			__typename
 		}
 		... on Live {
 			id
 			viewerEngagement {
 				id
 				favorited
-				__typename
 			}
-			__typename
 		}
 	}
 	
 	fragment CHANNEL_BASE_FRAG on Channel {
-		accountType
 		id
 		xid
 		name
 		displayName
-		isFollowed
 		description
-		thumbnailx60: logoURL(size: "x60")
-		thumbnailx120: logoURL(size: "x120")
-		thumbnailx240: logoURL(size: "x240")
-		thumbnailx720: logoURL(size: "x720")
-		__typename
+		avatar(height: SQUARE_240) {
+			url
+		}
 	}
 	
 	fragment PLAYLIST_BASE_FRAG on Collection {
 		id
 		xid
 		name
-		channel {
+		creator {
 			id
 			xid
 			name
 			displayName
-			accountType
-			__typename
+			avatar(height:SQUARE_240) {
+				url
+			}
 		}
 		description
-		thumbnailx60: thumbnailURL(size: "x60")
-		thumbnailx120: thumbnailURL(size: "x120")
-		thumbnailx240: thumbnailURL(size: "x240")
-		thumbnailx720: thumbnailURL(size: "x720")
 		stats {
 			id
 			videos {
 				id
 				total
-				__typename
 			}
-			__typename
 		}
-		__typename
 	}
 	
 	fragment TOPIC_BASE_FRAG on Topic {
@@ -670,29 +893,22 @@ function getSearchPagerAll(context) {
 			pageInfo {
 				hasNextPage
 				nextPage
-				__typename
 			}
 			edges {
 				node {
 					id
 					...VIDEO_BASE_FRAGMENT
 					...VIDEO_FAVORITES_FRAGMENT
-					__typename
 				}
-				__typename
 			}
-			__typename
 		}
 		stats {
 			id
 			videos {
 				id
 				total
-				__typename
 			}
-			__typename
 		}
-		__typename
 	}
 	
 	query SEARCH_QUERY(
@@ -720,18 +936,9 @@ function getSearchPagerAll(context) {
 				durationMax: $durationMaxVideos
 				createdAfter: $createdAfterVideos
 			) @include(if: $shouldIncludeVideos) {
-				metadata {
-					id
-					algorithm {
-						uuid
-						__typename
-					}
-					__typename
-				}
 				pageInfo {
 					hasNextPage
 					nextPage
-					__typename
 				}
 				totalCount
 				edges {
@@ -739,26 +946,14 @@ function getSearchPagerAll(context) {
 						id
 						...VIDEO_BASE_FRAGMENT
 						...VIDEO_FAVORITES_FRAGMENT
-						__typename
 					}
-					__typename
 				}
-				__typename
 			}
 			lives(query: $query, first: $limit, page: $page)
 				@include(if: $shouldIncludeLives) {
-				metadata {
-					id
-					algorithm {
-						uuid
-						__typename
-					}
-					__typename
-				}
 				pageInfo {
 					hasNextPage
 					nextPage
-					__typename
 				}
 				totalCount
 				edges {
@@ -766,119 +961,88 @@ function getSearchPagerAll(context) {
 						id
 						xid
 						title
-						thumbnail: thumbnailURL(size: "x240")
-						thumbnailx60: thumbnailURL(size: "x60")
-						thumbnailx120: thumbnailURL(size: "x120")
-						thumbnailx240: thumbnailURL(size: "x240")
-						thumbnailx720: thumbnailURL(size: "x720")
+						thumbnail(height: PORTRAIT_720) {
+							url
+						}
+						description
+						metrics {
+							engagement {
+								audience {
+									totalCount
+								}
+							}
+						}
 						audienceCount
-						aspectRatio
 						isOnAir
-						channel {
+						creator {
 							id
 							xid
 							name
 							displayName
-							accountType
-							__typename
+							avatar(height:SQUARE_240){
+								url
+							}
 						}
-						__typename
 					}
-					__typename
 				}
-				__typename
 			}
 			channels(query: $query, first: $limit, page: $page)
 				@include(if: $shouldIncludeChannels) {
-				metadata {
-					id
-					algorithm {
-						uuid
-						__typename
-					}
-					__typename
-				}
 				pageInfo {
 					hasNextPage
 					nextPage
-					__typename
 				}
 				totalCount
 				edges {
 					node {
 						id
 						...CHANNEL_BASE_FRAG
-						__typename
 					}
-					__typename
 				}
-				__typename
 			}
 			playlists: collections(query: $query, first: $limit, page: $page)
 				@include(if: $shouldIncludePlaylists) {
-				metadata {
-					id
-					algorithm {
-						uuid
-						__typename
-					}
-					__typename
-				}
 				pageInfo {
 					hasNextPage
 					nextPage
-					__typename
 				}
 				totalCount
 				edges {
 					node {
 						id
 						...PLAYLIST_BASE_FRAG
-						__typename
 					}
-					__typename
 				}
-				__typename
 			}
 			topics(query: $query, first: $limit, page: $page)
 				@include(if: $shouldIncludeTopics) {
-				metadata {
-					id
-					algorithm {
-						uuid
-						__typename
-					}
-					__typename
-				}
 				pageInfo {
 					hasNextPage
 					nextPage
-					__typename
 				}
 				totalCount
 				edges {
 					node {
 						id
 						...TOPIC_BASE_FRAG
-						__typename
 					}
-					__typename
 				}
-				__typename
 			}
-			__typename
 		}
-	}
+	}		
 	`;
 
 	const variables = {
 		"query": context.q,
-		// "sortByVideos": "RECENT",
+		"sortByVideos": context.sort,
+		"durationMaxVideos": context.filters?.durationMaxVideos,
+		"durationMinVideos": context.filters?.durationMinVideos,
+		"createdAfterVideos": context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
 		"shouldIncludeChannels": false,
 		"shouldIncludePlaylists": false,
 		"shouldIncludeTopics": false,
-		"shouldIncludeVideos": true,
-		"shouldIncludeLives": false,
+		"shouldIncludeVideos": false,
+		"shouldIncludeLives": true,
 		"page": context.page ?? 1,
 		"limit": 20
 	}
@@ -892,32 +1056,32 @@ function getSearchPagerAll(context) {
 
 	const results = []
 
-	for (const edge of jsonResponse.data.search.videos.edges) {
+	const all = [
+		...(jsonResponse?.data?.search?.videos?.edges ?? []),
+		...(jsonResponse?.data?.search?.lives?.edges ?? [])
+	]
+
+	for (const edge of all) {
 
 		const sv = edge.node;
 
-		const thumbnail =
-			sv.thumbnailx720 ??
-			sv.thumbnailx240 ??
-			sv.thumbnailx120 ??
-			sv.thumbnailx60 ??
-			sv.thumbnail ?? "";
-
+		const isLive = sv.isOnAir == true;
+		const viewCount = isLive ? sv.audienceCount : sv?.stats?.views?.total;
 
 		var video = ToPlatformVideo({
 			id: sv.id,
 			name: sv.title,
-			thumbnail: thumbnail,
+			thumbnail: sv.thumbnail.url,
 			createdAt: sv.createdAt,
-			creatorId: sv.channel.id,
-			creatorName: sv.channel.name,
-			creatorDisplayName: sv.channel.displayName,
-			creatorUrl: `${BASE_URL}/${sv.channel.name}`,
-			creatorAvatar: sv.channel?.avatar?.url ?? "",
+			creatorId: sv.creator?.id,
+			creatorName: sv.creator?.name,
+			creatorDisplayName: sv.creator?.displayName,
+			creatorUrl: `${BASE_URL}/${sv?.creator?.name}`,
+			creatorAvatar: sv.creator?.avatar?.url ?? "",
 			duration: sv.duration,
-			viewCount: sv.stats.views.total,
+			viewCount,
 			url: `${BASE_URL_VIDEO}/${sv.xid}`,
-			isLive: false,
+			isLive,
 			description: sv?.description ?? '',
 		});
 
@@ -927,8 +1091,10 @@ function getSearchPagerAll(context) {
 	//results, hasMore, path, params, page
 	var params = {
 		query: context.q,
+		sort: context.sort,
+		filters: context.filters,
 	}
-	return new SearchPagerAll(results, jsonResponse.data.search.videos.pageInfo.hasNextPage, params, context.page);
+	return new SearchPagerAll(results, jsonResponse?.data?.search?.videos?.pageInfo?.hasNextPage, params, context.page);
 }
 
 function executeGqlQuery(opts, addAuthorization) {
@@ -949,7 +1115,7 @@ function executeGqlQuery(opts, addAuthorization) {
 	}
 
 	if (addAuthorization) {
-		headersToAdd.Authorization = getToken();
+		headersToAdd.Authorization = getAnonymousUserTokenSingleton();
 	}
 
 	const gql = JSON.stringify({
@@ -1001,6 +1167,12 @@ function getSavedVideo(url) {
 		"Cache-Control": "no-cache"
 	}
 
+	if (_settings.hideSensitiveContent) {
+		headers1["Cookie"] = "ff=on"
+	} else {
+		headers1["Cookie"] = "ff=off"
+	}
+
 	var player_metadataResponse = http.GET(player_metadata_url, headers1);
 
 	if (!player_metadataResponse.isOk) {
@@ -1009,7 +1181,16 @@ function getSavedVideo(url) {
 
 	var player_metadata = JSON.parse(player_metadataResponse.body);
 
-	const hls_url = player_metadata.qualities.auto[0].url;
+	if (player_metadata.error) {
+
+		if (player_metadata.error.code && errorTypes[player_metadata.error.code] !== undefined) {
+			throw new UnavailableException(errorTypes[player_metadata.error.code]);
+		}
+
+		throw new UnavailableException('This content is not available');
+	}
+
+	const hls_url = player_metadata?.qualities?.auto[0]?.url;
 
 	checkHLS(hls_url, headers1);
 
@@ -1033,7 +1214,7 @@ function getSavedVideo(url) {
 		"Priority": "u=4",
 		"Pragma": "no-cache",
 		"Cache-Control": "no-cache",
-		"Authorization": AUTHORIZATION_TOKEN
+		"Authorization": getAnonymousUserTokenSingleton()
 	};
 
 	const videoDetailsGqlQuery = `
@@ -1044,24 +1225,12 @@ function getSavedVideo(url) {
 		duration
 		title
 		description
-		thumbnailx60: thumbnailURL(size: "x60")
-		thumbnailx120: thumbnailURL(size: "x120")
-		thumbnailx240: thumbnailURL(size: "x240")
-		thumbnailx360: thumbnailURL(size: "x360")
-		thumbnailx480: thumbnailURL(size: "x480")
-		thumbnailx720: thumbnailURL(size: "x720")
-		thumbnailx1080: thumbnailURL(size: "x1080")
-		category
+		thumbnail(height: PORTRAIT_720) {
+			url
+		}
 		bestAvailableQuality
 		createdAt
-		viewerEngagement {
-			id
-			liked
-			favorited
-			__typename
-		}
 		isPrivate
-		isWatched
 		isCreatedForKids
 		isExplicit
 		canDisplayAds
@@ -1073,56 +1242,45 @@ function getSavedVideo(url) {
 				node {
 					id
 					name
-					__typename
 				}
-				__typename
 			}
-			__typename
 		}
 		stats {
 			id
 			views {
 				id
 				total
-				__typename
 			}
-			__typename
 		}
-		channel {
-			__typename
+		creator {
 			id
 			xid
 			name
 			displayName
-			isArtist
-			logoURLx25: logoURL(size: "x25")
-			logoURL(size: "x60")
-			isFollowed
-			accountType
+			avatar(height: SQUARE_240) {
+				url
+				height
+				width
+			}
 			coverURLx375: coverURL(size: "x375")
 			stats {
 				id
 				views {
 					id
 					total
-					__typename
 				}
 				followers {
 					id
 					total
-					__typename
 				}
 				videos {
 					id
 					total
-					__typename
 				}
-				__typename
 			}
 			country {
 				id
 				codeAlpha2
-				__typename
 			}
 			organization @skip(if: $isSEO) {
 				id
@@ -1130,31 +1288,24 @@ function getSavedVideo(url) {
 				owner {
 					id
 					xid
-					__typename
 				}
-				__typename
 			}
 		}
 		language {
 			id
 			codeAlpha2
-			__typename
 		}
 		tags {
 			edges {
 				node {
 					id
 					label
-					__typename
 				}
-				__typename
 			}
-			__typename
 		}
 		moderation {
 			id
 			reviewedAt
-			__typename
 		}
 		topics(whitelistedOnly: true, first: 3, page: 1) {
 			edges {
@@ -1170,27 +1321,18 @@ function getSavedVideo(url) {
 								language {
 									id
 									codeAlpha2
-									__typename
 								}
-								__typename
 							}
-							__typename
 						}
-						__typename
 					}
-					__typename
 				}
-				__typename
 			}
-			__typename
 		}
 		geoblockedCountries {
 			id
 			allowed
 			denied
-			__typename
 		}
-		__typename
 	}
 	
 	fragment LIVE_FRAGMENT on Live {
@@ -1201,21 +1343,13 @@ function getSavedVideo(url) {
 		isPublished
 		title
 		description
-		thumbnailx60: thumbnailURL(size: "x60")
-		thumbnailx120: thumbnailURL(size: "x120")
-		thumbnailx240: thumbnailURL(size: "x240")
-		thumbnailx360: thumbnailURL(size: "x360")
-		thumbnailx480: thumbnailURL(size: "x480")
-		thumbnailx720: thumbnailURL(size: "x720")
-		thumbnailx1080: thumbnailURL(size: "x1080")
+		thumbnail(height:PORTRAIT_720){
+			url
+			height
+			width
+		}
 		category
 		createdAt
-		viewerEngagement {
-			id
-			liked
-			favorited
-			__typename
-		}
 		isPrivate
 		isExplicit
 		isCreatedForKids
@@ -1228,45 +1362,37 @@ function getSavedVideo(url) {
 			views {
 				id
 				total
-				__typename
 			}
-			__typename
 		}
-		channel {
-			__typename
+		creator {
 			id
 			xid
 			name
 			displayName
-			isArtist
-			logoURLx25: logoURL(size: "x25")
-			logoURL(size: "x60")
-			isFollowed
-			accountType
+			avatar(height: SQUARE_240) {
+				url
+				height
+				width
+			}
 			coverURLx375: coverURL(size: "x375")
 			stats {
 				id
 				views {
 					id
 					total
-					__typename
 				}
 				followers {
 					id
 					total
-					__typename
 				}
 				videos {
 					id
 					total
-					__typename
 				}
-				__typename
 			}
 			country {
 				id
 				codeAlpha2
-				__typename
 			}
 			organization @skip(if: $isSEO) {
 				id
@@ -1274,31 +1400,24 @@ function getSavedVideo(url) {
 				owner {
 					id
 					xid
-					__typename
 				}
-				__typename
 			}
 		}
 		language {
 			id
 			codeAlpha2
-			__typename
 		}
 		tags {
 			edges {
 				node {
 					id
 					label
-					__typename
 				}
-				__typename
 			}
-			__typename
 		}
 		moderation {
 			id
 			reviewedAt
-			__typename
 		}
 		topics(whitelistedOnly: true, first: 3, page: 1) {
 			edges {
@@ -1314,44 +1433,32 @@ function getSavedVideo(url) {
 								language {
 									id
 									codeAlpha2
-									__typename
 								}
-								__typename
 							}
-							__typename
 						}
-						__typename
 					}
-					__typename
 				}
-				__typename
 			}
-			__typename
 		}
 		geoblockedCountries {
 			id
 			allowed
 			denied
-			__typename
 		}
-		__typename
 	}
 	
 	query WATCHING_VIDEO($xid: String!, $isSEO: Boolean!) {
 		video: media(xid: $xid) {
-			__typename
 			... on Video {
 				id
 				...VIDEO_FRAGMENT
-				__typename
 			}
 			... on Live {
 				id
 				...LIVE_FRAGMENT
-				__typename
 			}
 		}
-	}	
+	}		
 	`
 
 	const videoDetailsRequestBody = JSON.stringify(
@@ -1384,7 +1491,13 @@ function getSavedVideo(url) {
 		)
 	]
 
-	const thumbnail = player_metadata.thumbnailx720 ?? player_metadata.thumbnailx240 ?? player_metadata.thumbnailx120 ?? player_metadata.thumbnailx60;
+	const thumbnail =
+		player_metadata.thumbnailx720
+		?? player_metadata.thumbnailx240
+		?? player_metadata.thumbnailx120
+		?? player_metadata.thumbnailx60;
+
+	const video = video_details?.data?.video;
 
 	return new PlatformVideoDetails({
 		id: new PlatformID(PLATFORM, id, config.id),
@@ -1394,14 +1507,14 @@ function getSavedVideo(url) {
 			new PlatformID(PLATFORM, player_metadata?.owner?.id, config.id, PLATFORM_CLAIMTYPE),
 			player_metadata?.owner?.screenname,
 			player_metadata?.owner?.url,
-			video_details?.data?.video?.channel?.logoURL ?? '',
+			video?.creator?.avatar?.url ?? '',
 		),
-		uploadDate: player_metadata?.created_time,
+		uploadDate: parseInt(new Date(video?.createdAt).getTime() / 1000),
 		duration: player_metadata?.duration,
-		viewCount: video_details?.data?.video?.stats?.views?.total,//TODO: get view count
+		viewCount: video?.stats?.views?.total,//TODO: get view count
 		url: player_metadata.url,
 		isLive: false,
-		description: video_details?.data?.video?.description,//TODO: get description
+		description: video?.description,//TODO: get description
 		video: new VideoSourceDescriptor(sources),
 	})
 }
@@ -1421,14 +1534,12 @@ function getSearchChannelPager(context) {
 				edges {
 					node {
 						id
-						accountType
 						id
 						xid
 						name
 						displayName
-						isFollowed
 						description
-						avatar(height: SQUARE_720) {
+						avatar(height:SQUARE_240) {
 							url
 							height
 							width
@@ -1498,7 +1609,14 @@ class SearchPagerAll extends VideoPager {
 	nextPage() {
 
 		this.context.page = this.context.page + 1
-		const opts = { q: this.context.params.query, page: this.context.page };
+
+		const opts = {
+			q: this.context.params.query,
+			sort: this.context.params.sort,
+			page: this.context.page,
+			filters: this.context.params.filters
+		};
+
 		return getSearchPagerAll(opts);
 	}
 }

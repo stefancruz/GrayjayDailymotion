@@ -7,10 +7,10 @@
   "sourceUrl": "https://stefancruz.github.io/GrayjayDailymotion/DailymotionConfig.json",
   "scriptUrl": "./DailymotionScript.js",
   "repositoryUrl": "https://github.com/stefancruz/GrayjayDailymotion",
-  "version": 3,
+  "version": 4,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "BKk607WFFvX2FkmR2BHrjqNi3NFpQ/WmngVoluLMTzRWmx2JiTeEF9Ld7Uzx6vG0zcR35L/0WYPdAHh325rXH6xNkI1EQZUyEDXYn5OOGdlTut2uHWSTHegq6HPWC19nUzD4Nldj394VAES77JjuJgGEBVm9ZKnaPUmDR2pTAFHR+Ljli3Kfk51/xpWpxokAvECaQNrL2agyHZn7BNraTIOLiU5TLdzl6pojoGxPcWyjVqu0AiBEkXSPF7IH7OAsgC/aeRSTHcpfyjEVqskdtvFMlzdA35+JFHTa8OMIXVCgon7nZbK2GQgS1ef8Q3AZ0gl71qCEPLK4FfL6yyTm3Q==",
+  "scriptSignature": "RCOAVph556fLNiegvM+xgwt/8qARKNZElZXdo4wU0XGm5jHUaDmXZLvtcxgRKx2Pi3AZ4yPfgoWIkFYjfcLZWKcqJtXgfE1aW/hpPO8upkV2OrffVLlPm8//FCTpleBn19gNZBuICZaRE+S0deM9vUREMbXdswm/Lr2D0yv3Q4cISr7pIdKrQHTFjhwdh48iVB2G19bjikMqLOnQtzD36qtUfHeVITQfoWfcjpevZdpLfhHglD5Yhxds48cvw9r7jBLEZ+jg3adeyhyH3ol1aMKm6mnmuH+mDXRaFarXZ0i0muY7L/xWB+jOBbFzhXCRxC9WIfPOMBxpezgopXc0ug==",
   "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
@@ -26,6 +26,13 @@
     "s3.dmcdn.net"
   ],
   "settings": [
+    {
+      "variable": "hideSensitiveContent",
+      "name": "Hide Sensitive Content",
+      "description": "Do not allow watching sensitive content",
+      "type": "Boolean",
+      "default": "true"
+    },
     {
       "variable": "preferredCountry",
       "name": "Preferred Country",
