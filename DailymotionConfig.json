@@ -10,7 +10,7 @@
   "version": 3,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "dcJqUQhXMAyRP4/kvGFn6Gt7n+m4lXfEb7+jrczlA0smCr1sXOEpcSWFaCCjuNF4o8ZbCf1UipB5KEbBh3BdLspOfdnzKgDSamlGwapu4U2vwc4VMKTV1UhKWslk21nQB9S7ziXH9zzQ+B088USrWTsxjHVR5b1wN7anYqXxLqg3ywAUFTC3l211Mfe+vfjlCBrlgesc4zhj89dSShXKNXf1Q/6PNlACCHHl3A2ndue/0Sg5LU8YFSfUjiR1hZg+JHfgk92F/ZeXtqTZ6XWIfExdg4QWmzN8yRS+vkt7KsHuzFHa/MHLe18eHjI9TUe8WulZaPb85qfHJ8/ca5S+Rw==",
+  "scriptSignature": "RCOAVph556fLNiegvM+xgwt/8qARKNZElZXdo4wU0XGm5jHUaDmXZLvtcxgRKx2Pi3AZ4yPfgoWIkFYjfcLZWKcqJtXgfE1aW/hpPO8upkV2OrffVLlPm8//FCTpleBn19gNZBuICZaRE+S0deM9vUREMbXdswm/Lr2D0yv3Q4cISr7pIdKrQHTFjhwdh48iVB2G19bjikMqLOnQtzD36qtUfHeVITQfoWfcjpevZdpLfhHglD5Yhxds48cvw9r7jBLEZ+jg3adeyhyH3ol1aMKm6mnmuH+mDXRaFarXZ0i0muY7L/xWB+jOBbFzhXCRxC9WIfPOMBxpezgopXc0ug==",
   "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
@@ -26,6 +26,13 @@
     "s3.dmcdn.net"
   ],
   "settings": [
+    {
+      "variable": "hideSensitiveContent",
+      "name": "Hide Sensitive Content",
+      "description": "Do not allow watching sensitive content",
+      "type": "Boolean",
+      "default": "true"
+    },
     {
       "variable": "preferredCountry",
       "name": "Preferred Country",
