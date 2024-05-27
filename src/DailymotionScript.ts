@@ -11,8 +11,8 @@ const USER_AGENT = '"Mozilla/5.0 (Linux; Android 11; SAMSUNG SM-G973U) AppleWebK
 const CLIENT_ID = 'f1a362d288c1b98099c7';
 const CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
 
-var config = {};
-var _settings = {};
+var config: IPluginConfig = {};
+var _settings: DailymotionPluginSettings = {};
 
 const X_DM_AppInfo_Id = "com.dailymotion.neon"
 const X_DM_AppInfo_Type = "website"
@@ -20,14 +20,11 @@ const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z" //TODO check how to get
 const X_DM_Neon_SSR = "0"
 const X_DM_Preferred_Country = "";//TODO check how to get this from Grayjay
 
-// const Accept_Language = "en-GB,en;q=0.5"
-
 const PLATFORM = "Dailymotion";
 const PLATFORM_CLAIMTYPE = 3;
 
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER = null;
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = null;
-
 
 // search capabilities - upload date
 const LESS_THAN_MINUTE = "LESS_THAN_MINUTE"
@@ -44,29 +41,10 @@ DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
-
-const errorTypes = {
-	"DM001": "No video has been specified, you need to specify one.",
-	"DM002": "Content has been deleted.",
-	"DM003": "Live content is not available, i.e. it may not have started yet.",
-	"DM004": "Copyrighted content, access forbidden.",
-	"DM005": "Content rejected (this video may have been removed due to a breach of the terms of use, a copyright claim or an infringement upon third party rights).",
-	"DM006": "Publishing in progress…",
-	"DM007": "Video geo-restricted by its owner.",
-	"DM008": "Explicit content. Explicit content can be enabled using the plugin settings",
-	"DM009": "Explicit content (offsite embed)",
-	"DM010": "Private content",
-	"DM011": "An encoding error occurred",
-	"DM012": "Encoding in progress",
-	"DM013": "This video has no preset (no video stream)",
-	"DM014": "This video has not been made available on your device by its owner",
-	"DM015": "Kids host error",
-	"DM016": "Content not available on this website, it can only be watched on Dailymotion",
-	"DM019": "This content has been uploaded by an inactive channel and its access is limited"
-}
-
-
-
+import errorTypes from './errorTypes';
+import constants from './constants';
+import queries from './gqlQueries';
+import util from './util';
 
 source.setSettings = function (settings) {
 	_settings = settings;
@@ -90,22 +68,6 @@ source.getHome = function () {
 };
 
 source.searchSuggestions = function (query) {
-	const gqlQuery = `
-	query AUTOCOMPLETE_QUERY($query: String!) {
-		search {
-		  id
-		  suggestedVideos: autosuggestions(
-			query: {eq: $query}
-			filter: {story: {eq: VIDEO}}
-		  ) {
-			edges {
-			  node {
-				name
-			  }
-			}
-		  }
-		}
-	  }`;
 
 	const variables = {
 		"query": query
@@ -115,12 +77,12 @@ source.searchSuggestions = function (query) {
 		const jsonResponse = executeGqlQuery({
 			operationName: 'AUTOCOMPLETE_QUERY',
 			variables: variables,
-			query: gqlQuery
+			query: queries.SEARCH_SUGGESTIONS_QUERY
 		}, true);
 
 		return jsonResponse?.data?.search?.suggestedVideos?.edges?.map(edge => edge?.node?.name);
 	} catch (error) {
-		log('Failed to get search suggestions', error);
+		log('Failed to get search suggestions:' + error?.message);
 		return [];
 	}
 };
@@ -130,9 +92,8 @@ source.getSearchCapabilities = () => {
 	//TODO: refact this to use more constants
 	return {
 		types: [
-			Type.Feed.Videos,
-			Type.Feed.Live,
-			Type.Feed.Mixed
+			// Type.Feed.Videos,
+			// Type.Feed.Live
 		],
 		sorts: [
 			"Most Recent",
@@ -169,16 +130,16 @@ source.getSearchCapabilities = () => {
 }
 
 
-source.search = function (query, type, order, filters, continuationToken) {
-	return getSearchPagerAll({ q: query, page: 1, type, order, filters, continuationToken });
+source.search = function (query: string, type: string, order: string, filters) {
+	return getSearchPagerAll({ q: query, page: 1, type, order, filters });
 }
 
-source.getSearchChannelContentsCapabilities = function () {
+// source.getSearchChannelContentsCapabilities = function () {
 
-};
-source.searchChannelContents = function (channelUrl, query, type, order, filters) {
+// };
+// source.searchChannelContents = function (channelUrl, query, type, order, filters) {
 
-};
+// };
 
 source.searchChannels = function (query) {
 	return getSearchChannelPager({ q: query, page: 1 })
@@ -193,78 +154,12 @@ source.getChannel = function (url) {
 
 	const channel_name = getChannelNameFromUrl(url);
 
-	const query = `
-	fragment CHANNEL_MAIN_FRAGMENT on Channel {
-		id
-		xid
-		name
-		displayName
-		description
-		avatar(height: SQUARE_120) {
-		  url
-		}
-		coverURL1024x: coverURL(size: "1024x")
-		coverURL1920x: coverURL(size: "1920x")
-		tagline
-		country {
-		  id
-		  codeAlpha2
-		}
-		metrics {
-		  engagement {
-			followers {
-			  edges {
-				node {
-				  total
-				}
-			  }
-			}
-			followings {
-			  edges {
-				node {
-				  total
-				}
-			  }
-			}
-		  }
-		}
-		stats {
-		  id
-		  views {
-			id
-			total
-		  }
-		  videos {
-			id
-			total
-		  }
-		}
-		externalLinks {
-		  facebookURL
-		  twitterURL
-		  websiteURL
-		  instagramURL
-		  pinterestURL
-		}
-	  }
-	  
-	  query CHANNEL_QUERY_DESKTOP($channel_name: String!) {
-		channel(name: $channel_name) {
-		  id
-		  ...CHANNEL_MAIN_FRAGMENT
-		}
-	  }
-	  
-	`
-
-
 	const channelDetails = executeGqlQuery(
 		{
 			operationName: 'CHANNEL_QUERY_DESKTOP',
 			variables: { "channel_name": channel_name },
-			query
-		}
-		, true);
+			query: queries.CHANNEL_BY_URL_QUERY
+		}, true);
 
 	const user = channelDetails.data.channel;
 
@@ -328,23 +223,6 @@ function isUsernameUrl(url) {
 }
 
 
-function objectToUrlEncodedString(obj) {
-	// Create an array to hold the encoded key-value pairs
-	const encodedParams = [];
-
-	// Iterate over the object's keys
-	for (const key in obj) {
-		if (obj.hasOwnProperty(key)) {
-			// Encode the key and the value, and join them with '='
-			const encodedKey = encodeURIComponent(key);
-			const encodedValue = encodeURIComponent(obj[key]);
-			encodedParams.push(`${encodedKey}=${encodedValue}`);
-		}
-	}
-
-	// Join all the encoded key-value pairs with '&' and return the result
-	return encodedParams.join('&');
-}
 
 function getAnonymousUserTokenSingleton() {
 	// Check if the anonymous user token is available and not expired
@@ -358,7 +236,7 @@ function getAnonymousUserTokenSingleton() {
 	}
 
 	// Prepare the request body for obtaining a new token
-	const body = objectToUrlEncodedString({
+	const body = util.objectToUrlEncodedString({
 		client_id: CLIENT_ID,
 		client_secret: CLIENT_SECRET,
 		grant_type: 'client_credentials'
@@ -383,7 +261,7 @@ function getAnonymousUserTokenSingleton() {
 	// Check if the response code indicates success
 	if (res.code !== 200) {
 		console.error('Failed to get token', res);
-		throw new ScriptException("Failed to get token: " + res.code + " - " + res.body);
+		throw new ScriptException("", "Failed to get token: " + res.code + " - " + res.body);
 	}
 
 	// Parse the response JSON to extract the token information
@@ -392,7 +270,7 @@ function getAnonymousUserTokenSingleton() {
 	// Ensure the response contains the necessary token information
 	if (!json.token_type || !json.access_token) {
 		console.error('Invalid token response', res);
-		throw new ScriptException('Invalid token response: ' + res.body);
+		throw new ScriptException("", 'Invalid token response: ' + res.body);
 	}
 
 	// Store the token and its expiration date
@@ -403,8 +281,8 @@ function getAnonymousUserTokenSingleton() {
 }
 
 function getPreferredCountry() {
-	const countryName = countryNames[_settings?.preferredCountry];
-	const code = countryNamesToCode[countryName];
+	const countryName = constants.countryNames[_settings?.preferredCountry];
+	const code = constants.countryNamesToCode[countryName];
 	const preferredCountry = (code || X_DM_Preferred_Country || '').toLowerCase();
 	return preferredCountry;
 }
@@ -439,97 +317,7 @@ function getVideoPager(params, page) {
 		"Cache-Control": "no-cache"
 	};
 
-	const gqlQuery = `	
-	fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
-		id
-		xid
-		title
-		isPublished
-		embedURL
-		thumbnail(height: PORTRAIT_720) {
-			url
-		}
-		createdAt
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height: SQUARE_240) {
-				url
-			}
-		}
-		duration
-		
-	}
-	
-	query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!) {
-		home: views {
-			id
-			neon {
-				id
-				sections(space: "home") {
-					edges {
-						node {
-							id
-							name
-							title
-							description
-							components {
-								edges {
-									node {
-										__typename
-										... on Media {
-											...SEARCH_DISCOVERY_VIDEO_FRAGMENT
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		featuredContent {
-			id
-			channels(first: 10) {
-				edges {
-					node {
-						id
-						xid
-						displayName
-						name
-						logoURL(size: "x120")
-						stats {
-							id
-							followers {
-								id
-								total
-							}
-						}
-					}
-				}
-			}
-		}
-		conversations(
-			filter: { story: { eq: HASHTAG }, algorithm: { eq: SPONSORED } }
-			first: 1
-		) @include(if: $shouldQueryPromotedHashtag) {
-			edges {
-				node {
-					id
-					story {
-						... on Hashtag {
-							id
-							name
-						}
-					}
-				}
-			}
-		}
-	}
-			
-`
+
 	let obj;
 
 	try {
@@ -537,12 +325,12 @@ function getVideoPager(params, page) {
 			{
 				operationName: 'SEACH_DISCOVERY_QUERY',
 				variables: { "shouldQueryPromotedHashtag": false },
-				query: gqlQuery,
+				query: queries.HOME_QUERY,
 				headers: headersToAdd
 			}, true);
 
 	} catch (error) {
-		return new VideoPager([], false);
+		return new VideoPager([], false, { params });
 	}
 
 	var results = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.edges
@@ -581,59 +369,6 @@ function getChannelPager(context) {
 
 	const channel_name = getChannelNameFromUrl(url);
 
-	const query = `
-	query CHANNEL_VIDEOS_QUERY($channel_name: String!, $first: Int!, $sort: String, $page: Int!, $allowExplicit: Boolean) {
-		channel(name: $channel_name) {
-		  id
-		  xid
-		  channel_videos_all_videos: videos(
-			sort: $sort
-			page: $page
-			first: $first
-			allowExplicit: $allowExplicit
-		  ) {
-			pageInfo {
-			  hasNextPage
-			  nextPage
-			}
-			edges {
-			  node {
-				id
-				xid
-				title
-				thumbnailx60: thumbnailURL(size: "x60")
-				thumbnailx120: thumbnailURL(size: "x120")
-				thumbnailx240: thumbnailURL(size: "x240")
-				thumbnailx720: thumbnailURL(size: "x720")
-				bestAvailableQuality
-				duration
-				createdAt
-				creator {
-					id
-					name
-					displayName
-					avatar(height:SQUARE_240) {
-						url
-					}
-					
-				}
-				metrics {
-					engagement {
-						likes {
-							totalCount
-						}
-					}
-				}
-						  
-			  }
-			}
-		  }
-		}
-	  }
-		
-	  
-	`
-
 	const json = executeGqlQuery(
 		{
 			operationName: 'CHANNEL_VIDEOS_QUERY',
@@ -644,29 +379,23 @@ function getChannelPager(context) {
 				"allowExplicit": true,
 				"first": context.page_size ?? 30
 			},
-			query
+			query: queries.CHANNEL_VIDEOS_BY_CHANNEL_NAME
 		}, true);
 
 	const edges = json?.data?.channel?.channel_videos_all_videos?.edges ?? [];
 
 	let videos = edges.map((edge) => {
 
-		const thumbnail =
-			edge?.node?.thumbnailx720 ??
-			edge?.node?.thumbnailx240 ??
-			edge?.node?.thumbnailx120 ??
-			edge?.node?.thumbnailx60;
-
 		return ToPlatformVideo({
 			id: edge.node.id,
 			name: edge.node.title,
-			thumbnail: thumbnail,
+			thumbnail: edge?.node?.thumbnail.url ?? "",
 			createdAt: edge.node.createdAt,
 			creatorId: edge?.node?.creator?.id,
 			creatorDisplayName: edge?.node?.creator?.displayName,
 			creatorName: edge.node.creator.name,
 			creatorAvatar: edge?.node?.creator?.avatar?.url,
-			creatorUrl: `${BASE_URL_VIDEO}/${edge.node.xid}`,
+			creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
 			duration: edge.node.duration,
 			url: `${BASE_URL_VIDEO}/${edge.node.xid}`,
 			viewCount: edge.node.metrics.engagement.likes.totalCount,
@@ -674,18 +403,6 @@ function getChannelPager(context) {
 		});
 
 	})
-
-	// if (context.cursor === null) {
-	// 	// get the currently live stream
-	// 	try {
-	// 		const current_stream = getLiveVideo(BASE_URL + login, false)
-	// 		// remove first video
-	// 		videos = videos.slice(1)
-	// 		videos.unshift(current_stream)
-	// 	} catch (e) {
-	// 		log(e)
-	// 	}
-	// }
 
 	if (edges.length > 0) {
 		context.page++;
@@ -696,8 +413,8 @@ function getChannelPager(context) {
 
 function ToPlatformVideo(resource) {
 
-	const opts = {
-		id: new PlatformID(PLATFORM, resource.id, config.id),
+	const opts: PlatformVideoDef = {
+		id: new PlatformID(PLATFORM, resource.id, config.id, PLATFORM_CLAIMTYPE),
 		name: resource.name,
 		thumbnails: new Thumbnails([new Thumbnail(resource.thumbnail, 0)]),
 		author: new PlatformAuthorLink(
@@ -705,19 +422,14 @@ function ToPlatformVideo(resource) {
 			resource.creatorDisplayName,
 			resource.creatorUrl,
 			resource.creatorAvatar ?? "",
+			0
 		),
 		uploadDate: parseInt(new Date(resource.createdAt).getTime() / 1000),
 		url: resource.url,
 		duration: resource.duration,
 		viewCount: resource.viewCount,
-		isLive: resource.isLive,
-		description: resource.description || '',
-		// video: resource.video || null,
+		isLive: resource.isLive
 	};
-
-	if (resource.video) {
-		opts.video = resource.video;
-	}
 
 	return new PlatformVideo(opts)
 
@@ -792,246 +504,6 @@ function getSearchPagerAll(context) {
 		context.filters.createdAfterVideos = parseUploadDateFilter(context.filters.uploaddate[0]);
 	}
 
-	const gqlQuery = `
-	fragment VIDEO_BASE_FRAGMENT on Video {
-		id
-		xid
-		title
-		createdAt
-		metrics {
-			engagement {
-				likes {
-					edges {
-						node {
-							rating
-							total
-						}
-					}
-				}
-			}
-		}
-		stats {
-			id
-			views {
-				id
-				total
-			}
-		}
-		creator {
-			id
-			xid
-			name
-			displayName
-			description
-			avatar(height: SQUARE_240) {
-				url
-			}
-		}
-		duration
-		thumbnail(height: PORTRAIT_720) {
-			url
-		}
-		
-	}
-	
-	fragment VIDEO_FAVORITES_FRAGMENT on Media {
-		... on Video {
-			id
-			viewerEngagement {
-				id
-				favorited
-			}
-		}
-		... on Live {
-			id
-			viewerEngagement {
-				id
-				favorited
-			}
-		}
-	}
-	
-	fragment CHANNEL_BASE_FRAG on Channel {
-		id
-		xid
-		name
-		displayName
-		description
-		avatar(height: SQUARE_240) {
-			url
-		}
-	}
-	
-	fragment PLAYLIST_BASE_FRAG on Collection {
-		id
-		xid
-		name
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height:SQUARE_240) {
-				url
-			}
-		}
-		description
-		stats {
-			id
-			videos {
-				id
-				total
-			}
-		}
-	}
-	
-	fragment TOPIC_BASE_FRAG on Topic {
-		id
-		xid
-		name
-		videos(sort: "recent", first: 5) {
-			pageInfo {
-				hasNextPage
-				nextPage
-			}
-			edges {
-				node {
-					id
-					...VIDEO_BASE_FRAGMENT
-					...VIDEO_FAVORITES_FRAGMENT
-				}
-			}
-		}
-		stats {
-			id
-			videos {
-				id
-				total
-			}
-		}
-	}
-	
-	query SEARCH_QUERY(
-		$query: String!
-		$shouldIncludeVideos: Boolean!
-		$shouldIncludeChannels: Boolean!
-		$shouldIncludePlaylists: Boolean!
-		$shouldIncludeTopics: Boolean!
-		$shouldIncludeLives: Boolean!
-		$page: Int
-		$limit: Int
-		$sortByVideos: SearchVideoSort
-		$durationMinVideos: Int
-		$durationMaxVideos: Int
-		$createdAfterVideos: DateTime
-	) {
-		search {
-			id
-			videos(
-				query: $query
-				first: $limit
-				page: $page
-				sort: $sortByVideos
-				durationMin: $durationMinVideos
-				durationMax: $durationMaxVideos
-				createdAfter: $createdAfterVideos
-			) @include(if: $shouldIncludeVideos) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						...VIDEO_BASE_FRAGMENT
-						...VIDEO_FAVORITES_FRAGMENT
-					}
-				}
-			}
-			lives(query: $query, first: $limit, page: $page)
-				@include(if: $shouldIncludeLives) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						xid
-						title
-						thumbnail(height: PORTRAIT_720) {
-							url
-						}
-						description
-						metrics {
-							engagement {
-								audience {
-									totalCount
-								}
-							}
-						}
-						audienceCount
-						isOnAir
-						creator {
-							id
-							xid
-							name
-							displayName
-							avatar(height:SQUARE_240){
-								url
-							}
-						}
-					}
-				}
-			}
-			channels(query: $query, first: $limit, page: $page)
-				@include(if: $shouldIncludeChannels) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						...CHANNEL_BASE_FRAG
-					}
-				}
-			}
-			playlists: collections(query: $query, first: $limit, page: $page)
-				@include(if: $shouldIncludePlaylists) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						...PLAYLIST_BASE_FRAG
-					}
-				}
-			}
-			topics(query: $query, first: $limit, page: $page)
-				@include(if: $shouldIncludeTopics) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						...TOPIC_BASE_FRAG
-					}
-				}
-			}
-		}
-	}		
-	`;
-
 	const variables = {
 		"query": context.q,
 		"sortByVideos": context.sort,
@@ -1050,7 +522,7 @@ function getSearchPagerAll(context) {
 	const jsonResponse = executeGqlQuery({
 		operationName: 'SEARCH_QUERY',
 		variables: variables,
-		query: gqlQuery,
+		query: queries.MAIN_SEARCH_QUERY,
 		headers: undefined
 	}, true);
 
@@ -1141,7 +613,7 @@ function checkHLS(url, headersToAdd, use_authenticated = false) {
 	var resp = http.GET(url, headersToAdd, use_authenticated);
 
 	if (!resp.isOk) {
-		throw new UnavailableException('This content is restricted to subscribers')
+		throw new UnavailableException('This content is not available')
 	}
 }
 
@@ -1217,260 +689,15 @@ function getSavedVideo(url) {
 		"Authorization": getAnonymousUserTokenSingleton()
 	};
 
-	const videoDetailsGqlQuery = `
-	fragment VIDEO_FRAGMENT on Video {
-		id
-		xid
-		isPublished
-		duration
-		title
-		description
-		thumbnail(height: PORTRAIT_720) {
-			url
-		}
-		bestAvailableQuality
-		createdAt
-		isPrivate
-		isCreatedForKids
-		isExplicit
-		canDisplayAds
-		videoWidth: width
-		videoHeight: height
-		status
-		hashtags {
-			edges {
-				node {
-					id
-					name
-				}
-			}
-		}
-		stats {
-			id
-			views {
-				id
-				total
-			}
-		}
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height: SQUARE_240) {
-				url
-				height
-				width
-			}
-			coverURLx375: coverURL(size: "x375")
-			stats {
-				id
-				views {
-					id
-					total
-				}
-				followers {
-					id
-					total
-				}
-				videos {
-					id
-					total
-				}
-			}
-			country {
-				id
-				codeAlpha2
-			}
-			organization @skip(if: $isSEO) {
-				id
-				xid
-				owner {
-					id
-					xid
-				}
-			}
-		}
-		language {
-			id
-			codeAlpha2
-		}
-		tags {
-			edges {
-				node {
-					id
-					label
-				}
-			}
-		}
-		moderation {
-			id
-			reviewedAt
-		}
-		topics(whitelistedOnly: true, first: 3, page: 1) {
-			edges {
-				node {
-					id
-					xid
-					name
-					names {
-						edges {
-							node {
-								id
-								name
-								language {
-									id
-									codeAlpha2
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		geoblockedCountries {
-			id
-			allowed
-			denied
-		}
-	}
-	
-	fragment LIVE_FRAGMENT on Live {
-		id
-		xid
-		startAt
-		endAt
-		isPublished
-		title
-		description
-		thumbnail(height:PORTRAIT_720){
-			url
-			height
-			width
-		}
-		category
-		createdAt
-		isPrivate
-		isExplicit
-		isCreatedForKids
-		bestAvailableQuality
-		canDisplayAds
-		videoWidth: width
-		videoHeight: height
-		stats {
-			id
-			views {
-				id
-				total
-			}
-		}
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height: SQUARE_240) {
-				url
-				height
-				width
-			}
-			coverURLx375: coverURL(size: "x375")
-			stats {
-				id
-				views {
-					id
-					total
-				}
-				followers {
-					id
-					total
-				}
-				videos {
-					id
-					total
-				}
-			}
-			country {
-				id
-				codeAlpha2
-			}
-			organization @skip(if: $isSEO) {
-				id
-				xid
-				owner {
-					id
-					xid
-				}
-			}
-		}
-		language {
-			id
-			codeAlpha2
-		}
-		tags {
-			edges {
-				node {
-					id
-					label
-				}
-			}
-		}
-		moderation {
-			id
-			reviewedAt
-		}
-		topics(whitelistedOnly: true, first: 3, page: 1) {
-			edges {
-				node {
-					id
-					xid
-					name
-					names {
-						edges {
-							node {
-								id
-								name
-								language {
-									id
-									codeAlpha2
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		geoblockedCountries {
-			id
-			allowed
-			denied
-		}
-	}
-	
-	query WATCHING_VIDEO($xid: String!, $isSEO: Boolean!) {
-		video: media(xid: $xid) {
-			... on Video {
-				id
-				...VIDEO_FRAGMENT
-			}
-			... on Live {
-				id
-				...LIVE_FRAGMENT
-			}
-		}
-	}		
-	`
-
 	const videoDetailsRequestBody = JSON.stringify(
-		{
-			"operationName": "WATCHING_VIDEO",
-			"variables": {
-				"xid": id,
-				"isSEO": false
-			},
-			"query": videoDetailsGqlQuery
-		});
-
+	{
+		"operationName": "WATCHING_VIDEO",
+		"variables": {
+			"xid": id,
+			"isSEO": false
+		},
+		"query": queries.VIDE_DETAILS_QUERY
+	});
 
 	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders)
 
@@ -1499,8 +726,8 @@ function getSavedVideo(url) {
 
 	const video = video_details?.data?.video;
 
-	return new PlatformVideoDetails({
-		id: new PlatformID(PLATFORM, id, config.id),
+	var test: PlatformVideoDetailsDef = {
+		id: new PlatformID(PLATFORM, id, config.id, PLATFORM_CLAIMTYPE),
 		name: player_metadata.title,
 		thumbnails: new Thumbnails([new Thumbnail(thumbnail, 0)]),
 		author: new PlatformAuthorLink(
@@ -1508,61 +735,26 @@ function getSavedVideo(url) {
 			player_metadata?.owner?.screenname,
 			player_metadata?.owner?.url,
 			video?.creator?.avatar?.url ?? '',
+			0 //dsubscribers
 		),
-		uploadDate: parseInt(new Date(video?.createdAt).getTime() / 1000),
+		// datetime: new Date(video?.createdAt).getTime(),
+		uploadDate: parseInt(new Date(video.createdAt).getTime() / 1000),
 		duration: player_metadata?.duration,
 		viewCount: video?.stats?.views?.total,//TODO: get view count
 		url: player_metadata.url,
 		isLive: false,
 		description: video?.description,//TODO: get description
 		video: new VideoSourceDescriptor(sources),
-	})
+		dash: null,
+		live: null,
+		hls: null,
+	}
+
+	return new PlatformVideoDetails(test)
 }
 
 function getSearchChannelPager(context) {
-
-	const gqlQuery = `		
-	query SEARCH_QUERY($query: String!, $page: Int, $limit: Int) {
-		search {
-			id
-			channels(query: $query, first: $limit, page: $page) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						id
-						xid
-						name
-						displayName
-						description
-						avatar(height:SQUARE_240) {
-							url
-							height
-							width
-						}
-						metrics {
-							engagement {
-								followers {
-									edges {
-										node {
-											total
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 	
-		`
-
 	const variables = {
 		query: context.q,
 		page: context.page ?? 1,
@@ -1572,7 +764,7 @@ function getSearchChannelPager(context) {
 	const json = executeGqlQuery({
 		operationName: "SEARCH_QUERY",
 		variables,
-		query: gqlQuery
+		query: queries.SEARCH_CHANNEL
 	}, true);
 
 	const results = json?.data?.search?.channels?.edges.map(edge => {
@@ -1584,6 +776,8 @@ function getSearchChannelPager(context) {
 			subscribers: c?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
 			url: `${BASE_URL}/${c.name}`,
 			links: [],
+			banner: null,
+			description: c.description,
 		});
 	});
 
@@ -1650,261 +844,9 @@ class ChannelVideoPager extends VideoPager {
 }
 
 
-const countryNamesToCode = {
-	"": "",
-	"Afghanistan": "AF",
-	"Aland Islands": "AX",
-	"Albania": "AL",
-	"Algeria": "DZ",
-	"American Samoa": "AS",
-	"Andorra": "AD",
-	"Angola": "AO",
-	"Anguilla": "AI",
-	"Antarctica": "AQ",
-	"Antigua and Barbuda": "AG",
-	"Argentina": "AR",
-	"Armenia": "AM",
-	"Aruba": "AW",
-	"Australia": "AU",
-	"Austria": "AT",
-	"Azerbaijan": "AZ",
-	"Bahamas": "BS",
-	"Bahrain": "BH",
-	"Bangladesh": "BD",
-	"Barbados": "BB",
-	"Belarus": "BY",
-	"Belgium": "BE",
-	"Belize": "BZ",
-	"Benin": "BJ",
-	"Bermuda": "BM",
-	"Bhutan": "BT",
-	"Bolivia": "BO",
-	"Bonaire, Sint Eustatius and Saba": "BQ",
-	"Bosnia and Herzegovina": "BA",
-	"Botswana": "BW",
-	"Bouvet Island": "BV",
-	"Brazil": "BR",
-	"British Indian Ocean Territory": "IO",
-	"Brunei Darussalam": "BN",
-	"Bulgaria": "BG",
-	"Burkina Faso": "BF",
-	"Burundi": "BI",
-	"Cambodia": "KH",
-	"Cameroon": "CM",
-	"Canada": "CA",
-	"Cabo Verde": "CV",
-	"Cayman Islands": "KY",
-	"Central African Republic": "CF",
-	"Chad": "TD",
-	"Chile": "CL",
-	"China": "CN",
-	"Christmas Island": "CX",
-	"Cocos (Keeling) Islands": "CC",
-	"Colombia": "CO",
-	"Comoros": "KM",
-	"Congo": "CG",
-	"Congo, Democratic Republic of the": "CD",
-	"Cook Islands": "CK",
-	"Costa Rica": "CR",
-	"Cote d'Ivoire": "CI",
-	"Croatia": "HR",
-	"Cuba": "CU",
-	"Curacao": "CW",
-	"Cyprus": "CY",
-	"Czech Republic": "CZ",
-	"Denmark": "DK",
-	"Djibouti": "DJ",
-	"Dominica": "DM",
-	"Dominican Republic": "DO",
-	"Ecuador": "EC",
-	"Egypt": "EG",
-	"El Salvador": "SV",
-	"Equatorial Guinea": "GQ",
-	"Eritrea": "ER",
-	"Estonia": "EE",
-	"Eswatini": "SZ",
-	"Ethiopia": "ET",
-	"Falkland Islands (Malvinas)": "FK",
-	"Faroe Islands": "FO",
-	"Fiji": "FJ",
-	"Finland": "FI",
-	"France": "FR",
-	"French Guiana": "GF",
-	"French Polynesia": "PF",
-	"French Southern Territories": "TF",
-	"Gabon": "GA",
-	"Gambia": "GM",
-	"Georgia": "GE",
-	"Germany": "DE",
-	"Ghana": "GH",
-	"Gibraltar": "GI",
-	"Greece": "GR",
-	"Greenland": "GL",
-	"Grenada": "GD",
-	"Guadeloupe": "GP",
-	"Guam": "GU",
-	"Guatemala": "GT",
-	"Guernsey": "GG",
-	"Guinea": "GN",
-	"Guinea-Bissau": "GW",
-	"Guyana": "GY",
-	"Haiti": "HT",
-	"Heard Island and McDonald Islands": "HM",
-	"Holy See": "VA",
-	"Honduras": "HN",
-	"Hong Kong": "HK",
-	"Hungary": "HU",
-	"Iceland": "IS",
-	"India": "IN",
-	"Indonesia": "ID",
-	"Iran": "IR",
-	"Iraq": "IQ",
-	"Ireland": "IE",
-	"Isle of Man": "IM",
-	"Israel": "IL",
-	"Italy": "IT",
-	"Jamaica": "JM",
-	"Japan": "JP",
-	"Jersey": "JE",
-	"Jordan": "JO",
-	"Kazakhstan": "KZ",
-	"Kenya": "KE",
-	"Kiribati": "KI",
-	"Korea, Democratic People's Republic of": "KP",
-	"Korea, Republic of": "KR",
-	"Kuwait": "KW",
-	"Kyrgyzstan": "KG",
-	"Lao People's Democratic Republic": "LA",
-	"Latvia": "LV",
-	"Lebanon": "LB",
-	"Lesotho": "LS",
-	"Liberia": "LR",
-	"Libya": "LY",
-	"Liechtenstein": "LI",
-	"Lithuania": "LT",
-	"Luxembourg": "LU",
-	"Macao": "MO",
-	"North Macedonia": "MK",
-	"Madagascar": "MG",
-	"Malawi": "MW",
-	"Malaysia": "MY",
-	"Maldives": "MV",
-	"Mali": "ML",
-	"Malta": "MT",
-	"Marshall Islands": "MH",
-	"Martinique": "MQ",
-	"Mauritania": "MR",
-	"Mauritius": "MU",
-	"Mayotte": "YT",
-	"Mexico": "MX",
-	"Micronesia, Federated States of": "FM",
-	"Moldova, Republic of": "MD",
-	"Monaco": "MC",
-	"Mongolia": "MN",
-	"Montenegro": "ME",
-	"Montserrat": "MS",
-	"Morocco": "MA",
-	"Mozambique": "MZ",
-	"Myanmar": "MM",
-	"Namibia": "NA",
-	"Nauru": "NR",
-	"Nepal": "NP",
-	"Netherlands": "NL",
-	"New Caledonia": "NC",
-	"New Zealand": "NZ",
-	"Nicaragua": "NI",
-	"Niger": "NE",
-	"Nigeria": "NG",
-	"Niue": "NU",
-	"Norfolk Island": "NF",
-	"Northern Mariana Islands": "MP",
-	"Norway": "NO",
-	"Oman": "OM",
-	"Pakistan": "PK",
-	"Palau": "PW",
-	"Palestine, State of": "PS",
-	"Panama": "PA",
-	"Papua New Guinea": "PG",
-	"Paraguay": "PY",
-	"Peru": "PE",
-	"Philippines": "PH",
-	"Pitcairn": "PN",
-	"Poland": "PL",
-	"Portugal": "PT",
-	"Puerto Rico": "PR",
-	"Qatar": "QA",
-	"Reunion": "RE",
-	"Romania": "RO",
-	"Russian Federation": "RU",
-	"Rwanda": "RW",
-	"Saint Barthelemy": "BL",
-	"Saint Helena, Ascension and Tristan da Cunha": "SH",
-	"Saint Kitts and Nevis": "KN",
-	"Saint Lucia": "LC",
-	"Saint Martin (French part)": "MF",
-	"Saint Pierre and Miquelon": "PM",
-	"Saint Vincent and the Grenadines": "VC",
-	"Samoa": "WS",
-	"San Marino": "SM",
-	"Sao Tome and Principe": "ST",
-	"Saudi Arabia": "SA",
-	"Senegal": "SN",
-	"Serbia": "RS",
-	"Seychelles": "SC",
-	"Sierra Leone": "SL",
-	"Singapore": "SG",
-	"Sint Maarten (Dutch part)": "SX",
-	"Slovakia": "SK",
-	"Slovenia": "SI",
-	"Solomon Islands": "SB",
-	"Somalia": "SO",
-	"South Africa": "ZA",
-	"South Georgia and the South Sandwich Islands": "GS",
-	"South Sudan": "SS",
-	"Spain": "ES",
-	"Sri Lanka": "LK",
-	"Sudan": "SD",
-	"Suriname": "SR",
-	"Svalbard and Jan Mayen": "SJ",
-	"Sweden": "SE",
-	"Switzerland": "CH",
-	"Syrian Arab Republic": "SY",
-	"Taiwan, Province of China": "TW",
-	"Tajikistan": "TJ",
-	"Tanzania, United Republic of": "TZ",
-	"Thailand": "TH",
-	"Timor-Leste": "TL",
-	"Togo": "TG",
-	"Tokelau": "TK",
-	"Tonga": "TO",
-	"Trinidad and Tobago": "TT",
-	"Tunisia": "TN",
-	"Turkey": "TR",
-	"Turkmenistan": "TM",
-	"Turks and Caicos Islands": "TC",
-	"Tuvalu": "TV",
-	"Uganda": "UG",
-	"Ukraine": "UA",
-	"United Arab Emirates": "AE",
-	"United Kingdom of Great Britain and Northern Ireland": "GB",
-	"United States of America": "US",
-	"United States Minor Outlying Islands": "UM",
-	"Uruguay": "UY",
-	"Uzbekistan": "UZ",
-	"Vanuatu": "VU",
-	"Venezuela, Bolivarian Republic of": "VE",
-	"Vietnam": "VN",
-	"Virgin Islands, British": "VG",
-	"Virgin Islands, U.S.": "VI",
-	"Wallis and Futuna": "WF",
-	"Western Sahara": "EH",
-	"Yemen": "YE",
-	"Zambia": "ZM",
-	"Zimbabwe": "ZW"
-}
 
-const countryNames = Object
-	.keys(countryNamesToCode)
+
+
 
 
 log("LOADED");
