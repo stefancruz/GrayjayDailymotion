@@ -4,6 +4,7 @@
   "main": "index.js",
   "scripts": {
     "build": "rollup -c",
+    "start": "rollup -c -w",
     "get-token": "node ./scripts/get-token.js",
     "codegen": "graphql-codegen --config ./scripts/codegen.ts"
   },

@@ -303,6 +303,10 @@ const MAIN_SEARCH_QUERY = `
 		id
 		xid
 		name
+		description
+		thumbnail(height: PORTRAIT_240) {
+			url
+		}
 		creator {
 			id
 			xid
@@ -318,6 +322,17 @@ const MAIN_SEARCH_QUERY = `
 			videos {
 				id
 				total
+			}
+		}
+		metrics {
+			engagement {
+				videos {
+					edges {
+						node {
+							total
+						}
+					}
+				}
 			}
 		}
 	}
@@ -758,6 +773,68 @@ const SEARCH_CHANNEL = `
 		`
 
 
+const PLAYLIST_DETAILS_QUERY = `
+query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100) {
+	collection(xid: $xid) {
+		id
+		id
+		xid
+		updatedAt
+		name
+		thumbnail(height: PORTRAIT_480) {
+			url
+		}
+		creator {
+			id
+			displayName
+			xid
+			avatar(height: SQUARE_240) {
+				url
+			}
+			metrics {
+				engagement {
+					followers {
+						edges {
+							node {
+								total
+							}
+						}
+					}
+				}
+			}
+		}
+		metrics {
+			engagement {
+				videos {
+					edges {
+						node {
+							total
+						}
+					}
+				}
+			}
+		}
+		videos(first: $numberOfVideos) {
+			edges {
+				node {
+					id
+					xid
+					duration
+					title
+					description
+					url
+					createdAt
+					thumbnail(height: PORTRAIT_480) {
+						url
+					}
+				}
+			}
+		}
+	}
+}
+	
+	`
+
 const queries = {
 	SEARCH_SUGGESTIONS_QUERY,
 	CHANNEL_BY_URL_QUERY,
@@ -765,7 +842,8 @@ const queries = {
 	CHANNEL_VIDEOS_BY_CHANNEL_NAME,
 	MAIN_SEARCH_QUERY,
 	VIDE_DETAILS_QUERY,
-	SEARCH_CHANNEL
+	SEARCH_CHANNEL,
+	PLAYLIST_DETAILS_QUERY
 };
 
 export default queries;
