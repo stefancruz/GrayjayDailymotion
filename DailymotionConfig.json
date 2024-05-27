@@ -7,10 +7,10 @@
   "sourceUrl": "https://stefancruz.github.io/GrayjayDailymotion/DailymotionConfig.json",
   "scriptUrl": "./DailymotionScript.js",
   "repositoryUrl": "https://github.com/stefancruz/GrayjayDailymotion",
-  "version": 4,
+  "version": 5,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "RCOAVph556fLNiegvM+xgwt/8qARKNZElZXdo4wU0XGm5jHUaDmXZLvtcxgRKx2Pi3AZ4yPfgoWIkFYjfcLZWKcqJtXgfE1aW/hpPO8upkV2OrffVLlPm8//FCTpleBn19gNZBuICZaRE+S0deM9vUREMbXdswm/Lr2D0yv3Q4cISr7pIdKrQHTFjhwdh48iVB2G19bjikMqLOnQtzD36qtUfHeVITQfoWfcjpevZdpLfhHglD5Yhxds48cvw9r7jBLEZ+jg3adeyhyH3ol1aMKm6mnmuH+mDXRaFarXZ0i0muY7L/xWB+jOBbFzhXCRxC9WIfPOMBxpezgopXc0ug==",
+  "scriptSignature": "jjlo84ZacOwqHFgJl++mvdijMuva025zzNoWmGk5etIvcQyf4GPErB3etocroyq0iLIK/1BbhCQy/tFaH1WHXor3dwdxbSh8+1mNzGrNal81iRCBKhY8lJLF4DlW0iKdN00kGiYfMaApkM+WvUSyJ3TM0UNDe/Nj0VKVfGmEa7LLsU03s+1mESgCgkWPTqTGRzP5o3gSoKCqBPpJ+NWA8eJB+t6xIHzAHyFKPtTtdZaedXDHhrXjoaF5rG8XEIku5e1imWhkufm5cTNImrTVtLSDI7zMLr138iFDUu7VTGFR06nrdXPkrPZJX+uWS2y0R8zEzz4WFrkLIfYYKX62yg==",
   "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
