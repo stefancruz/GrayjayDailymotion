@@ -2,3 +2,4 @@
 *.pem
 .env
 node_modules/
+build/
