@@ -582,54 +582,59 @@ function getChannelPager(context) {
 	const channel_name = getChannelNameFromUrl(url);
 
 	const query = `
-	query CHANNEL_VIDEOS_QUERY($channel_name: String!, $first: Int!, $sort: String, $page: Int!, $allowExplicit: Boolean) {
+	query CHANNEL_VIDEOS_QUERY(
+		$channel_name: String!
+		$first: Int!
+		$sort: String
+		$page: Int!
+		$allowExplicit: Boolean
+	) {
 		channel(name: $channel_name) {
-		  id
-		  xid
-		  channel_videos_all_videos: videos(
-			sort: $sort
-			page: $page
-			first: $first
-			allowExplicit: $allowExplicit
-		  ) {
-			pageInfo {
-			  hasNextPage
-			  nextPage
-			}
-			edges {
-			  node {
-				id
-				xid
-				title
-				thumbnailx60: thumbnailURL(size: "x60")
-				thumbnailx120: thumbnailURL(size: "x120")
-				thumbnailx240: thumbnailURL(size: "x240")
-				thumbnailx720: thumbnailURL(size: "x720")
-				bestAvailableQuality
-				duration
-				createdAt
-				creator {
-					id
-					name
-					displayName
-					avatar(height:SQUARE_240) {
-						url
-					}
-					
+			id
+			xid
+			channel_videos_all_videos: videos(
+				sort: $sort
+				page: $page
+				first: $first
+				allowExplicit: $allowExplicit
+			) {
+				pageInfo {
+					hasNextPage
+					nextPage
 				}
-				metrics {
-					engagement {
-						likes {
-							totalCount
+				edges {
+					node {
+						id
+						xid
+						title
+						thumbnail(height: PORTRAIT_720) {
+							url
 						}
+						bestAvailableQuality
+						duration
+						createdAt
+						creator {
+							id
+							name
+							displayName
+							avatar(height: SQUARE_240) {
+								url
+							}
+
+						}
+						metrics {
+							engagement {
+								likes {
+									totalCount
+								}
+							}
+						}
+
 					}
 				}
-						  
-			  }
 			}
-		  }
 		}
-	  }
+	}
 		
 	  
 	`
@@ -651,22 +656,16 @@ function getChannelPager(context) {
 
 	let videos = edges.map((edge) => {
 
-		const thumbnail =
-			edge?.node?.thumbnailx720 ??
-			edge?.node?.thumbnailx240 ??
-			edge?.node?.thumbnailx120 ??
-			edge?.node?.thumbnailx60;
-
 		return ToPlatformVideo({
 			id: edge.node.id,
 			name: edge.node.title,
-			thumbnail: thumbnail,
-			createdAt: edge.node.createdAt,
+			thumbnail: edge?.node?.thumbnail.url ?? "",
+			createdAt: edge?.node?.createdAt,
 			creatorId: edge?.node?.creator?.id,
 			creatorDisplayName: edge?.node?.creator?.displayName,
 			creatorName: edge.node.creator.name,
 			creatorAvatar: edge?.node?.creator?.avatar?.url,
-			creatorUrl: `${BASE_URL_VIDEO}/${edge.node.xid}`,
+			creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
 			duration: edge.node.duration,
 			url: `${BASE_URL_VIDEO}/${edge.node.xid}`,
 			viewCount: edge.node.metrics.engagement.likes.totalCount,
