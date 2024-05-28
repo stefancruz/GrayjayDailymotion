@@ -1553,7 +1553,7 @@ function getChannelPager(context) {
             "channel_name": channel_name,
             "sort": "recent",
             "page": context.page ?? 1,
-            "allowExplicit": true,
+            "allowExplicit": !_settings.hideSensitiveContent,
             "first": context.page_size ?? 30
         },
         query: queries.CHANNEL_VIDEOS_BY_CHANNEL_NAME
@@ -1571,7 +1571,7 @@ function getChannelPager(context) {
             creatorAvatar: edge?.node?.creator?.avatar?.url,
             creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
             duration: edge.node.duration,
-            url: `${BASE_URL_VIDEO}/${edge.node.name}`,
+            url: `${BASE_URL_VIDEO}/${edge?.node?.xid}`,
             viewCount: edge.node.metrics.engagement.likes.totalCount,
             isLive: false
         });
