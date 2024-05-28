@@ -3,14 +3,14 @@
   "platformUrl": "dailymotion.com",
   "description": "The latest news, sports, music and entertainment videos on Dailymotion",
   "author": "Stefan Cruz",
-  "authorUrl": "https://craftwithstefan.com/",
+  "authorUrl": "",
   "sourceUrl": "https://stefancruz.github.io/GrayjayDailymotion/DailymotionConfig.json",
   "scriptUrl": "./DailymotionScript.js",
   "repositoryUrl": "https://github.com/stefancruz/GrayjayDailymotion",
-  "version": 6,
+  "version": 7,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "Xgj+2fn/6UPM/34OQNW3rhEAblzIa67AG3kWN++qHGxAbTo04tsG/KHU0VRsVmbZATZ6C3THHNtfpyQJPS/Nc1HSZ7+PskyMJ1rLtrLQLKjrrsxp90W5nvDrk7ChiUR7ZMCUeWWeJGFkHk4bNR0yLTsQxPtLu+HW/nBXaQ5dWhOFQZC5+iSW6nWuZiugldrhCLP8yiJhDEbqrJJ8ydrWvVV946aGp6N5rwWkvAAsOLSFHDW0pwHmnHsDKvJ+i74OUBdC2uDnNyFlxRlev3NQAODN/qDUsAI1z49y7E022YGz1SNB8dXTkUesJJdpoIyJRVbtaS5o9dBGLO5H6SMQ9w==",
+  "scriptSignature": "evNaaKSpHzI/7T7ofa0dLBYr53DLzc3Ml6C9sYJRYmNJh5SUpQqdU957bGmx5DMdEbh/uX+REvyzWKEh3K8lLkGpZb2jtIIRIWN+HeUrx4gD690NWb+5TE8qwcUmrUfrPSoq6Pgb7G6yUoYhr5uDGL4QBMcv4gVAsj/yxffwD1noWiHK2qJ+YHJCaSw8LtEmn/Gc01b1IBGL929kFQFr9SI5vE4sAnbusOSiFmIDt/6+k9LNiR0QM50R5Cw97jzSE6gXl9+uevui1IRrNCWffiJmhZZDe3LJ+Cakz0Kt4fsaH69/IW0D6JtPxBfXbCbvirXPPysSZg8peyCBXXzOjg==",
   "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
