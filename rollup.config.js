@@ -4,13 +4,13 @@ const typescript = require('@rollup/plugin-typescript');
 const copy = require('rollup-plugin-copy');
 const del = require('rollup-plugin-delete');
 
-const dest = 'build'; // Change this to your output folder
+const dest = './build'; // Output folder
 
 module.exports = {
-  input: './src/DailymotionScript.ts', // Change this to your entry file
+  input: 'src/DailymotionScript.ts', // Entry file
   output: {
-    file: 'build/DailymotionScript.js',
-    format: 'cjs', // Use IIFE format to avoid using require
+    file: `${dest}/DailymotionScript.js`,
+    format: 'cjs', // Use IIFE format for browser compatibility
     sourcemap: false
   },
   plugins: [
@@ -20,10 +20,11 @@ module.exports = {
     typescript({ tsconfig: './tsconfig.json' }),
     copy({
       targets: [
-        { src: './DailymotionConfig.json', dest },
-        { src: './assets/dailymotion.png', dest},
-        { src: './assets/index.html', dest },
-        { src: './assets/qr.PNG', dest},
+        { src: 'DailymotionConfig.json', dest },
+        { src: 'assets/dailymotion.png', dest },
+        { src: 'assets/index.html', dest },
+        { src: 'assets/qr.PNG', dest },
+        { src: 'Readme.md', dest },
       ]
     })
   ]
