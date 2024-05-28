@@ -78,48 +78,50 @@ fragment CHANNEL_MAIN_FRAGMENT on Channel {
   }
 `
 const HOME_QUERY = `	
-	fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
+fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
+	id
+	xid
+	title
+	isPublished
+	embedURL
+	thumbnail(height: PORTRAIT_720) {
+		url
+	}
+	createdAt
+	creator {
 		id
 		xid
-		title
-		isPublished
-		embedURL
-		thumbnail(height: PORTRAIT_720) {
+		name
+		displayName
+		avatar(height: SQUARE_240) {
 			url
 		}
-		createdAt
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height: SQUARE_240) {
-				url
-			}
-		}
-		duration
-		
 	}
+	duration
 	
-	query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!) {
-		home: views {
+}
+
+query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!) {
+	home: views {
+		id
+		neon {
 			id
-			neon {
-				id
-				sections(space: "home") {
-					edges {
-						node {
-							id
-							name
-							title
-							description
-							components {
-								edges {
-									node {
-										__typename
-										... on Media {
-											...SEARCH_DISCOVERY_VIDEO_FRAGMENT
-										}
+			sections(space: "home") {
+				edges {
+					node {
+						id
+						name
+						title
+						description
+						components {
+							pageInfo {
+								hasNextPage
+							}
+							edges {
+								node {
+									__typename
+									... on Media {
+										...SEARCH_DISCOVERY_VIDEO_FRAGMENT
 									}
 								}
 							}
@@ -128,45 +130,46 @@ const HOME_QUERY = `
 				}
 			}
 		}
-		featuredContent {
-			id
-			channels(first: 10) {
-				edges {
-					node {
-						id
-						xid
-						displayName
-						name
-						logoURL(size: "x120")
-						stats {
-							id
-							followers {
-								id
-								total
-							}
-						}
-					}
-				}
-			}
-		}
-		conversations(
-			filter: { story: { eq: HASHTAG }, algorithm: { eq: SPONSORED } }
-			first: 1
-		) @include(if: $shouldQueryPromotedHashtag) {
+	}
+	featuredContent {
+		id
+		channels(first: 10) {
 			edges {
 				node {
 					id
-					story {
-						... on Hashtag {
+					xid
+					displayName
+					name
+					logoURL(size: "x120")
+					stats {
+						id
+						followers {
 							id
-							name
+							total
 						}
 					}
 				}
 			}
 		}
 	}
-			
+	conversations(
+		filter: { story: { eq: HASHTAG }, algorithm: { eq: SPONSORED } }
+		first: 1
+	) @include(if: $shouldQueryPromotedHashtag) {
+		edges {
+			node {
+				id
+				story {
+					... on Hashtag {
+						id
+						name
+					}
+				}
+			}
+		}
+	}
+}
+
 
 `
 
@@ -303,6 +306,10 @@ const MAIN_SEARCH_QUERY = `
 		id
 		xid
 		name
+		description
+		thumbnail(height: PORTRAIT_240) {
+			url
+		}
 		creator {
 			id
 			xid
@@ -318,6 +325,17 @@ const MAIN_SEARCH_QUERY = `
 			videos {
 				id
 				total
+			}
+		}
+		metrics {
+			engagement {
+				videos {
+					edges {
+						node {
+							total
+						}
+					}
+				}
 			}
 		}
 	}
@@ -758,6 +776,88 @@ const SEARCH_CHANNEL = `
 		`
 
 
+const PLAYLIST_DETAILS_QUERY = `
+query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100) {
+	collection(xid: $xid) {
+		id
+		id
+		xid
+		updatedAt
+		name
+		thumbnail(height: PORTRAIT_480) {
+			url
+		}
+		creator {
+			id
+			displayName
+			xid
+			avatar(height: SQUARE_240) {
+				url
+			}
+			metrics {
+				engagement {
+					followers {
+						edges {
+							node {
+								total
+							}
+						}
+					}
+				}
+			}
+		}
+		metrics {
+			engagement {
+				videos {
+					edges {
+						node {
+							total
+						}
+					}
+				}
+			}
+		}
+		videos(first: $numberOfVideos) {
+			edges {
+				node {
+					id
+					xid
+					duration
+					title
+					description
+					url
+					createdAt
+					thumbnail(height: PORTRAIT_480) {
+						url
+					}
+					creator {
+						id
+						displayName
+						xid
+						avatar(height: SQUARE_240) {
+							url
+						}
+						metrics {
+							engagement {
+								followers {
+									edges {
+										node {
+											total
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+	
+	`
+
 const queries = {
 	SEARCH_SUGGESTIONS_QUERY,
 	CHANNEL_BY_URL_QUERY,
@@ -765,7 +865,8 @@ const queries = {
 	CHANNEL_VIDEOS_BY_CHANNEL_NAME,
 	MAIN_SEARCH_QUERY,
 	VIDE_DETAILS_QUERY,
-	SEARCH_CHANNEL
+	SEARCH_CHANNEL,
+	PLAYLIST_DETAILS_QUERY
 };
 
 export default queries;

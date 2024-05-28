@@ -2,6 +2,7 @@ const BASE_URL = "https://www.dailymotion.com";
 const BASE_URL_API = "https://graphql.api.dailymotion.com";
 const BASE_URL_API_AUTH = `${BASE_URL_API}/oauth/token?`;
 const BASE_URL_VIDEO = `${BASE_URL}/video`;
+const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;
 const BASE_URL_METADATA = `${BASE_URL}/player/metadata/video`;
 
 const USER_AGENT = '"Mozilla/5.0 (Linux; Android 11; SAMSUNG SM-G973U) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/14.2 Chrome/87.0.4280.141 Mobile Safari/537.36"'
@@ -92,8 +93,8 @@ source.getSearchCapabilities = () => {
 	//TODO: refact this to use more constants
 	return {
 		types: [
-			// Type.Feed.Videos,
-			// Type.Feed.Live
+			Type.Feed.Videos,
+			Type.Feed.Live
 		],
 		sorts: [
 			"Most Recent",
@@ -204,6 +205,164 @@ source.isContentDetailsUrl = function (url) {
 source.getContentDetails = function (url) {
 	return getSavedVideo(url);
 };
+
+//Playlist
+source.isPlaylistUrl = (url): boolean => {
+	var isPlaylist = url.startsWith(BASE_URL_PLAYLIST);
+	return isPlaylist;
+};
+
+source.searchPlaylists = (query, type, order, filters) => {
+	return searchPlaylists({ q: query, type, order, filters });
+};
+
+source.getPlaylist = (url) => {
+
+	const xid = url.split('/').pop();
+
+	const variables = {
+		"xid": xid
+	}
+
+	const jsonResponse = executeGqlQuery({
+		operationName: 'PLAYLIST_VIDEO_QUERY',
+		variables,
+		query: queries.PLAYLIST_DETAILS_QUERY
+	}, true);
+
+	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
+		const resource = edge.node;	
+		const opts: PlatformVideoDef = {
+			id: new PlatformID(PLATFORM, resource.id, config.id, PLATFORM_CLAIMTYPE),
+			name: resource.title,
+			thumbnails: new Thumbnails([
+				new Thumbnail(resource?.thumbnail?.url, 0)
+			]),
+			author: new PlatformAuthorLink(
+				new PlatformID(PLATFORM, resource.creatorId, config.id, PLATFORM_CLAIMTYPE),
+				resource.creator.displayName,
+				`${BASE_URL}/${resource.creator.name}`,
+				resource.creator.avatar.url ?? "",
+				0
+			),
+			uploadDate: parseInt(new Date(resource.createdAt).getTime() / 1000),
+			datetime: parseInt(new Date(resource.createdAt).getTime() / 1000),
+			url: resource.url,
+			duration: resource.duration,
+			viewCount: resource?.viewCount ?? 0,
+			isLive: false
+		};
+
+		return opts;
+	});
+
+	const playlist = jsonResponse?.data?.collection;
+
+	return new PlatformPlaylistDetails({
+		url: `${BASE_URL_PLAYLIST}/${playlist?.xid}`,
+		id: new PlatformID(PLATFORM, playlist?.xid, config.id),
+		author: new PlatformAuthorLink(
+			new PlatformID(PLATFORM, playlist.creator.id, config.id, PLATFORM_CLAIMTYPE),
+			playlist.creator.displayName,
+			`${BASE_URL}/${playlist.creator.name}`,
+			playlist.creator.avatar.url ?? "",
+			0
+		),
+		name: playlist.name,
+		thumbnail: playlist?.thumbnail?.url,
+		videoCount: playlist?.metrics?.engagement?.videos?.edges[0]?.node?.total,
+		contents: new VideoPager(videos)
+	});
+
+}
+
+function getQuery(context) {
+	context.sort = parseSort(context.order);
+
+	if (!context.filters) {
+		context.filters = {};
+	}
+
+	if (!context.page) {
+		context.page = 1;
+	}
+
+	if (context?.filters.duration) {
+		context.filters.durationMinVideos = DURATION_THRESHOLDS[context.filters.duration].min;
+		context.filters.durationMaxVideos = DURATION_THRESHOLDS[context.filters.duration].max;
+	} else {
+		context.filters.durationMinVideos = null;
+		context.filters.durationMaxVideos = null;
+	}
+
+	if (context.filters.uploaddate) {
+		context.filters.createdAfterVideos = parseUploadDateFilter(context.filters.uploaddate[0]);
+	}
+
+	return context;
+}
+
+
+function searchPlaylists(contextQuery) {
+
+	const context = getQuery(contextQuery);
+
+	const variables = {
+		"query": context.q,
+		"sortByVideos": context.sort,
+		"durationMaxVideos": context.filters?.durationMaxVideos,
+		"durationMinVideos": context.filters?.durationMinVideos,
+		"createdAfterVideos": context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
+		"shouldIncludeChannels": false,
+		"shouldIncludePlaylists": true,
+		"shouldIncludeTopics": false,
+		"shouldIncludeVideos": false,
+		"shouldIncludeLives": false,
+		"page": context.page,
+		"limit": 20
+	}
+
+	const jsonResponse = executeGqlQuery({
+		operationName: 'SEARCH_QUERY',
+		variables: variables,
+		query: queries.MAIN_SEARCH_QUERY,
+		headers: undefined
+	}, true);
+
+	var searchResults = jsonResponse?.data?.search?.playlists?.edges?.map(edge => {
+
+		const playlist = edge.node;
+
+		return new PlatformPlaylist({
+			url: `${BASE_URL_PLAYLIST}/${playlist?.xid}`,
+			id: new PlatformID(PLATFORM, playlist?.xid, config.id),
+			author: new PlatformAuthorLink(
+				new PlatformID(PLATFORM, playlist.creator.id, config.id, PLATFORM_CLAIMTYPE),
+				playlist.creator.displayName,
+				`${BASE_URL}/${playlist.creator.name}`,
+				playlist.creator.avatar.url ?? "",
+				0
+			),
+			name: playlist.name,
+			thumbnail: playlist?.thumbnail?.url,
+			videoCount: playlist?.metrics?.engagement?.videos?.edges[0]?.node?.total,
+		});
+	});
+
+	const hasMore = jsonResponse?.data?.search?.playlists?.pageInfo?.hasNextPage;
+
+	if (!searchResults || !searchResults?.length) {
+		return new PlaylistPager([]);
+	}
+
+	var params = {
+		query: context.q,
+		sort: context.sort,
+		filters: context.filters,
+	}
+
+	return new SearchPlaylistPager(searchResults, hasMore, params, context.page);
+}
 
 
 //Internals
@@ -334,7 +493,8 @@ function getVideoPager(params, page) {
 	}
 
 	var results = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.edges
-		?.filter(edge => edge?.node?.__typename === 'Video')
+	// ?.filter(edge => edge?.node?.__typename === 'Video')
+		?.filter(edge => edge?.node?.id)
 		?.map(edge => {
 
 			const v = edge.node;
@@ -358,8 +518,8 @@ function getVideoPager(params, page) {
 
 		})
 
-
-	return new SearchPagerAll(results, obj.total > (start + count), params, page);
+	const hasMore = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.pageInfo?.hasNextPage ?? false;
+	return new SearchPagerAll(results, hasMore, params, page);
 }
 
 
@@ -397,7 +557,7 @@ function getChannelPager(context) {
 			creatorAvatar: edge?.node?.creator?.avatar?.url,
 			creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
 			duration: edge.node.duration,
-			url: `${BASE_URL_VIDEO}/${edge.node.xid}`,
+			url: `${BASE_URL_VIDEO}/${edge.node.name}`,
 			viewCount: edge.node.metrics.engagement.likes.totalCount,
 			isLive: false
 		});
@@ -484,25 +644,9 @@ function parseUploadDateFilter(filter) {
 	return createdAfterVideos;
 }
 
-function getSearchPagerAll(context) {
+function getSearchPagerAll(contextQuery) {
 
-	context.sort = parseSort(context.order);
-
-	if (!context.filters) {
-		context.filters = {};
-	}
-
-	if (context?.filters.duration) {
-		context.filters.durationMinVideos = DURATION_THRESHOLDS[context.filters.duration].min;
-		context.filters.durationMaxVideos = DURATION_THRESHOLDS[context.filters.duration].max;
-	} else {
-		context.filters.durationMinVideos = null;
-		context.filters.durationMaxVideos = null;
-	}
-
-	if (context.filters.uploaddate) {
-		context.filters.createdAfterVideos = parseUploadDateFilter(context.filters.uploaddate[0]);
-	}
+	const context = getQuery(contextQuery);
 
 	const variables = {
 		"query": context.q,
@@ -513,7 +657,7 @@ function getSearchPagerAll(context) {
 		"shouldIncludeChannels": false,
 		"shouldIncludePlaylists": false,
 		"shouldIncludeTopics": false,
-		"shouldIncludeVideos": false,
+		"shouldIncludeVideos": true,
 		"shouldIncludeLives": true,
 		"page": context.page ?? 1,
 		"limit": 20
@@ -543,7 +687,7 @@ function getSearchPagerAll(context) {
 		var video = ToPlatformVideo({
 			id: sv.id,
 			name: sv.title,
-			thumbnail: sv.thumbnail.url,
+			thumbnail: sv?.thumbnail?.url,
 			createdAt: sv.createdAt,
 			creatorId: sv.creator?.id,
 			creatorName: sv.creator?.name,
@@ -690,14 +834,14 @@ function getSavedVideo(url) {
 	};
 
 	const videoDetailsRequestBody = JSON.stringify(
-	{
-		"operationName": "WATCHING_VIDEO",
-		"variables": {
-			"xid": id,
-			"isSEO": false
-		},
-		"query": queries.VIDE_DETAILS_QUERY
-	});
+		{
+			"operationName": "WATCHING_VIDEO",
+			"variables": {
+				"xid": id,
+				"isSEO": false
+			},
+			"query": queries.VIDE_DETAILS_QUERY
+		});
 
 	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders)
 
@@ -754,7 +898,7 @@ function getSavedVideo(url) {
 }
 
 function getSearchChannelPager(context) {
-	
+
 	const variables = {
 		query: context.q,
 		page: context.page ?? 1,
@@ -843,6 +987,30 @@ class ChannelVideoPager extends VideoPager {
 	}
 }
 
+
+class SearchPlaylistPager extends VideoPager {
+	/**
+	 * @param {import("./types.d.ts").SearchContext} context the query params
+	 * @param {(PlatformVideo | PlatformChannel)[]} results the initial results
+	*/
+	constructor(results, hasMore, params, page) {
+		super(results, hasMore, { params, page });
+	}
+
+	nextPage() {
+
+		this.context.page = this.context.page + 1
+
+		const opts = {
+			q: this.context.params.query,
+			sort: this.context.params.sort,
+			page: this.context.page,
+			filters: this.context.params.filters
+		};
+
+		return searchPlaylists(opts);
+	}
+}
 
 
 

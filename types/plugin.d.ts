@@ -262,6 +262,9 @@ export interface Source {
 
     // Optional
     isPlaylistUrl?(url: string): boolean;
+
+    searchPlaylists(query, type, order, filters);
+    
     getPlaylist?(url: string): string[];
 
     isContentDetailsUrl(url: string): boolean;
