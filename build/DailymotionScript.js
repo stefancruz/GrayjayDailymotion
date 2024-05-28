@@ -1553,7 +1553,7 @@ function getChannelPager(context) {
             "channel_name": channel_name,
             "sort": "recent",
             "page": context.page ?? 1,
-            "allowExplicit": true,
+            "allowExplicit": !_settings.hideSensitiveContent,
             "first": context.page_size ?? 30
         },
         query: queries.CHANNEL_VIDEOS_BY_CHANNEL_NAME
