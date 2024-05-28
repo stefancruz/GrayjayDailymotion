@@ -231,7 +231,7 @@ source.getPlaylist = (url) => {
 	}, true);
 
 	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
-		const resource = edge.node;
+		const resource = edge.node;	
 		const opts: PlatformVideoDef = {
 			id: new PlatformID(PLATFORM, resource.id, config.id, PLATFORM_CLAIMTYPE),
 			name: resource.title,
@@ -240,9 +240,9 @@ source.getPlaylist = (url) => {
 			]),
 			author: new PlatformAuthorLink(
 				new PlatformID(PLATFORM, resource.creatorId, config.id, PLATFORM_CLAIMTYPE),
-				resource.creatorDisplayName,
-				resource.creatorUrl,
-				resource.creatorAvatar ?? "",
+				resource.creator.displayName,
+				`${BASE_URL}/${resource.creator.name}`,
+				resource.creator.avatar.url ?? "",
 				0
 			),
 			uploadDate: parseInt(new Date(resource.createdAt).getTime() / 1000),
@@ -493,7 +493,8 @@ function getVideoPager(params, page) {
 	}
 
 	var results = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.edges
-		?.filter(edge => edge?.node?.__typename === 'Video')
+	// ?.filter(edge => edge?.node?.__typename === 'Video')
+		?.filter(edge => edge?.node?.id)
 		?.map(edge => {
 
 			const v = edge.node;
@@ -517,8 +518,8 @@ function getVideoPager(params, page) {
 
 		})
 
-
-	return new SearchPagerAll(results, obj.total > (start + count), params, page);
+	const hasMore = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.pageInfo?.hasNextPage ?? false;
+	return new SearchPagerAll(results, hasMore, params, page);
 }
 
 
@@ -556,7 +557,7 @@ function getChannelPager(context) {
 			creatorAvatar: edge?.node?.creator?.avatar?.url,
 			creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
 			duration: edge.node.duration,
-			url: `${BASE_URL_VIDEO}/${edge.node.xid}`,
+			url: `${BASE_URL_VIDEO}/${edge.node.name}`,
 			viewCount: edge.node.metrics.engagement.likes.totalCount,
 			isLive: false
 		});
@@ -656,7 +657,7 @@ function getSearchPagerAll(contextQuery) {
 		"shouldIncludeChannels": false,
 		"shouldIncludePlaylists": false,
 		"shouldIncludeTopics": false,
-		"shouldIncludeVideos": false,
+		"shouldIncludeVideos": true,
 		"shouldIncludeLives": true,
 		"page": context.page ?? 1,
 		"limit": 20
