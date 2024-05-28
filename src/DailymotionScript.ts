@@ -557,7 +557,7 @@ function getChannelPager(context) {
 			creatorAvatar: edge?.node?.creator?.avatar?.url,
 			creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
 			duration: edge.node.duration,
-			url: `${BASE_URL_VIDEO}/${edge.node.name}`,
+			url: `${BASE_URL_VIDEO}/${edge?.node?.xid}`,
 			viewCount: edge.node.metrics.engagement.likes.totalCount,
 			isLive: false
 		});
