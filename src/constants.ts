@@ -251,7 +251,32 @@ const countryNamesToCode = {
     "Zimbabwe": "ZW"
 }
 
+const creatorAvatarHeight = [
+    "SQUARE_25",
+    "SQUARE_60",
+    "SQUARE_80",
+    "SQUARE_120",
+    "SQUARE_190",
+    "SQUARE_240",
+    "SQUARE_360",
+    "SQUARE_480",
+    "SQUARE_720"
+]
+
+const thumbnailHeight = [
+    "PORTRAIT_60",
+    "PORTRAIT_120",
+    "PORTRAIT_180",
+    "PORTRAIT_240",
+    "PORTRAIT_360",
+    "PORTRAIT_480",
+    "PORTRAIT_720",
+    "PORTRAIT_1080"
+]
+
 const constants = {
+    creatorAvatarHeight,
+    thumbnailHeight,
     countryNamesToCode,
     countryNames: Object.keys(countryNamesToCode)
 };

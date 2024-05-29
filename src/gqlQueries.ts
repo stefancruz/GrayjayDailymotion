@@ -16,66 +16,64 @@ const SEARCH_SUGGESTIONS_QUERY = `
 	  }
     `
 const CHANNEL_BY_URL_QUERY = `
-fragment CHANNEL_MAIN_FRAGMENT on Channel {
-  id
-  xid
-  name
-  displayName
-  description
-  avatar(height: SQUARE_120) {
-    url
-  }
-  coverURL1024x: coverURL(size: "1024x")
-  coverURL1920x: coverURL(size: "1920x")
-  tagline
-  country {
-    id
-    codeAlpha2
-  }
-  metrics {
-    engagement {
-    followers {
-      edges {
-      node {
-        total
-      }
-      }
-    }
-    followings {
-      edges {
-      node {
-        total
-      }
-      }
-    }
-    }
-  }
-  stats {
-    id
-    views {
-    id
-    total
-    }
-    videos {
-    id
-    total
-    }
-  }
-  externalLinks {
-    facebookURL
-    twitterURL
-    websiteURL
-    instagramURL
-    pinterestURL
-  }
-  }
-  
-  query CHANNEL_QUERY_DESKTOP($channel_name: String!) {
-  channel(name: $channel_name) {
-    id
-    ...CHANNEL_MAIN_FRAGMENT
-  }
-  }
+query CHANNEL_QUERY_DESKTOP(
+	$channel_name: String!
+	$avatar_size: AvatarHeight!
+) {
+	channel(name: $channel_name) {
+		id
+		xid
+		name
+		displayName
+		description
+		avatar(height:$avatar_size) {
+			url
+		}
+		coverURL1024x: coverURL(size: "1024x")
+		coverURL1920x: coverURL(size: "1920x")
+		tagline
+		country {
+			id
+			codeAlpha2
+		}
+		metrics {
+			engagement {
+				followers {
+					edges {
+						node {
+							total
+						}
+					}
+				}
+				followings {
+					edges {
+						node {
+							total
+						}
+					}
+				}
+			}
+		}
+		stats {
+			id
+			views {
+				id
+				total
+			}
+			videos {
+				id
+				total
+			}
+		}
+		externalLinks {
+			facebookURL
+			twitterURL
+			websiteURL
+			instagramURL
+			pinterestURL
+		}
+	}
+}
 `
 const HOME_QUERY = `	
 fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
@@ -84,7 +82,7 @@ fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 	title
 	isPublished
 	embedURL
-	thumbnail(height: PORTRAIT_720) {
+	thumbnail(height:$thumbnail_resolution) {
 		url
 	}
 	createdAt
@@ -93,7 +91,7 @@ fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 		xid
 		name
 		displayName
-		avatar(height: SQUARE_240) {
+		avatar(height:$avatar_size) {
 			url
 		}
 	}
@@ -101,7 +99,7 @@ fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 	
 }
 
-query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!) {
+query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!, $avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	home: views {
 		id
 		neon {
@@ -181,6 +179,8 @@ query CHANNEL_VIDEOS_QUERY(
 	$sort: String
 	$page: Int!
 	$allowExplicit: Boolean
+	$avatar_size: AvatarHeight!
+	$thumbnail_resolution: ThumbnailHeight!
 ) {
 	channel(name: $channel_name) {
 		id
@@ -200,7 +200,7 @@ query CHANNEL_VIDEOS_QUERY(
 					id
 					xid
 					title
-					thumbnail(height: PORTRAIT_720) {
+					thumbnail(height:$thumbnail_resolution) {
 						url
 					}
 					bestAvailableQuality
@@ -210,7 +210,7 @@ query CHANNEL_VIDEOS_QUERY(
 						id
 						name
 						displayName
-						avatar(height:SQUARE_240) {
+						avatar(height:$avatar_size) {
 							url
 						}
 
@@ -263,12 +263,12 @@ const MAIN_SEARCH_QUERY = `
 			name
 			displayName
 			description
-			avatar(height: SQUARE_240) {
+			avatar(height:$avatar_size) {
 				url
 			}
 		}
 		duration
-		thumbnail(height: PORTRAIT_720) {
+		thumbnail(height:$thumbnail_resolution) {
 			url
 		}
 		
@@ -297,7 +297,7 @@ const MAIN_SEARCH_QUERY = `
 		name
 		displayName
 		description
-		avatar(height: SQUARE_240) {
+		avatar(height:$avatar_size) {
 			url
 		}
 	}
@@ -307,7 +307,7 @@ const MAIN_SEARCH_QUERY = `
 		xid
 		name
 		description
-		thumbnail(height: PORTRAIT_240) {
+		thumbnail(height:$thumbnail_resolution) {
 			url
 		}
 		creator {
@@ -315,7 +315,7 @@ const MAIN_SEARCH_QUERY = `
 			xid
 			name
 			displayName
-			avatar(height:SQUARE_240) {
+			avatar(height:$avatar_size) {
 				url
 			}
 		}
@@ -379,6 +379,8 @@ const MAIN_SEARCH_QUERY = `
 		$durationMinVideos: Int
 		$durationMaxVideos: Int
 		$createdAfterVideos: DateTime
+		$avatar_size: AvatarHeight!
+		$thumbnail_resolution: ThumbnailHeight!
 	) {
 		search {
 			id
@@ -416,7 +418,7 @@ const MAIN_SEARCH_QUERY = `
 						id
 						xid
 						title
-						thumbnail(height: PORTRAIT_720) {
+						thumbnail(height:$thumbnail_resolution) {
 							url
 						}
 						description
@@ -434,7 +436,7 @@ const MAIN_SEARCH_QUERY = `
 							xid
 							name
 							displayName
-							avatar(height:SQUARE_240){
+							avatar(height:$avatar_size){
 								url
 							}
 						}
@@ -496,7 +498,7 @@ const VIDE_DETAILS_QUERY = `
 		duration
 		title
 		description
-		thumbnail(height: PORTRAIT_720) {
+		thumbnail(height:$thumbnail_resolution) {
 			url
 		}
 		bestAvailableQuality
@@ -528,7 +530,7 @@ const VIDE_DETAILS_QUERY = `
 			xid
 			name
 			displayName
-			avatar(height: SQUARE_240) {
+			avatar(height:$avatar_size) {
 				url
 				height
 				width
@@ -614,7 +616,7 @@ const VIDE_DETAILS_QUERY = `
 		isPublished
 		title
 		description
-		thumbnail(height:PORTRAIT_720){
+		thumbnail(height:$thumbnail_resolution){
 			url
 			height
 			width
@@ -640,7 +642,7 @@ const VIDE_DETAILS_QUERY = `
 			xid
 			name
 			displayName
-			avatar(height: SQUARE_240) {
+			avatar(height:$avatar_size) {
 				url
 				height
 				width
@@ -718,7 +720,12 @@ const VIDE_DETAILS_QUERY = `
 		}
 	}
 	
-	query WATCHING_VIDEO($xid: String!, $isSEO: Boolean!) {
+	query WATCHING_VIDEO(
+		$xid: String!
+		$isSEO: Boolean!
+		$avatar_size: AvatarHeight!
+		$thumbnail_resolution: ThumbnailHeight!
+	) {
 		video: media(xid: $xid) {
 			... on Video {
 				id
@@ -734,35 +741,34 @@ const VIDE_DETAILS_QUERY = `
 
 
 const SEARCH_CHANNEL = `		
-	query SEARCH_QUERY($query: String!, $page: Int, $limit: Int) {
-		search {
-			id
-			channels(query: $query, first: $limit, page: $page) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						id
-						xid
-						name
-						displayName
-						description
-						avatar(height:SQUARE_240) {
-							url
-							height
-							width
-						}
-						metrics {
-							engagement {
-								followers {
-									edges {
-										node {
-											total
-										}
+query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: AvatarHeight!) {
+	search {
+		id
+		channels(query: $query, first: $limit, page: $page) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			totalCount
+			edges {
+				node {
+					id
+					id
+					xid
+					name
+					displayName
+					description
+					avatar(height:$avatar_size) {
+						url
+						height
+						width
+					}
+					metrics {
+						engagement {
+							followers {
+								edges {
+									node {
+										total
 									}
 								}
 							}
@@ -772,26 +778,28 @@ const SEARCH_CHANNEL = `
 			}
 		}
 	}
+}
+
 	
 		`
 
 
 const PLAYLIST_DETAILS_QUERY = `
-query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100) {
+query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	collection(xid: $xid) {
 		id
 		id
 		xid
 		updatedAt
 		name
-		thumbnail(height: PORTRAIT_480) {
+		thumbnail(height:$thumbnail_resolution) {
 			url
 		}
 		creator {
 			id
 			displayName
 			xid
-			avatar(height: SQUARE_240) {
+			avatar(height:$avatar_size) {
 				url
 			}
 			metrics {
@@ -827,14 +835,14 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100) {
 					description
 					url
 					createdAt
-					thumbnail(height: PORTRAIT_480) {
+					thumbnail(height:$thumbnail_resolution) {
 						url
 					}
 					creator {
 						id
 						displayName
 						xid
-						avatar(height: SQUARE_240) {
+						avatar(height:$avatar_size) {
 							url
 						}
 						metrics {
@@ -854,8 +862,20 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100) {
 		}
 	}
 }
+`
 
-	
+const GET_VIDEO_EXTRA_DETAILS = `
+query WATCHING_VIDEO($xid: String!) {
+	video: media(xid: $xid)  {
+		... on Video {
+			stats {
+				views {
+					total
+				}
+			}
+		}
+	}
+}	
 	`
 
 const queries = {
@@ -866,7 +886,8 @@ const queries = {
 	MAIN_SEARCH_QUERY,
 	VIDE_DETAILS_QUERY,
 	SEARCH_CHANNEL,
-	PLAYLIST_DETAILS_QUERY
+	PLAYLIST_DETAILS_QUERY,
+	GET_VIDEO_EXTRA_DETAILS
 };
 
 export default queries;

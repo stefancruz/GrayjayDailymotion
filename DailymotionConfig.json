@@ -27,6 +27,41 @@
   ],
   "settings": [
     {
+      "variable": "thumbnailResolution",
+      "name": "Thumbnail resolution",
+      "description": "Select the resolution for the thumbnails",
+      "type": "Dropdown",
+      "default": "3",
+      "options": [
+        "60px",
+        "120px",
+        "180px",
+        "240px",
+        "360px",
+        "480px",
+        "720px",
+        "1080px"
+      ]
+    },
+    {
+      "variable": "avatarSize",
+      "name": "creator Avatar Height",
+      "description": "Select your height for the creator avatar",
+      "type": "Dropdown",
+      "default": "3",
+      "options": [
+        "25px",
+        "60px",
+        "80px",
+        "120px",
+        "190px",
+        "240px",
+        "360px",
+        "480px",
+        "720px"
+      ]
+    },
+    {
       "variable": "hideSensitiveContent",
       "name": "Hide Sensitive Content",
       "description": "Do not allow watching sensitive content",
