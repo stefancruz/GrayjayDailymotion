@@ -7,13 +7,13 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 ## Install
 npm install
 
-## optional to update graphql types:
+## Update graphql types (optional)
 
 npm run get-token
 
 npm run codegen
 
-## build
+## Build
 
 npm start - will build and watch for changes
 
