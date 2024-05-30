@@ -7,10 +7,10 @@
   "sourceUrl": "https://stefancruz.github.io/GrayjayDailymotion/DailymotionConfig.json",
   "scriptUrl": "./DailymotionScript.js",
   "repositoryUrl": "https://github.com/stefancruz/GrayjayDailymotion",
-  "version": 7,
+  "version": 8,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "evNaaKSpHzI/7T7ofa0dLBYr53DLzc3Ml6C9sYJRYmNJh5SUpQqdU957bGmx5DMdEbh/uX+REvyzWKEh3K8lLkGpZb2jtIIRIWN+HeUrx4gD690NWb+5TE8qwcUmrUfrPSoq6Pgb7G6yUoYhr5uDGL4QBMcv4gVAsj/yxffwD1noWiHK2qJ+YHJCaSw8LtEmn/Gc01b1IBGL929kFQFr9SI5vE4sAnbusOSiFmIDt/6+k9LNiR0QM50R5Cw97jzSE6gXl9+uevui1IRrNCWffiJmhZZDe3LJ+Cakz0Kt4fsaH69/IW0D6JtPxBfXbCbvirXPPysSZg8peyCBXXzOjg==",
+  "scriptSignature": "LQ3Vga/N4v9J5q/JsFtkSHvE2ICfbWbmZ4f0E4sMgZcK0NWSUvkQKfhzyVno1MUfFICA25qP+J6K9SfPDPsNdTYPDN4a68mBYgqGMu6zSCgxyD7XldnG2UP1siBqF4Gg1JUUcbY6ee2eoOhT8cAEZdCBivDhf35YOR7FwNkjAt2p28PNn15moNxivr6gviycQnI5QHXKxGIF0BrOXMCdVc2cUFYkTbezH9Lm5FM1mt2Lu2GCNPy78Ufor+lfvD2lsk7fQ1ppFcg5bBXAaybuG3zLFU63LmmbnTXXg6c8Rs2PSnXPtR9S05x9GLJOnyYfufUM+VyKeeqiWzjgqtVyMg==",
   "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
@@ -25,7 +25,53 @@
     "s2.dmcdn.net",
     "s3.dmcdn.net"
   ],
+  "authentication": {
+    "loginUrl": "https://www.dailymotion.com/signin",
+    "cookiesToFind": [
+      "refresh_token",
+      "access_token"
+    ],
+    "headersToFind": [
+      "Authorization"
+    ],
+    "userAgent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36"
+  },
   "settings": [
+    {
+      "variable": "thumbnailResolution",
+      "name": "Thumbnail resolution",
+      "description": "Select the resolution for the thumbnails",
+      "type": "Dropdown",
+      "default": "7",
+      "options": [
+        "60px",
+        "120px",
+        "180px",
+        "240px",
+        "360px",
+        "480px",
+        "720px",
+        "1080px"
+      ]
+    },
+    {
+      "variable": "avatarSize",
+      "name": "creator Avatar Height",
+      "description": "Select your height for the creator avatar",
+      "type": "Dropdown",
+      "default": "8",
+      "options": [
+        "25px",
+        "60px",
+        "80px",
+        "120px",
+        "190px",
+        "240px",
+        "360px",
+        "480px",
+        "720px"
+      ]
+    },
     {
       "variable": "hideSensitiveContent",
       "name": "Hide Sensitive Content",

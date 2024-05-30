@@ -24,6 +24,8 @@ const X_DM_Preferred_Country = "";//TODO check how to get this from Grayjay
 const PLATFORM = "Dailymotion";
 const PLATFORM_CLAIMTYPE = 3;
 
+const ITEMS_PER_PAGE = 5;
+
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER = null;
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = null;
 
@@ -44,8 +46,25 @@ DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
 import errorTypes from './errorTypes';
 import constants from './constants';
-import queries from './gqlQueries';
+import {
+	SEARCH_SUGGESTIONS_QUERY,
+	CHANNEL_BY_URL_QUERY,
+	PLAYLIST_DETAILS_QUERY,
+	GET_USER_SUBSCRIPTIONS,
+	MAIN_SEARCH_QUERY,
+	HOME_QUERY,
+	GET_VIDEO_EXTRA_DETAILS,
+	CHANNEL_VIDEOS_BY_CHANNEL_NAME,
+	VIDEO_DETAILS_QUERY,
+	SEARCH_CHANNEL
+} from './gqlQueries';
+
 import util from './util';
+
+type authOptions = {
+	useAnonymousToken?: boolean,
+	usePlatformAuth?: boolean
+}
 
 source.setSettings = function (settings) {
 	_settings = settings;
@@ -59,7 +78,6 @@ source.enable = function (conf, settings, saveStateStr) {
 
 	http.GET(BASE_URL, {}, true);
 
-	AUTHORIZATION_TOKEN_ANONYMOUS_USER = getAnonymousUserTokenSingleton();
 
 }
 
@@ -78,8 +96,8 @@ source.searchSuggestions = function (query) {
 		const jsonResponse = executeGqlQuery({
 			operationName: 'AUTOCOMPLETE_QUERY',
 			variables: variables,
-			query: queries.SEARCH_SUGGESTIONS_QUERY
-		}, true);
+			query: SEARCH_SUGGESTIONS_QUERY
+		}, { useAnonymousToken: true });
 
 		return jsonResponse?.data?.search?.suggestedVideos?.edges?.map(edge => edge?.node?.name);
 	} catch (error) {
@@ -158,9 +176,12 @@ source.getChannel = function (url) {
 	const channelDetails = executeGqlQuery(
 		{
 			operationName: 'CHANNEL_QUERY_DESKTOP',
-			variables: { "channel_name": channel_name },
-			query: queries.CHANNEL_BY_URL_QUERY
-		}, true);
+			variables: {
+				channel_name: channel_name,
+				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
+			},
+			query: CHANNEL_BY_URL_QUERY
+		}, { useAnonymousToken: true });
 
 	const user = channelDetails.data.channel;
 
@@ -183,7 +204,6 @@ source.getChannel = function (url) {
 		name: user?.displayName,
 		thumbnail: user?.avatar?.url,
 		banner,
-
 		subscribers: user?.metrics?.engagement?.followers?.edges[0]?.node?.total,
 		description: user?.description,
 		url,
@@ -193,7 +213,7 @@ source.getChannel = function (url) {
 };
 
 source.getChannelContents = function (url) {
-	return getChannelPager({ url, page_size: 20, page: 1 })
+	return getChannelPager({ url, page_size: ITEMS_PER_PAGE, page: 1 })
 }
 
 
@@ -221,17 +241,19 @@ source.getPlaylist = (url) => {
 	const xid = url.split('/').pop();
 
 	const variables = {
-		"xid": xid
+		xid,
+		avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
+		thumbnail_resolution: constants.thumbnailHeight[_settings?.thumbnailResolution],
 	}
 
 	const jsonResponse = executeGqlQuery({
 		operationName: 'PLAYLIST_VIDEO_QUERY',
 		variables,
-		query: queries.PLAYLIST_DETAILS_QUERY
-	}, true);
+		query: PLAYLIST_DETAILS_QUERY
+	}, { useAnonymousToken: true });
 
 	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
-		const resource = edge.node;	
+		const resource = edge.node;
 		const opts: PlatformVideoDef = {
 			id: new PlatformID(PLATFORM, resource.id, config.id, PLATFORM_CLAIMTYPE),
 			name: resource.title,
@@ -239,7 +261,7 @@ source.getPlaylist = (url) => {
 				new Thumbnail(resource?.thumbnail?.url, 0)
 			]),
 			author: new PlatformAuthorLink(
-				new PlatformID(PLATFORM, resource.creatorId, config.id, PLATFORM_CLAIMTYPE),
+				new PlatformID(PLATFORM, resource.creator.id, config.id, PLATFORM_CLAIMTYPE),
 				resource.creator.displayName,
 				`${BASE_URL}/${resource.creator.name}`,
 				resource.creator.avatar.url ?? "",
@@ -262,10 +284,10 @@ source.getPlaylist = (url) => {
 		url: `${BASE_URL_PLAYLIST}/${playlist?.xid}`,
 		id: new PlatformID(PLATFORM, playlist?.xid, config.id),
 		author: new PlatformAuthorLink(
-			new PlatformID(PLATFORM, playlist.creator.id, config.id, PLATFORM_CLAIMTYPE),
-			playlist.creator.displayName,
-			`${BASE_URL}/${playlist.creator.name}`,
-			playlist.creator.avatar.url ?? "",
+			new PlatformID(PLATFORM, playlist?.creator?.id, config.id, PLATFORM_CLAIMTYPE),
+			playlist?.creator?.displayName,
+			`${BASE_URL}/${playlist?.creator?.name}`,
+			playlist?.creator?.avatar?.url ?? "",
 			0
 		),
 		name: playlist.name,
@@ -275,6 +297,45 @@ source.getPlaylist = (url) => {
 	});
 
 }
+
+source.getUserSubscriptions = () => {
+
+	if (!bridge.isLoggedIn()) {
+		bridge.log("Failed to retrieve subscriptions page because not logged in.");
+		throw new ScriptException("Not logged in");
+	}
+
+	const fetchSubscriptions = (page, first) => {
+		const jsonResponse = executeGqlQuery({
+			operationName: 'SUBSCRIPTIONS_QUERY',
+			variables: {
+				first: first,
+				page: page,
+				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
+			},
+			query: GET_USER_SUBSCRIPTIONS
+		}, { usePlatformAuth: true });
+
+		return jsonResponse?.data?.me?.followingChannels;
+	};
+
+	const first = 100;  // Number of records to fetch per page
+	let page = 1;
+	let subscriptions: string[] = [];
+	let totalCount = 0;
+	let fetchedCount = 0;
+
+	do {
+		const response = fetchSubscriptions(page, first);
+		totalCount = response.totalCount;
+		subscriptions.push(...response.edges.map(edge => `${BASE_URL}/${edge.node.name}`));
+		fetchedCount += response.edges.length;
+		page++;
+	} while (fetchedCount < totalCount);
+
+	return subscriptions;
+};
+
 
 function getQuery(context) {
 	context.sort = parseSort(context.order);
@@ -319,15 +380,17 @@ function searchPlaylists(contextQuery) {
 		"shouldIncludeVideos": false,
 		"shouldIncludeLives": false,
 		"page": context.page,
-		"limit": 20
+		"limit": ITEMS_PER_PAGE,
+		"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution],
+		"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
 	}
 
 	const jsonResponse = executeGqlQuery({
 		operationName: 'SEARCH_QUERY',
 		variables: variables,
-		query: queries.MAIN_SEARCH_QUERY,
+		query: MAIN_SEARCH_QUERY,
 		headers: undefined
-	}, true);
+	}, { useAnonymousToken: true });
 
 	var searchResults = jsonResponse?.data?.search?.playlists?.edges?.map(edge => {
 
@@ -448,7 +511,7 @@ function getPreferredCountry() {
 
 function getVideoPager(params, page) {
 
-	const count = 20;
+	const count = ITEMS_PER_PAGE;
 	const start = (page ?? 0) * count;
 
 	if (!params) {
@@ -483,21 +546,27 @@ function getVideoPager(params, page) {
 		obj = executeGqlQuery(
 			{
 				operationName: 'SEACH_DISCOVERY_QUERY',
-				variables: { "shouldQueryPromotedHashtag": false },
-				query: queries.HOME_QUERY,
-				headers: headersToAdd
-			}, true);
+				variables: {
+					shouldQueryPromotedHashtag: false,
+					avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
+					thumbnail_resolution: constants.thumbnailHeight[_settings?.thumbnailResolution],
+				},
+				query: HOME_QUERY,
+				headers: headersToAdd,
+			}, { useAnonymousToken: true });
 
 	} catch (error) {
 		return new VideoPager([], false, { params });
 	}
 
 	var results = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.edges
-	// ?.filter(edge => edge?.node?.__typename === 'Video')
+		// ?.filter(edge => edge?.node?.__typename === 'Video')
 		?.filter(edge => edge?.node?.id)
 		?.map(edge => {
 
 			const v = edge.node;
+
+			const metadata = GetVideoExtraDEtails(v.xid);
 
 			return ToPlatformVideo({
 				id: v.id,
@@ -510,7 +579,7 @@ function getVideoPager(params, page) {
 				creatorAvatar: v?.creator?.avatar?.url ?? "",
 				creatorUrl: `${BASE_URL}/${v.creator?.name}`,
 				duration: v.duration,
-				viewCount: 0,
+				viewCount: metadata.views ?? 0,
 				url: `${BASE_URL_VIDEO}/${v.xid}`,
 				isLive: false,
 				description: v?.description ?? '',
@@ -520,6 +589,20 @@ function getVideoPager(params, page) {
 
 	const hasMore = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.pageInfo?.hasNextPage ?? false;
 	return new SearchPagerAll(results, hasMore, params, page);
+}
+
+function GetVideoExtraDEtails(xid) {
+
+	const json = executeGqlQuery({
+		operationName: 'WATCHING_VIDEO',
+		variables: { xid },
+		query: GET_VIDEO_EXTRA_DETAILS
+	}, { useAnonymousToken: true });
+
+
+	return {
+		views: json?.data?.video?.stats?.views?.total
+	}
 }
 
 
@@ -537,14 +620,18 @@ function getChannelPager(context) {
 				"sort": "recent",
 				"page": context.page ?? 1,
 				"allowExplicit": !_settings.hideSensitiveContent,
-				"first": context.page_size ?? 30
+				"first": context.page_size ?? ITEMS_PER_PAGE,
+				"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
+				"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution],
 			},
-			query: queries.CHANNEL_VIDEOS_BY_CHANNEL_NAME
-		}, true);
+			query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
+		}, { useAnonymousToken: true });
 
 	const edges = json?.data?.channel?.channel_videos_all_videos?.edges ?? [];
 
 	let videos = edges.map((edge) => {
+
+		const metadata = GetVideoExtraDEtails(edge.node.xid);
 
 		return ToPlatformVideo({
 			id: edge.node.id,
@@ -558,7 +645,7 @@ function getChannelPager(context) {
 			creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
 			duration: edge.node.duration,
 			url: `${BASE_URL_VIDEO}/${edge?.node?.xid}`,
-			viewCount: edge.node.metrics.engagement.likes.totalCount,
+			viewCount: metadata.views ?? 0,
 			isLive: false
 		});
 
@@ -660,15 +747,17 @@ function getSearchPagerAll(contextQuery) {
 		"shouldIncludeVideos": true,
 		"shouldIncludeLives": true,
 		"page": context.page ?? 1,
-		"limit": 20
+		"limit": ITEMS_PER_PAGE,
+		"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
+		"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
 	}
 
 	const jsonResponse = executeGqlQuery({
 		operationName: 'SEARCH_QUERY',
 		variables: variables,
-		query: queries.MAIN_SEARCH_QUERY,
+		query: MAIN_SEARCH_QUERY,
 		headers: undefined
-	}, true);
+	}, { useAnonymousToken: true });
 
 	const results = []
 
@@ -713,9 +802,9 @@ function getSearchPagerAll(contextQuery) {
 	return new SearchPagerAll(results, jsonResponse?.data?.search?.videos?.pageInfo?.hasNextPage, params, context.page);
 }
 
-function executeGqlQuery(opts, addAuthorization) {
+function executeGqlQuery(requestOptions, authOptions: authOptions = {}) {
 
-	const headersToAdd = opts.headers || {
+	const headersToAdd = requestOptions.headers || {
 		"User-Agent": USER_AGENT,
 		"Accept": "*/*",
 		// "Accept-Language": Accept_Language,
@@ -730,17 +819,17 @@ function executeGqlQuery(opts, addAuthorization) {
 		"Cache-Control": "no-cache"
 	}
 
-	if (addAuthorization) {
+	if (authOptions.useAnonymousToken) {
 		headersToAdd.Authorization = getAnonymousUserTokenSingleton();
 	}
 
 	const gql = JSON.stringify({
-		operationName: opts.operationName,
-		variables: opts.variables,
-		query: opts.query,
+		operationName: requestOptions.operationName,
+		variables: requestOptions.variables,
+		query: requestOptions.query,
 	});
 
-	const res = http.POST(BASE_URL_API, gql, headersToAdd);
+	const res = http.POST(BASE_URL_API, gql, headersToAdd, authOptions.usePlatformAuth);
 
 	if (!res.isOk) {
 		console.error('Failed to get token', res);
@@ -761,7 +850,7 @@ function checkHLS(url, headersToAdd, use_authenticated = false) {
 	}
 }
 
-function getSavedVideo(url) {
+function getSavedVideo(url, authOptions: authOptions = {}) {
 
 	const id = url.split('/').pop();
 
@@ -833,17 +922,23 @@ function getSavedVideo(url) {
 		"Authorization": getAnonymousUserTokenSingleton()
 	};
 
+	if (authOptions.useAnonymousToken) {
+		videoDetailsRequestHeaders.Authorization = getAnonymousUserTokenSingleton();
+	}
+
 	const videoDetailsRequestBody = JSON.stringify(
 		{
 			"operationName": "WATCHING_VIDEO",
 			"variables": {
 				"xid": id,
-				"isSEO": false
+				"isSEO": false,
+				"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
+				"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
 			},
-			"query": queries.VIDE_DETAILS_QUERY
+			"query": VIDEO_DETAILS_QUERY
 		});
 
-	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders)
+	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, authOptions.usePlatformAuth)
 
 	if (video_details_response.code != 200) {
 		throw new UnavailableException('Failed to get video details');
@@ -902,14 +997,15 @@ function getSearchChannelPager(context) {
 	const variables = {
 		query: context.q,
 		page: context.page ?? 1,
-		limit: 20
+		limit: ITEMS_PER_PAGE,
+		avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
 	};
 
 	const json = executeGqlQuery({
 		operationName: "SEARCH_QUERY",
 		variables,
-		query: queries.SEARCH_CHANNEL
-	}, true);
+		query: SEARCH_CHANNEL
+	}, { useAnonymousToken: true });
 
 	const results = json?.data?.search?.channels?.edges.map(edge => {
 		const c = edge.node;
