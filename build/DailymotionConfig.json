@@ -10,8 +10,8 @@
   "version": 8,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "LQ3Vga/N4v9J5q/JsFtkSHvE2ICfbWbmZ4f0E4sMgZcK0NWSUvkQKfhzyVno1MUfFICA25qP+J6K9SfPDPsNdTYPDN4a68mBYgqGMu6zSCgxyD7XldnG2UP1siBqF4Gg1JUUcbY6ee2eoOhT8cAEZdCBivDhf35YOR7FwNkjAt2p28PNn15moNxivr6gviycQnI5QHXKxGIF0BrOXMCdVc2cUFYkTbezH9Lm5FM1mt2Lu2GCNPy78Ufor+lfvD2lsk7fQ1ppFcg5bBXAaybuG3zLFU63LmmbnTXXg6c8Rs2PSnXPtR9S05x9GLJOnyYfufUM+VyKeeqiWzjgqtVyMg==",
-  "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
+  "scriptSignature": "",
+  "scriptPublicKey": "",
   "packages": [
     "Http"
   ],

@@ -76,6 +76,12 @@ source.enable = function (conf, settings, saveStateStr) {
 	config = conf ?? {};
 	_settings = settings ?? {};
 
+	if (IS_TESTING) {
+		_settings.hideSensitiveContent = false;
+		_settings.avatarSize = 8;
+		_settings.thumbnailResolution = 7;
+	}
+
 	http.GET(BASE_URL, {}, true);
 
 
@@ -223,7 +229,7 @@ source.isContentDetailsUrl = function (url) {
 };
 
 source.getContentDetails = function (url) {
-	return getSavedVideo(url);
+	return getSavedVideo(url, { useAnonymousToken: true, usePlatformAuth: false });
 };
 
 //Playlist
@@ -850,7 +856,7 @@ function checkHLS(url, headersToAdd, use_authenticated = false) {
 	}
 }
 
-function getSavedVideo(url, authOptions: authOptions = {}) {
+function getSavedVideo(url, authOptions: authOptions = { useAnonymousToken: false, usePlatformAuth: false }) {
 
 	const id = url.split('/').pop();
 
@@ -918,24 +924,25 @@ function getSavedVideo(url, authOptions: authOptions = {}) {
 		"Sec-Fetch-Site": "same-site",
 		"Priority": "u=4",
 		"Pragma": "no-cache",
-		"Cache-Control": "no-cache",
-		"Authorization": getAnonymousUserTokenSingleton()
+		"Cache-Control": "no-cache"
 	};
 
 	if (authOptions.useAnonymousToken) {
 		videoDetailsRequestHeaders.Authorization = getAnonymousUserTokenSingleton();
 	}
 
+	const variables = {
+		"xid": id,
+		"isSEO": false,
+		"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
+		"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
+	};
+
 	const videoDetailsRequestBody = JSON.stringify(
 		{
-			"operationName": "WATCHING_VIDEO",
-			"variables": {
-				"xid": id,
-				"isSEO": false,
-				"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
-				"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
-			},
-			"query": VIDEO_DETAILS_QUERY
+			operationName: "WATCHING_VIDEO",
+			variables,
+			query: VIDEO_DETAILS_QUERY
 		});
 
 	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, authOptions.usePlatformAuth)
@@ -959,31 +966,63 @@ function getSavedVideo(url, authOptions: authOptions = {}) {
 
 	const video = video_details?.data?.video;
 
-	var test: PlatformVideoDetailsDef = {
+
+	// This platform uses a scale system for rating the videos.
+	// Ratings are grouped into positive and negative to calculate likes and dislikes.
+
+	const positiveRatings = [
+		"STAR_STRUCK", // amazing
+		"SMILING_FACE_WITH_SUNGLASSES", // cool
+		"WINKING_FACE" // interesting
+	];
+
+	const negativeRatings = [
+		"SLEEPING_FACE", // boring
+		"FISHING_POLE" // waste of time
+	];
+
+	let positiveRatingCount = 0;
+	let negativeRatingCount = 0;
+
+	const ratings = video?.metrics?.engagement?.likes?.edges ?? [];
+
+	for (const edge of ratings) {
+		const ratingName = edge?.node?.rating as string;
+		const ratingTotal = edge?.node?.total as number;
+
+		if (positiveRatings.includes(ratingName)) {
+			positiveRatingCount += ratingTotal;
+		} else if (negativeRatings.includes(ratingName)) {
+			negativeRatingCount += ratingTotal;
+		}
+	}
+
+	var platformVideoDetails: PlatformVideoDetailsDef = {
 		id: new PlatformID(PLATFORM, id, config.id, PLATFORM_CLAIMTYPE),
-		name: player_metadata.title,
+		name: video.title,
 		thumbnails: new Thumbnails([new Thumbnail(video.thumbnail.url, 0)]),
 		author: new PlatformAuthorLink(
-			new PlatformID(PLATFORM, player_metadata?.owner?.id, config.id, PLATFORM_CLAIMTYPE),
-			player_metadata?.owner?.screenname,
-			player_metadata?.owner?.url,
-			video?.creator?.avatar?.url ?? '',
-			0 //dsubscribers
+			new PlatformID(PLATFORM, video?.creator?.id, config.id, PLATFORM_CLAIMTYPE),
+			video?.creator?.displayName,
+			`${BASE_URL}/${video?.creator?.name}`,
+			`${video?.creator?.avatar?.url}`,
+			0 //subscribers
 		),
 		// datetime: new Date(video?.createdAt).getTime(),
 		uploadDate: parseInt(new Date(video.createdAt).getTime() / 1000),
-		duration: player_metadata?.duration,
-		viewCount: video?.stats?.views?.total,//TODO: get view count
-		url: player_metadata.url,
-		isLive: false,
-		description: video?.description,//TODO: get description
+		duration: video?.duration,
+		viewCount: video?.stats?.views?.total,
+		url: `${BASE_URL_VIDEO}/${id}`,
+		isLive: video?.duration == undefined,
+		description: video?.description,
 		video: new VideoSourceDescriptor(sources),
+		rating: new RatingLikesDislikes(positiveRatingCount, negativeRatingCount),
 		dash: null,
 		live: null,
 		hls: null,
 	}
 
-	return new PlatformVideoDetails(test)
+	return new PlatformVideoDetails(platformVideoDetails)
 }
 
 function getSearchChannelPager(context) {

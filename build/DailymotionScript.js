@@ -788,252 +788,268 @@ const MAIN_SEARCH_QUERY = `
 	}		
 	`;
 const VIDEO_DETAILS_QUERY = `
-	fragment VIDEO_FRAGMENT on Video {
-		id
-		xid
-		isPublished
-		duration
-		title
-		description
-		thumbnail(height:$thumbnail_resolution) {
-			url
-		}
-		bestAvailableQuality
-		createdAt
-		isPrivate
-		isCreatedForKids
-		isExplicit
-		canDisplayAds
-		videoWidth: width
-		videoHeight: height
-		status
-		hashtags {
-			edges {
-				node {
-					id
-					name
-				}
-			}
-		}
-		stats {
-			id
-			views {
-				id
-				total
-			}
-		}
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height:$avatar_size) {
-				url
-				height
-				width
-			}
-			coverURLx375: coverURL(size: "x375")
-			stats {
-				id
-				views {
-					id
-					total
-				}
-				followers {
-					id
-					total
-				}
-				videos {
-					id
-					total
-				}
-			}
-			country {
-				id
-				codeAlpha2
-			}
-			organization @skip(if: $isSEO) {
-				id
-				xid
-				owner {
-					id
-					xid
-				}
-			}
-		}
-		language {
-			id
-			codeAlpha2
-		}
-		tags {
-			edges {
-				node {
-					id
-					label
-				}
-			}
-		}
-		moderation {
-			id
-			reviewedAt
-		}
-		topics(whitelistedOnly: true, first: 3, page: 1) {
-			edges {
-				node {
-					id
-					xid
-					name
-					names {
-						edges {
-							node {
-								id
-								name
-								language {
-									id
-									codeAlpha2
-								}
-							}
-						}
+fragment VIDEO_FRAGMENT on Video {
+	id
+	xid
+	isPublished
+	duration
+	title
+	description
+	thumbnail(height:$thumbnail_resolution) {
+		url
+	}
+	bestAvailableQuality
+	createdAt
+	isPrivate
+	isCreatedForKids
+	isExplicit
+	videoWidth: width
+	videoHeight: height
+	status
+	metrics {
+		engagement {
+			likes {
+				totalCount
+				edges {
+					node {
+						rating
+						total
 					}
 				}
 			}
 		}
-		geoblockedCountries {
+	}
+	stats {
+		id
+		views {
 			id
-			allowed
-			denied
+			total
 		}
 	}
-	
-	fragment LIVE_FRAGMENT on Live {
+	creator {
 		id
 		xid
-		startAt
-		endAt
-		isPublished
-		title
-		description
-		thumbnail(height:$thumbnail_resolution){
+		name
+		displayName
+		avatar(height:$avatar_size) {
 			url
 			height
 			width
 		}
-		category
-		createdAt
-		isPrivate
-		isExplicit
-		isCreatedForKids
-		bestAvailableQuality
-		canDisplayAds
-		videoWidth: width
-		videoHeight: height
+		coverURLx375: coverURL(size: "x375")
 		stats {
 			id
 			views {
 				id
 				total
 			}
-		}
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height:$avatar_size) {
-				url
-				height
-				width
-			}
-			coverURLx375: coverURL(size: "x375")
-			stats {
+			followers {
 				id
-				views {
-					id
-					total
-				}
-				followers {
-					id
-					total
-				}
-				videos {
-					id
-					total
-				}
+				total
 			}
-			country {
+			videos {
 				id
-				codeAlpha2
-			}
-			organization @skip(if: $isSEO) {
-				id
-				xid
-				owner {
-					id
-					xid
-				}
+				total
 			}
 		}
-		language {
+		country {
 			id
 			codeAlpha2
 		}
-		tags {
-			edges {
-				node {
-					id
-					label
-				}
+		organization @skip(if: $isSEO) {
+			id
+			xid
+			owner {
+				id
+				xid
 			}
 		}
-		moderation {
-			id
-			reviewedAt
+	}
+	language {
+		id
+		codeAlpha2
+	}
+	tags {
+		edges {
+			node {
+				id
+				label
+			}
 		}
-		topics(whitelistedOnly: true, first: 3, page: 1) {
-			edges {
-				node {
-					id
-					xid
-					name
-					names {
-						edges {
-							node {
+	}
+	moderation {
+		id
+		reviewedAt
+	}
+	topics(whitelistedOnly: true, first: 3, page: 1) {
+		edges {
+			node {
+				id
+				xid
+				name
+				names {
+					edges {
+						node {
+							id
+							name
+							language {
 								id
-								name
-								language {
-									id
-									codeAlpha2
-								}
+								codeAlpha2
 							}
 						}
 					}
 				}
 			}
 		}
-		geoblockedCountries {
-			id
-			allowed
-			denied
+	}
+	geoblockedCountries {
+		id
+		allowed
+		denied
+	}
+}
+
+fragment LIVE_FRAGMENT on Live {
+	id
+	xid
+	startAt
+	endAt
+	isPublished
+	title
+	description
+	thumbnail(height:$thumbnail_resolution){
+		url
+		height
+		width
+	}
+	category
+	createdAt
+	isPrivate
+	isExplicit
+	isCreatedForKids
+	bestAvailableQuality
+	canDisplayAds
+	videoWidth: width
+	videoHeight: height
+	metrics {
+		engagement {
+			likes {
+				edges {
+					node {
+						rating
+						total
+					}
+				}
+			}
 		}
 	}
-	
-	query WATCHING_VIDEO(
-		$xid: String!
-		$isSEO: Boolean!
-		$avatar_size: AvatarHeight!
-		$thumbnail_resolution: ThumbnailHeight!
-	) {
-		video: media(xid: $xid) {
-			... on Video {
+	stats {
+		id
+		views {
+			id
+			total
+		}
+	}
+	creator {
+		id
+		xid
+		name
+		displayName
+		avatar(height:$avatar_size) {
+			url
+			height
+			width
+		}
+		coverURLx375: coverURL(size: "x375")
+		stats {
+			id
+			views {
 				id
-				...VIDEO_FRAGMENT
+				total
 			}
-			... on Live {
+			followers {
 				id
-				...LIVE_FRAGMENT
+				total
+			}
+			videos {
+				id
+				total
 			}
 		}
-	}		
+		country {
+			id
+			codeAlpha2
+		}
+		organization @skip(if: $isSEO) {
+			id
+			xid
+			owner {
+				id
+				xid
+			}
+		}
+	}
+	language {
+		id
+		codeAlpha2
+	}
+	tags {
+		edges {
+			node {
+				id
+				label
+			}
+		}
+	}
+	moderation {
+		id
+		reviewedAt
+	}
+	topics(whitelistedOnly: true, first: 3, page: 1) {
+		edges {
+			node {
+				id
+				xid
+				name
+				names {
+					edges {
+						node {
+							id
+							name
+							language {
+								id
+								codeAlpha2
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	geoblockedCountries {
+		id
+		allowed
+		denied
+	}
+}
+
+query WATCHING_VIDEO(
+	$xid: String!
+	$isSEO: Boolean!
+	$avatar_size: AvatarHeight!
+	$thumbnail_resolution: ThumbnailHeight!
+) {
+	video: media(xid: $xid) {
+		... on Video {
+			id
+			...VIDEO_FRAGMENT
+		}
+		... on Live {
+			id
+			...LIVE_FRAGMENT
+		}
+	}
+}		
 	`;
 const SEARCH_CHANNEL = `		
 query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: AvatarHeight!) {
@@ -1249,6 +1265,11 @@ source.setSettings = function (settings) {
 source.enable = function (conf, settings, saveStateStr) {
     config = conf ?? {};
     _settings = settings ?? {};
+    if (IS_TESTING) {
+        _settings.hideSensitiveContent = false;
+        _settings.avatarSize = 8;
+        _settings.thumbnailResolution = 7;
+    }
     http.GET(BASE_URL, {}, true);
 };
 source.getHome = function () {
@@ -1364,7 +1385,7 @@ source.isContentDetailsUrl = function (url) {
     return url.startsWith(BASE_URL_VIDEO);
 };
 source.getContentDetails = function (url) {
-    return getSavedVideo(url);
+    return getSavedVideo(url, { useAnonymousToken: true, usePlatformAuth: false });
 };
 //Playlist
 source.isPlaylistUrl = (url) => {
@@ -1846,7 +1867,7 @@ function checkHLS(url, headersToAdd, use_authenticated = false) {
         throw new UnavailableException('This content is not available');
     }
 }
-function getSavedVideo(url, authOptions = {}) {
+function getSavedVideo(url, authOptions = { useAnonymousToken: false, usePlatformAuth: false }) {
     const id = url.split('/').pop();
     const player_metadata_url = `${BASE_URL_METADATA}/${id}?embedder=https%3A%2F%2Fwww.dailymotion.com%2Fvideo%2Fx8yb2e8&geo=1&player-id=xjnde&locale=en-GB&dmV1st=ce2035cd-bdca-4d7b-baa4-127a17490ca5&dmTs=747022&is_native_app=0&app=com.dailymotion.neon&client_type=webapp&section_type=player&component_style=_`;
     var headers1 = {
@@ -1902,21 +1923,21 @@ function getSavedVideo(url, authOptions = {}) {
         "Sec-Fetch-Site": "same-site",
         "Priority": "u=4",
         "Pragma": "no-cache",
-        "Cache-Control": "no-cache",
-        "Authorization": getAnonymousUserTokenSingleton()
+        "Cache-Control": "no-cache"
     };
     if (authOptions.useAnonymousToken) {
         videoDetailsRequestHeaders.Authorization = getAnonymousUserTokenSingleton();
     }
+    const variables = {
+        "xid": id,
+        "isSEO": false,
+        "avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
+        "thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
+    };
     const videoDetailsRequestBody = JSON.stringify({
-        "operationName": "WATCHING_VIDEO",
-        "variables": {
-            "xid": id,
-            "isSEO": false,
-            "avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
-            "thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
-        },
-        "query": VIDEO_DETAILS_QUERY
+        operationName: "WATCHING_VIDEO",
+        variables,
+        query: VIDEO_DETAILS_QUERY
     });
     const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, authOptions.usePlatformAuth);
     if (video_details_response.code != 200) {
@@ -1931,30 +1952,51 @@ function getSavedVideo(url, authOptions = {}) {
             // priority: true,
         })
     ];
-    const thumbnail = player_metadata.thumbnailx720
-        ?? player_metadata.thumbnailx240
-        ?? player_metadata.thumbnailx120
-        ?? player_metadata.thumbnailx60;
     const video = video_details?.data?.video;
-    var test = {
+    // This platform uses a scale system for rating the videos.
+    // Ratings are grouped into positive and negative to calculate likes and dislikes.
+    const positiveRatings = [
+        "STAR_STRUCK", // amazing
+        "SMILING_FACE_WITH_SUNGLASSES", // cool
+        "WINKING_FACE" // interesting
+    ];
+    const negativeRatings = [
+        "SLEEPING_FACE", // boring
+        "FISHING_POLE" // waste of time
+    ];
+    let positiveRatingCount = 0;
+    let negativeRatingCount = 0;
+    const ratings = video?.metrics?.engagement?.likes?.edges ?? [];
+    for (const edge of ratings) {
+        const ratingName = edge?.node?.rating;
+        const ratingTotal = edge?.node?.total;
+        if (positiveRatings.includes(ratingName)) {
+            positiveRatingCount += ratingTotal;
+        }
+        else if (negativeRatings.includes(ratingName)) {
+            negativeRatingCount += ratingTotal;
+        }
+    }
+    var platformVideoDetails = {
         id: new PlatformID(PLATFORM, id, config.id, PLATFORM_CLAIMTYPE),
-        name: player_metadata.title,
-        thumbnails: new Thumbnails([new Thumbnail(thumbnail, 0)]),
-        author: new PlatformAuthorLink(new PlatformID(PLATFORM, player_metadata?.owner?.id, config.id, PLATFORM_CLAIMTYPE), player_metadata?.owner?.screenname, player_metadata?.owner?.url, video?.creator?.avatar?.url ?? '', 0 //dsubscribers
+        name: video.title,
+        thumbnails: new Thumbnails([new Thumbnail(video.thumbnail.url, 0)]),
+        author: new PlatformAuthorLink(new PlatformID(PLATFORM, video?.creator?.id, config.id, PLATFORM_CLAIMTYPE), video?.creator?.displayName, `${BASE_URL}/${video?.creator?.name}`, `${video?.creator?.avatar?.url}`, 0 //subscribers
         ),
         // datetime: new Date(video?.createdAt).getTime(),
         uploadDate: parseInt(new Date(video.createdAt).getTime() / 1000),
-        duration: player_metadata?.duration,
-        viewCount: video?.stats?.views?.total, //TODO: get view count
-        url: player_metadata.url,
-        isLive: false,
-        description: video?.description, //TODO: get description
+        duration: video?.duration,
+        viewCount: video?.stats?.views?.total,
+        url: `${BASE_URL_VIDEO}/${id}`,
+        isLive: video?.duration == undefined,
+        description: video?.description,
         video: new VideoSourceDescriptor(sources),
+        rating: new RatingLikesDislikes(positiveRatingCount, negativeRatingCount),
         dash: null,
         live: null,
         hls: null,
     };
-    return new PlatformVideoDetails(test);
+    return new PlatformVideoDetails(platformVideoDetails);
 }
 function getSearchChannelPager(context) {
     const variables = {
