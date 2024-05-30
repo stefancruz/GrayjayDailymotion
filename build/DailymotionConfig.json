@@ -10,7 +10,7 @@
   "version": 7,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "iL1sGKNKYl5Ed6CiV6Td43I8uyYrYVF7K5tsDno3hD6iA/5VAKmEjqTy61T6yfLEjTN5oyq5wPm/gZyMLsCFR+B5cP0gO7n0Gi8oECC9XxlNIRsPeaUmzcEbK+fFCTDZH0iBWFIqUJcA3eE/AkZLWluKBHwqVm+3c7Q+Hm1VkA/mn4Q82FROBsw6cIS9nGauc6TciT1lnTBSj60u2DyMOBk730xeJ+1mZ/qmIA9CvxvYwfe9LFkh/PZCnopmOJrfHgymc8kMflADxa69hztcgK8EHKwLuZapV5tB720BIS1jAF5X8io9sTLBHgCvgayFyx8BrLewiF62BeyMNwWtyQ==",
+  "scriptSignature": "XZsugFUI3zLAEiiwVTrk1haKqZdljNa0XLjE+KcOyNsdiT7Y7Cs/irt09dl8kMEYwbkocoRsGQOuQjdug61aOui9EbmY7U0O3ZV6GgRCo5HAxOsLp5hWvQtE9xXepwuCllxDrPAfupqbX7q6g2D5PH/hBUJas4HJ+YEq5uzVns8ypEJJ/HYP+aqPVa74PTYDZbl7LC4Hbw5trYi9F4n3dW1zuwZLMG5N1qW3dWWJZb3yRi8Pyk/68LGK0TygQJ3gy7FVznTQm5oDW+/LG3HgpHpa+hZPRNPvHwiT9Yw3i0spxjZiCx4+VX7vgZktAgzF5DtNdNMzGBQ/YLFIVQLVgg==",
   "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
@@ -25,6 +25,17 @@
     "s2.dmcdn.net",
     "s3.dmcdn.net"
   ],
+  "authentication": {
+    "loginUrl": "https://www.dailymotion.com/signin",
+    "cookiesToFind": [
+      "refresh_token",
+      "access_token"
+    ],
+    "headersToFind": [
+      "Authorization"
+    ],
+    "userAgent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36"
+  },
   "settings": [
     {
       "variable": "thumbnailResolution",

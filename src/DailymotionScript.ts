@@ -49,6 +49,11 @@ import constants from './constants';
 import queries from './gqlQueries';
 import util from './util';
 
+type authOptions = {
+	useAnonymousToken?: boolean,
+	usePlatformAuth?: boolean
+}
+
 source.setSettings = function (settings) {
 	_settings = settings;
 }
@@ -61,7 +66,6 @@ source.enable = function (conf, settings, saveStateStr) {
 
 	http.GET(BASE_URL, {}, true);
 
-	AUTHORIZATION_TOKEN_ANONYMOUS_USER = getAnonymousUserTokenSingleton();
 
 }
 
@@ -81,7 +85,7 @@ source.searchSuggestions = function (query) {
 			operationName: 'AUTOCOMPLETE_QUERY',
 			variables: variables,
 			query: queries.SEARCH_SUGGESTIONS_QUERY
-		}, true);
+		}, { useAnonymousToken: true });
 
 		return jsonResponse?.data?.search?.suggestedVideos?.edges?.map(edge => edge?.node?.name);
 	} catch (error) {
@@ -165,7 +169,7 @@ source.getChannel = function (url) {
 				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
 			},
 			query: queries.CHANNEL_BY_URL_QUERY
-		}, true);
+		}, { useAnonymousToken: true });
 
 	const user = channelDetails.data.channel;
 
@@ -234,7 +238,7 @@ source.getPlaylist = (url) => {
 		operationName: 'PLAYLIST_VIDEO_QUERY',
 		variables,
 		query: queries.PLAYLIST_DETAILS_QUERY
-	}, true);
+	}, { useAnonymousToken: true });
 
 	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
 		const resource = edge.node;
@@ -335,7 +339,7 @@ function searchPlaylists(contextQuery) {
 		variables: variables,
 		query: queries.MAIN_SEARCH_QUERY,
 		headers: undefined
-	}, true);
+	}, { useAnonymousToken: true });
 
 	var searchResults = jsonResponse?.data?.search?.playlists?.edges?.map(edge => {
 
@@ -498,7 +502,7 @@ function getVideoPager(params, page) {
 				},
 				query: queries.HOME_QUERY,
 				headers: headersToAdd,
-			}, true);
+			}, { useAnonymousToken: true });
 
 	} catch (error) {
 		return new VideoPager([], false, { params });
@@ -542,7 +546,7 @@ function GetVideoExtraDEtails(xid) {
 		operationName: 'WATCHING_VIDEO',
 		variables: { xid },
 		query: queries.GET_VIDEO_EXTRA_DETAILS
-	}, true);
+	}, { useAnonymousToken: true });
 
 
 	return {
@@ -553,54 +557,54 @@ function GetVideoExtraDEtails(xid) {
 
 function getChannelPager(context) {
 
-		const url = context.url;
+	const url = context.url;
 
-		const channel_name = getChannelNameFromUrl(url);
+	const channel_name = getChannelNameFromUrl(url);
 
-		const json = executeGqlQuery(
-			{
-				operationName: 'CHANNEL_VIDEOS_QUERY',
-				variables: {
-					"channel_name": channel_name,
-					"sort": "recent",
-					"page": context.page ?? 1,
-					"allowExplicit": !_settings.hideSensitiveContent,
-					"first": context.page_size ?? ITEMS_PER_PAGE,
-					"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
-					"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution],
-				},
-				query: queries.CHANNEL_VIDEOS_BY_CHANNEL_NAME
-			}, true);
+	const json = executeGqlQuery(
+		{
+			operationName: 'CHANNEL_VIDEOS_QUERY',
+			variables: {
+				"channel_name": channel_name,
+				"sort": "recent",
+				"page": context.page ?? 1,
+				"allowExplicit": !_settings.hideSensitiveContent,
+				"first": context.page_size ?? ITEMS_PER_PAGE,
+				"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
+				"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution],
+			},
+			query: queries.CHANNEL_VIDEOS_BY_CHANNEL_NAME
+		}, { useAnonymousToken: true });
 
-		const edges = json?.data?.channel?.channel_videos_all_videos?.edges ?? [];
+	const edges = json?.data?.channel?.channel_videos_all_videos?.edges ?? [];
 
-		let videos = edges.map((edge) => {
+	let videos = edges.map((edge) => {
 
-			const metadata = GetVideoExtraDEtails(edge.node.xid);
+		const metadata = GetVideoExtraDEtails(edge.node.xid);
 
-			return ToPlatformVideo({
-				id: edge.node.id,
-				name: edge.node.title,
-				thumbnail: edge?.node?.thumbnail.url ?? "",
-				createdAt: edge?.node?.createdAt,
-				creatorId: edge?.node?.creator?.id,
-				creatorDisplayName: edge?.node?.creator?.displayName,
-				creatorName: edge.node.creator.name,
-				creatorAvatar: edge?.node?.creator?.avatar?.url,
-				creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
-				duration: edge.node.duration,
-				url: `${BASE_URL_VIDEO}/${edge?.node?.xid}`,
-				viewCount: metadata.views ?? 0,
-				isLive: false
-			});
+		return ToPlatformVideo({
+			id: edge.node.id,
+			name: edge.node.title,
+			thumbnail: edge?.node?.thumbnail.url ?? "",
+			createdAt: edge?.node?.createdAt,
+			creatorId: edge?.node?.creator?.id,
+			creatorDisplayName: edge?.node?.creator?.displayName,
+			creatorName: edge.node.creator.name,
+			creatorAvatar: edge?.node?.creator?.avatar?.url,
+			creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
+			duration: edge.node.duration,
+			url: `${BASE_URL_VIDEO}/${edge?.node?.xid}`,
+			viewCount: metadata.views ?? 0,
+			isLive: false
+		});
 
-		})
+	})
 
-		if (edges.length > 0) {
-			context.page++;
-		}
+	if (edges.length > 0) {
+		context.page++;
+	}
 
-		return new ChannelVideoPager(context, videos, json?.data?.channel?.channel_videos_all_videos?.pageInfo?.hasNextPage);
+	return new ChannelVideoPager(context, videos, json?.data?.channel?.channel_videos_all_videos?.pageInfo?.hasNextPage);
 }
 
 function ToPlatformVideo(resource) {
@@ -702,7 +706,7 @@ function getSearchPagerAll(contextQuery) {
 		variables: variables,
 		query: queries.MAIN_SEARCH_QUERY,
 		headers: undefined
-	}, true);
+	}, { useAnonymousToken: true });
 
 	const results = []
 
@@ -747,9 +751,9 @@ function getSearchPagerAll(contextQuery) {
 	return new SearchPagerAll(results, jsonResponse?.data?.search?.videos?.pageInfo?.hasNextPage, params, context.page);
 }
 
-function executeGqlQuery(opts, addAuthorization) {
+function executeGqlQuery(requestOptions, authOptions: authOptions = {}) {
 
-	const headersToAdd = opts.headers || {
+	const headersToAdd = requestOptions.headers || {
 		"User-Agent": USER_AGENT,
 		"Accept": "*/*",
 		// "Accept-Language": Accept_Language,
@@ -764,17 +768,17 @@ function executeGqlQuery(opts, addAuthorization) {
 		"Cache-Control": "no-cache"
 	}
 
-	if (addAuthorization) {
+	if (authOptions.useAnonymousToken) {
 		headersToAdd.Authorization = getAnonymousUserTokenSingleton();
 	}
 
 	const gql = JSON.stringify({
-		operationName: opts.operationName,
-		variables: opts.variables,
-		query: opts.query,
+		operationName: requestOptions.operationName,
+		variables: requestOptions.variables,
+		query: requestOptions.query,
 	});
 
-	const res = http.POST(BASE_URL_API, gql, headersToAdd);
+	const res = http.POST(BASE_URL_API, gql, headersToAdd, authOptions.usePlatformAuth);
 
 	if (!res.isOk) {
 		console.error('Failed to get token', res);
@@ -795,7 +799,7 @@ function checkHLS(url, headersToAdd, use_authenticated = false) {
 	}
 }
 
-function getSavedVideo(url) {
+function getSavedVideo(url, authOptions: authOptions = {}) {
 
 	const id = url.split('/').pop();
 
@@ -867,6 +871,10 @@ function getSavedVideo(url) {
 		"Authorization": getAnonymousUserTokenSingleton()
 	};
 
+	if (authOptions.useAnonymousToken) {
+		videoDetailsRequestHeaders.Authorization = getAnonymousUserTokenSingleton();
+	}
+
 	const videoDetailsRequestBody = JSON.stringify(
 		{
 			"operationName": "WATCHING_VIDEO",
@@ -879,7 +887,7 @@ function getSavedVideo(url) {
 			"query": queries.VIDE_DETAILS_QUERY
 		});
 
-	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders)
+	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, authOptions.usePlatformAuth)
 
 	if (video_details_response.code != 200) {
 		throw new UnavailableException('Failed to get video details');
@@ -946,7 +954,7 @@ function getSearchChannelPager(context) {
 		operationName: "SEARCH_QUERY",
 		variables,
 		query: queries.SEARCH_CHANNEL
-	}, true);
+	}, { useAnonymousToken: true });
 
 	const results = json?.data?.search?.channels?.edges.map(edge => {
 		const c = edge.node;
