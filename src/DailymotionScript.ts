@@ -957,18 +957,12 @@ function getSavedVideo(url, authOptions: authOptions = {}) {
 		)
 	]
 
-	const thumbnail =
-		player_metadata.thumbnailx720
-		?? player_metadata.thumbnailx240
-		?? player_metadata.thumbnailx120
-		?? player_metadata.thumbnailx60;
-
 	const video = video_details?.data?.video;
 
 	var test: PlatformVideoDetailsDef = {
 		id: new PlatformID(PLATFORM, id, config.id, PLATFORM_CLAIMTYPE),
 		name: player_metadata.title,
-		thumbnails: new Thumbnails([new Thumbnail(thumbnail, 0)]),
+		thumbnails: new Thumbnails([new Thumbnail(video.thumbnail.url, 0)]),
 		author: new PlatformAuthorLink(
 			new PlatformID(PLATFORM, player_metadata?.owner?.id, config.id, PLATFORM_CLAIMTYPE),
 			player_metadata?.owner?.screenname,
