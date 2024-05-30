@@ -1,4 +1,4 @@
-const SEARCH_SUGGESTIONS_QUERY = `
+export const SEARCH_SUGGESTIONS_QUERY = `
     query AUTOCOMPLETE_QUERY($query: String!) {
 		search {
 		  id
@@ -15,7 +15,7 @@ const SEARCH_SUGGESTIONS_QUERY = `
 		}
 	  }
     `
-const CHANNEL_BY_URL_QUERY = `
+export const CHANNEL_BY_URL_QUERY = `
 query CHANNEL_QUERY_DESKTOP(
 	$channel_name: String!
 	$avatar_size: AvatarHeight!
@@ -75,7 +75,7 @@ query CHANNEL_QUERY_DESKTOP(
 	}
 }
 `
-const HOME_QUERY = `	
+export const HOME_QUERY = `	
 fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 	id
 	xid
@@ -172,7 +172,7 @@ query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!, $avatar_size:
 `
 
 
-const CHANNEL_VIDEOS_BY_CHANNEL_NAME = `
+export const CHANNEL_VIDEOS_BY_CHANNEL_NAME = `
 query CHANNEL_VIDEOS_QUERY(
 	$channel_name: String!
 	$first: Int!
@@ -232,7 +232,7 @@ query CHANNEL_VIDEOS_QUERY(
 	  
 	`
 
-const MAIN_SEARCH_QUERY = ` 
+export const MAIN_SEARCH_QUERY = ` 
 	fragment VIDEO_BASE_FRAGMENT on Video {
 		id
 		xid
@@ -490,7 +490,7 @@ const MAIN_SEARCH_QUERY = `
 	`;
 
 
-const VIDE_DETAILS_QUERY = `
+export const VIDEO_DETAILS_QUERY = `
 	fragment VIDEO_FRAGMENT on Video {
 		id
 		xid
@@ -740,7 +740,7 @@ const VIDE_DETAILS_QUERY = `
 	`
 
 
-const SEARCH_CHANNEL = `		
+export const SEARCH_CHANNEL = `		
 query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: AvatarHeight!) {
 	search {
 		id
@@ -784,7 +784,7 @@ query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: Avata
 		`
 
 
-const PLAYLIST_DETAILS_QUERY = `
+export const PLAYLIST_DETAILS_QUERY = `
 query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	collection(xid: $xid) {
 		id
@@ -864,7 +864,7 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 }
 `
 
-const GET_VIDEO_EXTRA_DETAILS = `
+export const GET_VIDEO_EXTRA_DETAILS = `
 query WATCHING_VIDEO($xid: String!) {
 	video: media(xid: $xid)  {
 		... on Video {
@@ -878,16 +878,25 @@ query WATCHING_VIDEO($xid: String!) {
 }	
 	`
 
-const queries = {
-	SEARCH_SUGGESTIONS_QUERY,
-	CHANNEL_BY_URL_QUERY,
-	HOME_QUERY,
-	CHANNEL_VIDEOS_BY_CHANNEL_NAME,
-	MAIN_SEARCH_QUERY,
-	VIDE_DETAILS_QUERY,
-	SEARCH_CHANNEL,
-	PLAYLIST_DETAILS_QUERY,
-	GET_VIDEO_EXTRA_DETAILS
-};
-
-export default queries;
+export const GET_USER_SUBSCRIPTIONS = `
+query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
+	me {
+		followingChannels(first: $first, page: $page) {
+			totalCount
+			edges {
+				node {
+					id
+					xid
+					name
+					displayName
+					avatar(height: SQUARE_240) {
+						url
+						width
+					}
+					coverURLx375: coverURL(size: "x375")
+					logoURLx60: logoURL(size: "x60")
+				}
+			}
+		}
+	}
+}`;

@@ -46,7 +46,19 @@ DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
 import errorTypes from './errorTypes';
 import constants from './constants';
-import queries from './gqlQueries';
+import {
+	SEARCH_SUGGESTIONS_QUERY,
+	CHANNEL_BY_URL_QUERY,
+	PLAYLIST_DETAILS_QUERY,
+	GET_USER_SUBSCRIPTIONS,
+	MAIN_SEARCH_QUERY,
+	HOME_QUERY,
+	GET_VIDEO_EXTRA_DETAILS,
+	CHANNEL_VIDEOS_BY_CHANNEL_NAME,
+	VIDEO_DETAILS_QUERY,
+	SEARCH_CHANNEL
+} from './gqlQueries';
+
 import util from './util';
 
 type authOptions = {
@@ -84,7 +96,7 @@ source.searchSuggestions = function (query) {
 		const jsonResponse = executeGqlQuery({
 			operationName: 'AUTOCOMPLETE_QUERY',
 			variables: variables,
-			query: queries.SEARCH_SUGGESTIONS_QUERY
+			query: SEARCH_SUGGESTIONS_QUERY
 		}, { useAnonymousToken: true });
 
 		return jsonResponse?.data?.search?.suggestedVideos?.edges?.map(edge => edge?.node?.name);
@@ -168,7 +180,7 @@ source.getChannel = function (url) {
 				channel_name: channel_name,
 				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
 			},
-			query: queries.CHANNEL_BY_URL_QUERY
+			query: CHANNEL_BY_URL_QUERY
 		}, { useAnonymousToken: true });
 
 	const user = channelDetails.data.channel;
@@ -237,7 +249,7 @@ source.getPlaylist = (url) => {
 	const jsonResponse = executeGqlQuery({
 		operationName: 'PLAYLIST_VIDEO_QUERY',
 		variables,
-		query: queries.PLAYLIST_DETAILS_QUERY
+		query: PLAYLIST_DETAILS_QUERY
 	}, { useAnonymousToken: true });
 
 	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
@@ -285,6 +297,44 @@ source.getPlaylist = (url) => {
 	});
 
 }
+
+source.getUserSubscriptions = () => {
+
+	if (!bridge.isLoggedIn()) {
+		bridge.log("Failed to retrieve subscriptions page because not logged in.");
+		throw new ScriptException("Not logged in");
+	}
+
+	const fetchSubscriptions = (page, first) => {
+		const jsonResponse = executeGqlQuery({
+			operationName: 'SUBSCRIPTIONS_QUERY',
+			variables: {
+				first: first,
+				page: page
+			},
+			query: GET_USER_SUBSCRIPTIONS
+		}, { usePlatformAuth: true });
+
+		return jsonResponse?.data?.me?.followingChannels;
+	};
+
+	const first = 100;  // Number of records to fetch per page
+	let page = 1;
+	let subscriptions: string[] = [];
+	let totalCount = 0;
+	let fetchedCount = 0;
+
+	do {
+		const response = fetchSubscriptions(page, first);
+		totalCount = response.totalCount;
+		subscriptions.push(...response.edges.map(edge => `${BASE_URL}/${edge.node.name}`));
+		fetchedCount += response.edges.length;
+		page++;
+	} while (fetchedCount < totalCount);
+
+	return subscriptions;
+};
+
 
 function getQuery(context) {
 	context.sort = parseSort(context.order);
@@ -337,7 +387,7 @@ function searchPlaylists(contextQuery) {
 	const jsonResponse = executeGqlQuery({
 		operationName: 'SEARCH_QUERY',
 		variables: variables,
-		query: queries.MAIN_SEARCH_QUERY,
+		query: MAIN_SEARCH_QUERY,
 		headers: undefined
 	}, { useAnonymousToken: true });
 
@@ -500,7 +550,7 @@ function getVideoPager(params, page) {
 					avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
 					thumbnail_resolution: constants.thumbnailHeight[_settings?.thumbnailResolution],
 				},
-				query: queries.HOME_QUERY,
+				query: HOME_QUERY,
 				headers: headersToAdd,
 			}, { useAnonymousToken: true });
 
@@ -545,7 +595,7 @@ function GetVideoExtraDEtails(xid) {
 	const json = executeGqlQuery({
 		operationName: 'WATCHING_VIDEO',
 		variables: { xid },
-		query: queries.GET_VIDEO_EXTRA_DETAILS
+		query: GET_VIDEO_EXTRA_DETAILS
 	}, { useAnonymousToken: true });
 
 
@@ -573,7 +623,7 @@ function getChannelPager(context) {
 				"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
 				"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution],
 			},
-			query: queries.CHANNEL_VIDEOS_BY_CHANNEL_NAME
+			query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
 		}, { useAnonymousToken: true });
 
 	const edges = json?.data?.channel?.channel_videos_all_videos?.edges ?? [];
@@ -704,7 +754,7 @@ function getSearchPagerAll(contextQuery) {
 	const jsonResponse = executeGqlQuery({
 		operationName: 'SEARCH_QUERY',
 		variables: variables,
-		query: queries.MAIN_SEARCH_QUERY,
+		query: MAIN_SEARCH_QUERY,
 		headers: undefined
 	}, { useAnonymousToken: true });
 
@@ -884,7 +934,7 @@ function getSavedVideo(url, authOptions: authOptions = {}) {
 				"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
 				"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
 			},
-			"query": queries.VIDE_DETAILS_QUERY
+			"query": VIDEO_DETAILS_QUERY
 		});
 
 	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, authOptions.usePlatformAuth)
@@ -953,7 +1003,7 @@ function getSearchChannelPager(context) {
 	const json = executeGqlQuery({
 		operationName: "SEARCH_QUERY",
 		variables,
-		query: queries.SEARCH_CHANNEL
+		query: SEARCH_CHANNEL
 	}, { useAnonymousToken: true });
 
 	const results = json?.data?.search?.channels?.edges.map(edge => {

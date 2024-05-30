@@ -787,7 +787,7 @@ const MAIN_SEARCH_QUERY = `
 		}
 	}		
 	`;
-const VIDE_DETAILS_QUERY = `
+const VIDEO_DETAILS_QUERY = `
 	fragment VIDEO_FRAGMENT on Video {
 		id
 		xid
@@ -1169,17 +1169,28 @@ query WATCHING_VIDEO($xid: String!) {
 	}
 }	
 	`;
-const queries = {
-    SEARCH_SUGGESTIONS_QUERY,
-    CHANNEL_BY_URL_QUERY,
-    HOME_QUERY,
-    CHANNEL_VIDEOS_BY_CHANNEL_NAME,
-    MAIN_SEARCH_QUERY,
-    VIDE_DETAILS_QUERY,
-    SEARCH_CHANNEL,
-    PLAYLIST_DETAILS_QUERY,
-    GET_VIDEO_EXTRA_DETAILS
-};
+const GET_USER_SUBSCRIPTIONS = `
+query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
+	me {
+		followingChannels(first: $first, page: $page) {
+			totalCount
+			edges {
+				node {
+					id
+					xid
+					name
+					displayName
+					avatar(height: SQUARE_240) {
+						url
+						width
+					}
+					coverURLx375: coverURL(size: "x375")
+					logoURLx60: logoURL(size: "x60")
+				}
+			}
+		}
+	}
+}`;
 
 const objectToUrlEncodedString = (obj) => {
     const encodedParams = [];
@@ -1251,7 +1262,7 @@ source.searchSuggestions = function (query) {
         const jsonResponse = executeGqlQuery({
             operationName: 'AUTOCOMPLETE_QUERY',
             variables: variables,
-            query: queries.SEARCH_SUGGESTIONS_QUERY
+            query: SEARCH_SUGGESTIONS_QUERY
         }, { useAnonymousToken: true });
         return jsonResponse?.data?.search?.suggestedVideos?.edges?.map(edge => edge?.node?.name);
     }
@@ -1321,7 +1332,7 @@ source.getChannel = function (url) {
             channel_name: channel_name,
             avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
         },
-        query: queries.CHANNEL_BY_URL_QUERY
+        query: CHANNEL_BY_URL_QUERY
     }, { useAnonymousToken: true });
     const user = channelDetails.data.channel;
     const banner = user?.coverURL1024x ?? user?.coverURL1920x;
@@ -1373,7 +1384,7 @@ source.getPlaylist = (url) => {
     const jsonResponse = executeGqlQuery({
         operationName: 'PLAYLIST_VIDEO_QUERY',
         variables,
-        query: queries.PLAYLIST_DETAILS_QUERY
+        query: PLAYLIST_DETAILS_QUERY
     }, { useAnonymousToken: true });
     const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
         const resource = edge.node;
@@ -1403,6 +1414,36 @@ source.getPlaylist = (url) => {
         videoCount: playlist?.metrics?.engagement?.videos?.edges[0]?.node?.total,
         contents: new VideoPager(videos)
     });
+};
+source.getUserSubscriptions = () => {
+    if (!bridge.isLoggedIn()) {
+        bridge.log("Failed to retrieve subscriptions page because not logged in.");
+        throw new ScriptException("Not logged in");
+    }
+    const fetchSubscriptions = (page, first) => {
+        const jsonResponse = executeGqlQuery({
+            operationName: 'SUBSCRIPTIONS_QUERY',
+            variables: {
+                first: first,
+                page: page
+            },
+            query: GET_USER_SUBSCRIPTIONS
+        }, { usePlatformAuth: true });
+        return jsonResponse?.data?.me?.followingChannels;
+    };
+    const first = 100; // Number of records to fetch per page
+    let page = 1;
+    let subscriptions = [];
+    let totalCount = 0;
+    let fetchedCount = 0;
+    do {
+        const response = fetchSubscriptions(page, first);
+        totalCount = response.totalCount;
+        subscriptions.push(...response.edges.map(edge => `${BASE_URL}/${edge.node.name}`));
+        fetchedCount += response.edges.length;
+        page++;
+    } while (fetchedCount < totalCount);
+    return subscriptions;
 };
 function getQuery(context) {
     context.sort = parseSort(context.order);
@@ -1446,7 +1487,7 @@ function searchPlaylists(contextQuery) {
     const jsonResponse = executeGqlQuery({
         operationName: 'SEARCH_QUERY',
         variables: variables,
-        query: queries.MAIN_SEARCH_QUERY,
+        query: MAIN_SEARCH_QUERY,
         headers: undefined
     }, { useAnonymousToken: true });
     var searchResults = jsonResponse?.data?.search?.playlists?.edges?.map(edge => {
@@ -1566,7 +1607,7 @@ function getVideoPager(params, page) {
                 avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
                 thumbnail_resolution: constants.thumbnailHeight[_settings?.thumbnailResolution],
             },
-            query: queries.HOME_QUERY,
+            query: HOME_QUERY,
             headers: headersToAdd,
         }, { useAnonymousToken: true });
     }
@@ -1603,7 +1644,7 @@ function GetVideoExtraDEtails(xid) {
     const json = executeGqlQuery({
         operationName: 'WATCHING_VIDEO',
         variables: { xid },
-        query: queries.GET_VIDEO_EXTRA_DETAILS
+        query: GET_VIDEO_EXTRA_DETAILS
     }, { useAnonymousToken: true });
     return {
         views: json?.data?.video?.stats?.views?.total
@@ -1623,7 +1664,7 @@ function getChannelPager(context) {
             "avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
             "thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution],
         },
-        query: queries.CHANNEL_VIDEOS_BY_CHANNEL_NAME
+        query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
     }, { useAnonymousToken: true });
     const edges = json?.data?.channel?.channel_videos_all_videos?.edges ?? [];
     let videos = edges.map((edge) => {
@@ -1729,7 +1770,7 @@ function getSearchPagerAll(contextQuery) {
     const jsonResponse = executeGqlQuery({
         operationName: 'SEARCH_QUERY',
         variables: variables,
-        query: queries.MAIN_SEARCH_QUERY,
+        query: MAIN_SEARCH_QUERY,
         headers: undefined
     }, { useAnonymousToken: true });
     const results = [];
@@ -1874,7 +1915,7 @@ function getSavedVideo(url, authOptions = {}) {
             "avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
             "thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
         },
-        "query": queries.VIDE_DETAILS_QUERY
+        "query": VIDEO_DETAILS_QUERY
     });
     const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, authOptions.usePlatformAuth);
     if (video_details_response.code != 200) {
@@ -1924,7 +1965,7 @@ function getSearchChannelPager(context) {
     const json = executeGqlQuery({
         operationName: "SEARCH_QUERY",
         variables,
-        query: queries.SEARCH_CHANNEL
+        query: SEARCH_CHANNEL
     }, { useAnonymousToken: true });
     const results = json?.data?.search?.channels?.edges.map(edge => {
         const c = edge.node;
