@@ -879,7 +879,7 @@ query WATCHING_VIDEO($xid: String!) {
 	`
 
 export const GET_USER_SUBSCRIPTIONS = `
-query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
+query SUBSCRIPTIONS_QUERY($first: Int, $page: Int, $avatar_size: AvatarHeight!) {
 	me {
 		followingChannels(first: $first, page: $page) {
 			totalCount
@@ -889,7 +889,7 @@ query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 					xid
 					name
 					displayName
-					avatar(height: SQUARE_240) {
+					avatar(height: $avatar_size) {
 						url
 						width
 					}

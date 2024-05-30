@@ -42,7 +42,7 @@
       "name": "Thumbnail resolution",
       "description": "Select the resolution for the thumbnails",
       "type": "Dropdown",
-      "default": "3",
+      "default": "7",
       "options": [
         "60px",
         "120px",
@@ -59,7 +59,7 @@
       "name": "creator Avatar Height",
       "description": "Select your height for the creator avatar",
       "type": "Dropdown",
-      "default": "3",
+      "default": "8",
       "options": [
         "25px",
         "60px",

@@ -10,7 +10,7 @@
   "version": 7,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "L8QwIEWQX1aGIXEL8lsv56tziKjtGByB0DrOzhzAPI0BF1oFfdBKII4/vT3nioQXT0lZjpLvHlYBT1U5I9K8iO2jIbOGsBLx3hdmXcCgaQc+DpECXcedfyFS2gtdSLvAn0SakYMyvZNSRk5gZqpO9eFsrf1aVX1YkLyiNTRWUHc8X4rcVbTdd8CKUXljSsaoqGnPGf+LZzijLqv++PGvUYmm1pwS6UaJ3fKtbaYQlKLQeYGxVHyTv/iD4qJS4E2cfaoSZp7P7gyPaLgS1op7Lcrv1LLoHqQ93ee5oH/FjB8PDt97Ke6HeWju36+Er3AjYQV8qawhXHu0HD2wwdLtJw==",
+  "scriptSignature": "LQ3Vga/N4v9J5q/JsFtkSHvE2ICfbWbmZ4f0E4sMgZcK0NWSUvkQKfhzyVno1MUfFICA25qP+J6K9SfPDPsNdTYPDN4a68mBYgqGMu6zSCgxyD7XldnG2UP1siBqF4Gg1JUUcbY6ee2eoOhT8cAEZdCBivDhf35YOR7FwNkjAt2p28PNn15moNxivr6gviycQnI5QHXKxGIF0BrOXMCdVc2cUFYkTbezH9Lm5FM1mt2Lu2GCNPy78Ufor+lfvD2lsk7fQ1ppFcg5bBXAaybuG3zLFU63LmmbnTXXg6c8Rs2PSnXPtR9S05x9GLJOnyYfufUM+VyKeeqiWzjgqtVyMg==",
   "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
@@ -42,7 +42,7 @@
       "name": "Thumbnail resolution",
       "description": "Select the resolution for the thumbnails",
       "type": "Dropdown",
-      "default": "3",
+      "default": "7",
       "options": [
         "60px",
         "120px",
@@ -59,7 +59,7 @@
       "name": "creator Avatar Height",
       "description": "Select your height for the creator avatar",
       "type": "Dropdown",
-      "default": "3",
+      "default": "8",
       "options": [
         "25px",
         "60px",

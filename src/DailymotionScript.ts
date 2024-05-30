@@ -310,7 +310,8 @@ source.getUserSubscriptions = () => {
 			operationName: 'SUBSCRIPTIONS_QUERY',
 			variables: {
 				first: first,
-				page: page
+				page: page,
+				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
 			},
 			query: GET_USER_SUBSCRIPTIONS
 		}, { usePlatformAuth: true });

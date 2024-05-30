@@ -1170,7 +1170,7 @@ query WATCHING_VIDEO($xid: String!) {
 }	
 	`;
 const GET_USER_SUBSCRIPTIONS = `
-query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
+query SUBSCRIPTIONS_QUERY($first: Int, $page: Int, $avatar_size: AvatarHeight!) {
 	me {
 		followingChannels(first: $first, page: $page) {
 			totalCount
@@ -1180,7 +1180,7 @@ query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 					xid
 					name
 					displayName
-					avatar(height: SQUARE_240) {
+					avatar(height: $avatar_size) {
 						url
 						width
 					}
@@ -1425,7 +1425,8 @@ source.getUserSubscriptions = () => {
             operationName: 'SUBSCRIPTIONS_QUERY',
             variables: {
                 first: first,
-                page: page
+                page: page,
+                avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
             },
             query: GET_USER_SUBSCRIPTIONS
         }, { usePlatformAuth: true });
