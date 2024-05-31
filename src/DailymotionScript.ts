@@ -842,7 +842,16 @@ function executeGqlQuery(requestOptions, authOptions: authOptions = {}) {
 		throw new ScriptException("Failed to get token", res);
 	}
 
-	return JSON.parse(res.body);
+	const body = JSON.parse(res.body);
+
+	// some errors may be returned in the body with a status code 200
+	if (body.errors) {
+		const message = body.errors.map(e => e.message).join(', ');
+		log(JSON.stringify(message))
+		throw new UnavailableException(message);
+	}
+
+	return body;
 }
 
 
