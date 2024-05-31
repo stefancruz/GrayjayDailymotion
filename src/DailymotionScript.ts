@@ -5,7 +5,7 @@ const BASE_URL_VIDEO = `${BASE_URL}/video`;
 const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;
 const BASE_URL_METADATA = `${BASE_URL}/player/metadata/video`;
 
-const USER_AGENT = '"Mozilla/5.0 (Linux; Android 11; SAMSUNG SM-G973U) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/14.2 Chrome/87.0.4280.141 Mobile Safari/537.36"'
+const USER_AGENT = 'Mozilla/5.0 (Linux; Android 11; SAMSUNG SM-G973U) AppleWebKit/537.36 (KHTML, like Gecko) SamsungBrowser/14.2 Chrome/87.0.4280.141 Mobile Safari/537.36'
 
 // Those are used even for not logged users to make requests on the graphql api.
 //TODO: check how to get them dynamically
