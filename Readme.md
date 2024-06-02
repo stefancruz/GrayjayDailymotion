@@ -15,6 +15,8 @@ npm run codegen
 
 ## Build
 
+npm run build
+
 npm start - will build and watch for changes
 
 # notes:
