@@ -10,8 +10,8 @@
   "version": 8,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
-  "scriptSignature": "",
-  "scriptPublicKey": "",
+  "scriptSignature": "OjAgpayE+8LfSvm+TLWCUyPzoUHzaGgSJ5bLgrYFi7nlX3jQapqgS9el5J4NBlN9/C4kSLiQ7UFNn2qcozCROPmA3F+yNxO5XISGopziFT9axARUXbY0p5AmlPoqKHWkw1LseHmRADPc/2J+BTOnbpl4QhBWBpm6ljP8SkSzTiZxTdafiQLU78yi89fYyti5329xsUzyuQztq2R32d/R0Oo3I+94hltpJnIz2MzZ/5FLGHByPjqMw8aB4F1M0DW+CzJtQ3wkMZn3/Y6vVr7Xpy0DW29pynA+tJnuurd88xWtO/aJ+s0FodDyP3OAEYuxe2OiFMTJRKIbzNzGR0i0CA==",
+  "scriptPublicKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwrBXc5lMXrDD4y5GLT1rnxq64nmmBcE19lvIWL/o+wTK6jebmlQss4CrpH2Pkw8cwczcA4aHQKN8+ThveJFMBxW57gf30odKrAglvvPAv9Rm9D0BZZ501jBXvz+2Rt7su/ICN97JNabjeniAxWBGgr+It3gwvgGAXmWo9FcGfPTooy+g7lErDx5S9Hy/W83b/L3Q64Ytcb4ed0zi6pfZhgpXW0ZJxiZSJRPj6JusTJclPd4OHnl6EwAL979PloyKT0EjMgMX89LAsgctJzSOJkWcQnsbcWV3SE87GyFN4/4Py+GEvvZLKv/iWhY9Dhw9G7j3hy+3QPpHd5L3KSXC4wIDAQAB",
   "packages": [
     "Http"
   ],
@@ -27,6 +27,7 @@
   ],
   "authentication": {
     "loginUrl": "https://www.dailymotion.com/signin",
+    "completionUrl": "https://www.dailymotion.com/cookie/refresh_token",
     "cookiesToFind": [
       "refresh_token",
       "access_token"
@@ -56,7 +57,7 @@
     },
     {
       "variable": "avatarSize",
-      "name": "creator Avatar Height",
+      "name": "Creator avatar resolution",
       "description": "Select your height for the creator avatar",
       "type": "Dropdown",
       "default": "8",
