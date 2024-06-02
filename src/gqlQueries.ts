@@ -895,24 +895,20 @@ query WATCHING_VIDEO($xid: String!) {
 	`
 
 export const GET_USER_SUBSCRIPTIONS = `
-query SUBSCRIPTIONS_QUERY($first: Int, $page: Int, $avatar_size: AvatarHeight!) {
+query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 	me {
-		followingChannels(first: $first, page: $page) {
-			totalCount
-			edges {
-				node {
-					id
-					xid
-					name
-					displayName
-					avatar(height: $avatar_size) {
-						url
-						width
+		channel {
+			followings(first: $first, page: $page) {
+				totalCount
+				edges {
+					node {
+						creator {
+							name
+						}
 					}
-					coverURLx375: coverURL(size: "x375")
-					logoURLx60: logoURL(size: "x60")
 				}
 			}
 		}
 	}
-}`;
+}
+`;
