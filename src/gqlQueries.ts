@@ -912,3 +912,49 @@ query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 	}
 }
 `;
+
+
+export const GET_CHANNEL_PLAYLISTS = `
+query CHANNEL_PLAYLISTS_QUERY(
+	$channel_name: String!
+	$sort: String
+	$page: Int!
+	$first: Int!
+) {
+	channel(name: $channel_name) {
+		id
+		xid
+		channel_playlist_collections: collections(
+			sort: $sort
+			page: $page
+			first: $first
+		) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			edges {
+				node {
+					id
+					xid
+					updatedAt
+					createdAt
+					name
+					description
+					thumbnailx60: thumbnailURL(size: "x60")
+					thumbnailx120: thumbnailURL(size: "x120")
+					thumbnailx240: thumbnailURL(size: "x240")
+					thumbnailx720: thumbnailURL(size: "x720")
+					stats {
+						id
+						videos {
+							id
+							total
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`

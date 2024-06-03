@@ -56,7 +56,8 @@ import {
 	GET_VIDEO_EXTRA_DETAILS,
 	CHANNEL_VIDEOS_BY_CHANNEL_NAME,
 	VIDEO_DETAILS_QUERY,
-	SEARCH_CHANNEL
+	SEARCH_CHANNEL,
+	GET_CHANNEL_PLAYLISTS
 } from './gqlQueries';
 
 import util from './util';
@@ -66,6 +67,7 @@ var httpClientRequestToken = null;
 
 source.setSettings = function (settings) {
 	_settings = settings;
+	http.GET(BASE_URL, {}, true);
 }
 
 //Source Methods
@@ -177,14 +179,14 @@ source.getChannel = function (url) {
 	const channel_name = getChannelNameFromUrl(url);
 
 	const channelDetails = executeGqlQuery(
-	{
-		operationName: 'CHANNEL_QUERY_DESKTOP',
-		variables: {
-			channel_name: channel_name,
-			avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
-		},
-		query: CHANNEL_BY_URL_QUERY
-	});
+		{
+			operationName: 'CHANNEL_QUERY_DESKTOP',
+			variables: {
+				channel_name: channel_name,
+				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
+			},
+			query: CHANNEL_BY_URL_QUERY
+		});
 
 	const user = channelDetails.data.channel;
 
@@ -239,7 +241,7 @@ source.searchPlaylists = (query, type, order, filters) => {
 	return searchPlaylists({ q: query, type, order, filters });
 };
 
-source.getPlaylist = (url) => {
+source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 	const xid = url.split('/').pop();
 
@@ -249,11 +251,30 @@ source.getPlaylist = (url) => {
 		thumbnail_resolution: constants.thumbnailHeight[_settings?.thumbnailResolution],
 	}
 
-	const jsonResponse = executeGqlQuery({
+	let jsonResponse = executeGqlQuery({
 		operationName: 'PLAYLIST_VIDEO_QUERY',
 		variables,
-		query: PLAYLIST_DETAILS_QUERY
+		query: PLAYLIST_DETAILS_QUERY,
+		throwOnError: false
 	});
+
+	const error = jsonResponse?.errors?.[0]?.message;
+	const isForbideen = error?.includes('Access forbidden.');
+
+	if (isForbideen) {
+		//retry using authenticated user
+		jsonResponse = executeGqlQuery({
+			operationName: 'PLAYLIST_VIDEO_QUERY',
+			variables,
+			query: PLAYLIST_DETAILS_QUERY,
+			usePlatformAuth: true,
+		});
+	} else {
+		throw new UnavailableException(error);
+	}
+
+
+
 
 	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
 		const resource = edge.node;
@@ -340,8 +361,9 @@ source.getUserSubscriptions = (): string[] => {
 				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
 			},
 			headers,
-			query: GET_USER_SUBSCRIPTIONS
-		}, true);
+			query: GET_USER_SUBSCRIPTIONS,
+			usePlatformAuth: true
+		});
 
 		return jsonResponse?.data?.me?.channel?.followings?.edges?.map(edge => edge.node.creator.name);
 	};
@@ -368,6 +390,84 @@ source.getUserSubscriptions = (): string[] => {
 	return subscriptions;
 };
 
+
+source.getUserPlaylists = (): string[] => {
+
+	if (!bridge.isLoggedIn()) {
+		bridge.log("Failed to retrieve subscriptions page because not logged in.");
+		throw new ScriptException("Not logged in");
+	}
+
+	const headers = {
+		'Content-Type': 'application/json',
+		'User-Agent': USER_AGENT,
+		// Accept: '*/*, */*',
+		'Accept-Language': 'en-GB',
+		Referer: `${BASE_URL}/library/subscriptions`,
+		'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
+		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
+		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
+		'X-DM-Neon-SSR': '0',
+		'X-DM-Preferred-Country': 'it',
+		Origin: BASE_URL,
+		DNT: '1',
+		Connection: 'keep-alive',
+		'Sec-Fetch-Dest': 'empty',
+		'Sec-Fetch-Mode': 'cors',
+		'Sec-Fetch-Site': 'same-site',
+		Priority: 'u=4',
+		Pragma: 'no-cache',
+		'Cache-Control': 'no-cache',
+	}
+
+	const userInfoQuery = `
+	query SUBSCRIPTIONS_QUERY {
+		me {
+			xid
+			channel {
+				name
+			}
+		}
+	}	
+	`;
+
+	const jsonResponse = executeGqlQuery({
+		operationName: 'SUBSCRIPTIONS_QUERY',
+		headers,
+		query: userInfoQuery,
+		usePlatformAuth: true
+	});
+
+	const userName = jsonResponse?.data?.me?.channel?.name;
+
+	return getPlaylistsByUsername(userName, headers, true);
+
+}
+
+function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
+	
+	const jsonResponse1 = executeGqlQuery({
+		operationName: 'CHANNEL_PLAYLISTS_QUERY',
+		variables: {
+			channel_name: userName,
+			sort: "recent",
+			page: 1,
+			first: 99
+		},
+		headers,
+		query: GET_CHANNEL_PLAYLISTS,
+		usePlatformAuth
+	});
+
+	const playlists = jsonResponse1.data.channel.channel_playlist_collections.edges.map(edge => {
+		const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
+		return playlistUrl;
+	});
+
+
+	return playlists;
+
+}
 
 function getQuery(context) {
 	context.sort = parseSort(context.order);
@@ -834,7 +934,7 @@ function getSearchPagerAll(contextQuery) {
 	return new SearchPagerAll(results, jsonResponse?.data?.search?.videos?.pageInfo?.hasNextPage, params, context.page);
 }
 
-function executeGqlQuery(requestOptions, usePlatformAuth = false) {
+function executeGqlQuery(requestOptions) {
 
 	const headersToAdd = requestOptions.headers || {
 		"User-Agent": USER_AGENT,
@@ -858,11 +958,16 @@ function executeGqlQuery(requestOptions, usePlatformAuth = false) {
 		query: requestOptions.query,
 	});
 
+	const usePlatformAuth = requestOptions.usePlatformAuth == undefined ? false : requestOptions.usePlatformAuth;
+	const throwOnError = requestOptions.throwOnError == undefined ? true : requestOptions.throwOnError;
+
 	const res = getHttpContext(usePlatformAuth).POST(BASE_URL_API, gql, headersToAdd, usePlatformAuth);
 
 	if (!res.isOk) {
 		console.error('Failed to get token', res);
-		throw new ScriptException("Failed to get token", res);
+		if (throwOnError) {
+			throw new ScriptException("Failed to get token", res);
+		}
 	}
 
 	const body = JSON.parse(res.body);
@@ -870,8 +975,10 @@ function executeGqlQuery(requestOptions, usePlatformAuth = false) {
 	// some errors may be returned in the body with a status code 200
 	if (body.errors) {
 		const message = body.errors.map(e => e.message).join(', ');
-		log(JSON.stringify(message))
-		throw new UnavailableException(message);
+
+		if (throwOnError) {
+			throw new UnavailableException(message);
+		}
 	}
 
 	return body;
