@@ -1,51 +1,40 @@
-const BASE_URL = "https://www.dailymotion.com";
-const BASE_URL_API = "https://graphql.api.dailymotion.com";
-const BASE_URL_API_AUTH = `${BASE_URL_API}/oauth/token`;
-const BASE_URL_VIDEO = `${BASE_URL}/video`;
-const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;
-const BASE_URL_METADATA = `${BASE_URL}/player/metadata/video`;
-
-const USER_AGENT = 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36'
-
-// Those are used even for not logged users to make requests on the graphql api.
-//TODO: check how to get them dynamically
-const CLIENT_ID = 'f1a362d288c1b98099c7';
-const CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
-
 var config: Config;
 var _settings: DailymotionPluginSettings;
-
-const X_DM_AppInfo_Id = "com.dailymotion.neon"
-const X_DM_AppInfo_Type = "website"
-const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z" //TODO check how to get this dynamically
-const X_DM_Neon_SSR = "0"
-const X_DM_Preferred_Country = "";//TODO check how to get this from Grayjay
-
-const PLATFORM = "Dailymotion";
-const PLATFORM_CLAIMTYPE = 3;
-
-const ITEMS_PER_PAGE = 5;
-
-// search capabilities - upload date
-const LESS_THAN_MINUTE = "LESS_THAN_MINUTE"
-const ONE_TO_FIVE_MINUTES = "ONE_TO_FIVE_MINUTES"
-const FIVE_TO_THIRTY_MINUTES = "FIVE_TO_THIRTY_MINUTES"
-const THIRTY_TO_ONE_HOUR = "THIRTY_TO_ONE_HOUR"
-const MORE_THAN_ONE_HOUR = "MORE_THAN_ONE_HOUR"
-
-
-const DURATION_THRESHOLDS = {}
-DURATION_THRESHOLDS[LESS_THAN_MINUTE] = { min: 0, max: 60 };
-DURATION_THRESHOLDS[ONE_TO_FIVE_MINUTES] = { min: 60, max: 300 };
-DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
-DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
-DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER: string = "";
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE: number;
 
-import errorTypes from './errorTypes';
-import constants from './constants';
+import {
+	creatorAvatarHeight,
+	thumbnailHeight,
+	countryNames,
+	countryNamesToCode,
+	BASE_URL,
+	LESS_THAN_MINUTE,
+	ONE_TO_FIVE_MINUTES,
+	FIVE_TO_THIRTY_MINUTES,
+	THIRTY_TO_ONE_HOUR,
+	MORE_THAN_ONE_HOUR,
+	PLATFORM,
+	PLATFORM_CLAIMTYPE,
+	ITEMS_PER_PAGE,
+	BASE_URL_VIDEO,
+	BASE_URL_PLAYLIST,
+	USER_AGENT,
+	X_DM_AppInfo_Id,
+	X_DM_AppInfo_Type,
+	X_DM_AppInfo_Version,
+	X_DM_Neon_SSR,
+	DURATION_THRESHOLDS,
+	CLIENT_ID,
+	CLIENT_SECRET,
+	BASE_URL_API_AUTH,
+	X_DM_Preferred_Country,
+	BASE_URL_API,
+	BASE_URL_METADATA,
+	errorTypes,
+} from './constants';
+
 import {
 	SEARCH_SUGGESTIONS_QUERY,
 	CHANNEL_BY_URL_QUERY,
@@ -60,10 +49,36 @@ import {
 	GET_CHANNEL_PLAYLISTS
 } from './gqlQueries';
 
-import util from './util';
-import { Channel, Collection, CollectionConnection, LiveConnection, LiveEdge, SuggestionConnection, Video, VideoConnection, VideoEdge } from '../types/CodeGenDailymotion';
+import {
+	objectToUrlEncodedString,
+	getChannelNameFromUrl,
+	isUsernameUrl,
+	executeGqlQuery,
+	getPreferredCountry
+} from './util';
 
-var httpClientAnonymous = null;
+import {
+	Channel,
+	Collection,
+	CollectionConnection,
+	LiveConnection,
+	LiveEdge,
+	SuggestionConnection,
+	Video,
+	VideoConnection,
+	VideoEdge
+} from '../types/CodeGenDailymotion';
+
+import {
+	SearchPagerAll,
+	SearchChannelPager,
+	ChannelVideoPager,
+	SearchPlaylistPager
+} from './Pagers';
+
+
+let httpClientAnonymous: IHttp
+
 var httpClientRequestToken = null;
 
 source.setSettings = function (settings) {
@@ -89,20 +104,23 @@ source.getHome = function () {
 	return getVideoPager({}, 0);
 };
 
-source.searchSuggestions = function (query) {
+source.searchSuggestions = function (query): string[] {
 
 	const variables = {
 		"query": query
 	}
 
 	try {
-		const jsonResponse = executeGqlQuery({
-			operationName: 'AUTOCOMPLETE_QUERY',
-			variables: variables,
-			query: SEARCH_SUGGESTIONS_QUERY
-		});
 
-		return (jsonResponse?.data?.search?.suggestedVideos as SuggestionConnection)?.edges?.map(edge => edge?.node?.name);
+		const jsonResponse = executeGqlQuery(
+			getHttpContext({ usePlatformAuth: false }),
+			{
+				operationName: 'AUTOCOMPLETE_QUERY',
+				variables: variables,
+				query: SEARCH_SUGGESTIONS_QUERY
+			});
+
+		return (jsonResponse?.data?.search?.suggestedVideos as SuggestionConnection)?.edges?.map(edge => edge?.node?.name ?? "") ?? [];
 	} catch (error) {
 		log('Failed to get search suggestions:' + error?.message);
 		return [];
@@ -156,13 +174,6 @@ source.search = function (query: string, type: string, order: string, filters) {
 	return getSearchPagerAll({ q: query, page: 1, type, order, filters });
 }
 
-// source.getSearchChannelContentsCapabilities = function () {
-
-// };
-// source.searchChannelContents = function (channelUrl, query, type, order, filters) {
-
-// };
-
 source.searchChannels = function (query) {
 	return getSearchChannelPager({ q: query, page: 1 })
 }
@@ -177,11 +188,12 @@ source.getChannel = function (url) {
 	const channel_name = getChannelNameFromUrl(url);
 
 	const channelDetails = executeGqlQuery(
+		getHttpContext({ usePlatformAuth: false }),
 		{
 			operationName: 'CHANNEL_QUERY_DESKTOP',
 			variables: {
 				channel_name: channel_name,
-				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
+				avatar_size: creatorAvatarHeight[_settings?.avatarSize]
 			},
 			query: CHANNEL_BY_URL_QUERY
 		});
@@ -242,28 +254,33 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 	const variables = {
 		xid,
-		avatar_size: constants.creatorAvatarHeight[_settings.avatarSize],
-		thumbnail_resolution: constants.thumbnailHeight[_settings.thumbnailResolution],
+		avatar_size: creatorAvatarHeight[_settings.avatarSize],
+		thumbnail_resolution: thumbnailHeight[_settings.thumbnailResolution],
 	}
 
-	let jsonResponse = executeGqlQuery({
-		operationName: 'PLAYLIST_VIDEO_QUERY',
-		variables,
-		query: PLAYLIST_DETAILS_QUERY,
-		throwOnError: false
-	});
+
+	let jsonResponse = executeGqlQuery(
+		getHttpContext({ usePlatformAuth: false }),
+		{
+			operationName: 'PLAYLIST_VIDEO_QUERY',
+			variables,
+			query: PLAYLIST_DETAILS_QUERY,
+			throwOnError: false
+		});
 
 	const error = jsonResponse?.errors?.[0]?.message;
 	const isForbideen = error?.includes('Access forbidden.');
 
 	if (isForbideen) {
 		//retry using authenticated user
-		jsonResponse = executeGqlQuery({
-			operationName: 'PLAYLIST_VIDEO_QUERY',
-			variables,
-			query: PLAYLIST_DETAILS_QUERY,
-			usePlatformAuth: true,
-		});
+		jsonResponse = executeGqlQuery(
+			getHttpContext({ usePlatformAuth: true }),
+			{
+				operationName: 'PLAYLIST_VIDEO_QUERY',
+				variables,
+				query: PLAYLIST_DETAILS_QUERY,
+				usePlatformAuth: true,
+			});
 	} else {
 		throw new UnavailableException(error);
 	}
@@ -300,7 +317,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 		url: `${BASE_URL_PLAYLIST}/${playlist?.xid}`,
 		id: new PlatformID(PLATFORM, playlist?.xid, config.id, PLATFORM_CLAIMTYPE),
 		author: new PlatformAuthorLink(
-			new PlatformID(PLATFORM, playlist?.creator?.id, config.id, PLATFORM_CLAIMTYPE),
+			new PlatformID(PLATFORM, playlist?.creator?.id ?? "", config.id, PLATFORM_CLAIMTYPE),
 			playlist?.creator?.displayName ?? "",
 			`${BASE_URL}/${playlist?.creator?.name}`,
 			playlist?.creator?.avatar?.url ?? "",
@@ -345,17 +362,19 @@ source.getUserSubscriptions = (): string[] => {
 
 
 	const fetchSubscriptions = (page, first): string[] => {
-		const jsonResponse = executeGqlQuery({
-			operationName: 'SUBSCRIPTIONS_QUERY',
-			variables: {
-				first: first,
-				page: page,
-				avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
-			},
-			headers,
-			query: GET_USER_SUBSCRIPTIONS,
-			usePlatformAuth: true
-		});
+		const jsonResponse = executeGqlQuery(
+			getHttpContext({ usePlatformAuth: true }),
+			{
+				operationName: 'SUBSCRIPTIONS_QUERY',
+				variables: {
+					first: first,
+					page: page,
+					avatar_size: creatorAvatarHeight[_settings?.avatarSize],
+				},
+				headers,
+				query: GET_USER_SUBSCRIPTIONS,
+				usePlatformAuth: true
+			});
 
 		return (jsonResponse?.data?.me?.channel as Channel)?.followings?.edges?.map(edge => edge?.node?.creator?.name ?? "") ?? [];
 	};
@@ -423,12 +442,15 @@ source.getUserPlaylists = (): string[] => {
 	}	
 	`;
 
-	const jsonResponse = executeGqlQuery({
-		operationName: 'SUBSCRIPTIONS_QUERY',
-		headers,
-		query: userInfoQuery,
-		usePlatformAuth: true
-	});
+
+	const jsonResponse = executeGqlQuery(
+		getHttpContext({ usePlatformAuth: true }),
+		{
+			operationName: 'SUBSCRIPTIONS_QUERY',
+			headers,
+			query: userInfoQuery,
+			usePlatformAuth: true
+		});
 
 	const userName = (jsonResponse?.data?.me?.channel as Channel)?.name;
 
@@ -438,18 +460,22 @@ source.getUserPlaylists = (): string[] => {
 
 function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 
-	const jsonResponse1 = executeGqlQuery({
-		operationName: 'CHANNEL_PLAYLISTS_QUERY',
-		variables: {
-			channel_name: userName,
-			sort: "recent",
-			page: 1,
-			first: 99
-		},
-		headers,
-		query: GET_CHANNEL_PLAYLISTS,
-		usePlatformAuth
-	});
+
+	const jsonResponse1 = executeGqlQuery(
+		getHttpContext({ usePlatformAuth }),
+		{
+			operationName: 'CHANNEL_PLAYLISTS_QUERY',
+			variables: {
+				channel_name: userName,
+				sort: "recent",
+				page: 1,
+				first: 99
+			},
+			headers,
+			query: GET_CHANNEL_PLAYLISTS,
+			usePlatformAuth
+		}
+	);
 
 	const playlists = jsonResponse1.data.channel.channel_playlist_collections.edges.map(edge => {
 		const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
@@ -505,16 +531,19 @@ function searchPlaylists(contextQuery) {
 		"shouldIncludeLives": false,
 		"page": context.page,
 		"limit": ITEMS_PER_PAGE,
-		"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution],
-		"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
+		"thumbnail_resolution": thumbnailHeight[_settings?.thumbnailResolution],
+		"avatar_size": creatorAvatarHeight[_settings?.avatarSize],
 	}
 
-	const jsonResponse = executeGqlQuery({
-		operationName: 'SEARCH_QUERY',
-		variables: variables,
-		query: MAIN_SEARCH_QUERY,
-		headers: undefined
-	});
+
+	const jsonResponse = executeGqlQuery(
+		getHttpContext({ usePlatformAuth: false }),
+		{
+			operationName: 'SEARCH_QUERY',
+			variables: variables,
+			query: MAIN_SEARCH_QUERY,
+			headers: undefined
+		});
 
 	const playlistConnection = jsonResponse?.data?.search?.playlists as CollectionConnection;
 
@@ -550,24 +579,11 @@ function searchPlaylists(contextQuery) {
 		filters: context.filters,
 	}
 
-	return new SearchPlaylistPager(searchResults, hasMore, params, context.page);
+	return new SearchPlaylistPager(searchResults, hasMore, params, context.page, searchPlaylists);
 }
 
 
 //Internals
-
-function getChannelNameFromUrl(url) {
-	const channel_name = url.split('/').pop();
-	return channel_name;
-}
-
-function isUsernameUrl(url) {
-
-	var regex = new RegExp('^' + BASE_URL.replace(/\./g, '\\.') + '/[^/]+$');
-
-	return regex.test(url);
-}
-
 
 
 function getAnonymousUserTokenSingleton() {
@@ -582,7 +598,7 @@ function getAnonymousUserTokenSingleton() {
 	}
 
 	// Prepare the request body for obtaining a new token
-	const body = util.objectToUrlEncodedString({
+	const body = objectToUrlEncodedString({
 		client_id: CLIENT_ID,
 		client_secret: CLIENT_SECRET,
 		grant_type: 'client_credentials'
@@ -626,12 +642,6 @@ function getAnonymousUserTokenSingleton() {
 	return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
 }
 
-function getPreferredCountry() {
-	const countryName = constants.countryNames[_settings?.preferredCountry];
-	const code = constants.countryNamesToCode[countryName];
-	const preferredCountry = (code || X_DM_Preferred_Country || '').toLowerCase();
-	return preferredCountry;
-}
 
 function getVideoPager(params, page) {
 
@@ -654,7 +664,7 @@ function getVideoPager(params, page) {
 		"X-DM-AppInfo-Type": X_DM_AppInfo_Type,
 		"X-DM-AppInfo-Version": X_DM_AppInfo_Version,
 		"X-DM-Neon-SSR": X_DM_Neon_SSR,
-		"X-DM-Preferred-Country": getPreferredCountry(),
+		"X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountry),
 		"Origin": BASE_URL,
 		"DNT": "1",
 		"Sec-Fetch-Site": "same-site",
@@ -668,12 +678,13 @@ function getVideoPager(params, page) {
 
 	try {
 		obj = executeGqlQuery(
+			getHttpContext({ usePlatformAuth: false }),
 			{
 				operationName: 'SEACH_DISCOVERY_QUERY',
 				variables: {
 					shouldQueryPromotedHashtag: false,
-					avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
-					thumbnail_resolution: constants.thumbnailHeight[_settings?.thumbnailResolution],
+					avatar_size: creatorAvatarHeight[_settings?.avatarSize],
+					thumbnail_resolution: thumbnailHeight[_settings?.thumbnailResolution],
 				},
 				query: HOME_QUERY,
 				headers: headersToAdd,
@@ -712,12 +723,14 @@ function getVideoPager(params, page) {
 		})
 
 	const hasMore = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.pageInfo?.hasNextPage ?? false;
-	return new SearchPagerAll(results, hasMore, params, page);
+	return new SearchPagerAll(results, hasMore, params, page, getVideoPager);
 }
 
 function GetVideoExtraDetails(xid) {
 
-	const json = executeGqlQuery({
+
+	const json = executeGqlQuery(
+		getHttpContext({ usePlatformAuth: false }), {
 		operationName: 'WATCHING_VIDEO',
 		variables: { xid },
 		query: GET_VIDEO_EXTRA_DETAILS
@@ -737,6 +750,7 @@ function getChannelPager(context) {
 	const channel_name = getChannelNameFromUrl(url);
 
 	const json = executeGqlQuery(
+		getHttpContext({ usePlatformAuth: false }),
 		{
 			operationName: 'CHANNEL_VIDEOS_QUERY',
 			variables: {
@@ -745,8 +759,8 @@ function getChannelPager(context) {
 				"page": context.page ?? 1,
 				"allowExplicit": !_settings.hideSensitiveContent,
 				"first": context.page_size ?? ITEMS_PER_PAGE,
-				"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
-				"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution],
+				"avatar_size": creatorAvatarHeight[_settings?.avatarSize],
+				"thumbnail_resolution": thumbnailHeight[_settings?.thumbnailResolution],
 			},
 			query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
 		});
@@ -782,7 +796,7 @@ function getChannelPager(context) {
 		context.page++;
 	}
 
-	return new ChannelVideoPager(context, videos, json?.data?.channel?.channel_videos_all_videos?.pageInfo?.hasNextPage);
+	return new ChannelVideoPager(context, videos, json?.data?.channel?.channel_videos_all_videos?.pageInfo?.hasNextPage, getChannelPager);
 }
 
 function ToPlatformVideo(resource) {
@@ -873,16 +887,19 @@ function getSearchPagerAll(contextQuery): VideoPager {
 		"shouldIncludeLives": true,
 		"page": context.page ?? 1,
 		"limit": ITEMS_PER_PAGE,
-		"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
-		"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
+		"avatar_size": creatorAvatarHeight[_settings?.avatarSize],
+		"thumbnail_resolution": thumbnailHeight[_settings?.thumbnailResolution]
 	}
 
-	const jsonResponse = executeGqlQuery({
-		operationName: 'SEARCH_QUERY',
-		variables: variables,
-		query: MAIN_SEARCH_QUERY,
-		headers: undefined
-	});
+
+	const jsonResponse = executeGqlQuery(
+		getHttpContext({ usePlatformAuth: false }),
+		{
+			operationName: 'SEARCH_QUERY',
+			variables: variables,
+			query: MAIN_SEARCH_QUERY,
+			headers: undefined
+		});
 
 	const results: PlatformVideo[] = []
 
@@ -927,64 +944,12 @@ function getSearchPagerAll(contextQuery): VideoPager {
 		sort: context.sort,
 		filters: context.filters,
 	}
-	return new SearchPagerAll(results, videoConnection?.pageInfo?.hasNextPage, params, context.page);
+	return new SearchPagerAll(results, videoConnection?.pageInfo?.hasNextPage, params, context.page, getSearchPagerAll);
 }
 
-function executeGqlQuery(requestOptions) {
-
-	const headersToAdd = requestOptions.headers || {
-		"User-Agent": USER_AGENT,
-		"Accept": "*/*",
-		// "Accept-Language": Accept_Language,
-		"Referer": BASE_URL,
-		"Origin": BASE_URL,
-		"DNT": "1",
-		"Connection": "keep-alive",
-		"Sec-Fetch-Dest": "empty",
-		"Sec-Fetch-Mode": "cors",
-		"Sec-Fetch-Site": "same-site",
-		"Pragma": "no-cache",
-		"Cache-Control": "no-cache"
-	}
-
-
-	const gql = JSON.stringify({
-		operationName: requestOptions.operationName,
-		variables: requestOptions.variables,
-		query: requestOptions.query,
-	});
-
-	const usePlatformAuth = requestOptions.usePlatformAuth == undefined ? false : requestOptions.usePlatformAuth;
-	const throwOnError = requestOptions.throwOnError == undefined ? true : requestOptions.throwOnError;
-
-	const res = getHttpContext(usePlatformAuth).POST(BASE_URL_API, gql, headersToAdd, usePlatformAuth);
-
-	if (!res.isOk) {
-		console.error('Failed to get token', res);
-		if (throwOnError) {
-			throw new ScriptException("Failed to get token", res);
-		}
-	}
-
-	const body = JSON.parse(res.body);
-
-	// some errors may be returned in the body with a status code 200
-	if (body.errors) {
-		const message = body.errors.map(e => e.message).join(', ');
-
-		if (throwOnError) {
-			throw new UnavailableException(message);
-		}
-	}
-
-	return body;
-}
-
-
-
-function checkHLS(url, headersToAdd, use_authenticated = false) {
+function checkHLS(url, headersToAdd, usePlatformAuth = false) {
 	// const resp = http.GET(url, headersToAdd, true);
-	var resp = getHttpContext(use_authenticated).GET(url, headersToAdd, use_authenticated);
+	var resp = getHttpContext({ usePlatformAuth }).GET(url, headersToAdd, usePlatformAuth);
 
 	if (!resp.isOk) {
 		throw new UnavailableException('This content is not available')
@@ -1019,7 +984,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		headers1["Cookie"] = "ff=off"
 	}
 
-	var player_metadataResponse = getHttpContext(usePlatformAuth).GET(player_metadata_url, headers1, usePlatformAuth);
+	var player_metadataResponse = getHttpContext({ usePlatformAuth }).GET(player_metadata_url, headers1, usePlatformAuth);
 
 	if (!player_metadataResponse.isOk) {
 		throw new UnavailableException('Unable to get player metadata');
@@ -1050,7 +1015,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		"X-DM-AppInfo-Type": X_DM_AppInfo_Type,
 		"X-DM-AppInfo-Version": X_DM_AppInfo_Version,
 		"X-DM-Neon-SSR": X_DM_Neon_SSR,
-		"X-DM-Preferred-Country": getPreferredCountry(),
+		"X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountry),
 		"Origin": BASE_URL,
 		"DNT": "1",
 		"Connection": "keep-alive",
@@ -1069,8 +1034,8 @@ function getSavedVideo(url, usePlatformAuth = false) {
 	const variables = {
 		"xid": id,
 		"isSEO": false,
-		"avatar_size": constants.creatorAvatarHeight[_settings?.avatarSize],
-		"thumbnail_resolution": constants.thumbnailHeight[_settings?.thumbnailResolution]
+		"avatar_size": creatorAvatarHeight[_settings?.avatarSize],
+		"thumbnail_resolution": thumbnailHeight[_settings?.thumbnailResolution]
 	};
 
 	const videoDetailsRequestBody = JSON.stringify(
@@ -1080,7 +1045,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 			query: VIDEO_DETAILS_QUERY
 		});
 
-	const video_details_response = getHttpContext(usePlatformAuth).POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth)
+	const video_details_response = getHttpContext({ usePlatformAuth }).POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth)
 
 	if (video_details_response.code != 200) {
 		throw new UnavailableException('Failed to get video details');
@@ -1166,10 +1131,11 @@ function getSearchChannelPager(context) {
 		query: context.q,
 		page: context.page ?? 1,
 		limit: ITEMS_PER_PAGE,
-		avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize]
+		avatar_size: creatorAvatarHeight[_settings?.avatarSize]
 	};
 
-	const json = executeGqlQuery({
+	const json = executeGqlQuery(
+		getHttpContext({ usePlatformAuth: false }),{
 		operationName: "SEARCH_QUERY",
 		variables,
 		query: SEARCH_CHANNEL
@@ -1193,12 +1159,12 @@ function getSearchChannelPager(context) {
 		query: context.q,
 	}
 
-	return new SearchChannelPager(results, json?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page);
+	return new SearchChannelPager(results, json?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page, getSearchChannelPager);
 
 }
 
-function getHttpContext(usePlatformAuth: Boolean = false) {
-	return usePlatformAuth ? http : httpClientAnonymous;
+function getHttpContext(opts: { usePlatformAuth: Boolean } = { usePlatformAuth: false }): IHttp {
+	return opts.usePlatformAuth ? http : httpClientAnonymous;
 }
 
 function ensureDefaultSettings() {
@@ -1220,7 +1186,7 @@ function ensureDefaultSettings() {
 	}
 
 	if (_settings.preferredCountry == undefined) {
-		const settingIndex = constants?.countryNames?.indexOf('');
+		const settingIndex = countryNames?.indexOf('');
 		_settings.preferredCountry = settingIndex;
 	}
 }
@@ -1249,82 +1215,7 @@ function ensureDefaults() {
 
 //Pagers
 
-class SearchPagerAll extends VideoPager {
-	/**
-	 * @param {import("./types.d.ts").SearchContext} context the query params
-	 * @param {(PlatformVideo | PlatformChannel)[]} results the initial results
-	*/
-	constructor(results, hasMore, params, page) {
-		super(results, hasMore, { params, page });
-	}
 
-	nextPage() {
-
-		this.context.page = this.context.page + 1
-
-		const opts = {
-			q: this.context.params.query,
-			sort: this.context.params.sort,
-			page: this.context.page,
-			filters: this.context.params.filters
-		};
-
-		return getSearchPagerAll(opts);
-	}
-}
-
-class SearchChannelPager extends ChannelPager {
-	constructor(results, hasNextPage, params, page,) {
-		super(results, hasNextPage, { params, page })
-	}
-
-	nextPage() {
-		const opts = { q: this.context.params.query, page: this.context.page += 1 };
-		return getSearchChannelPager(opts)
-	}
-}
-
-
-
-class ChannelVideoPager extends VideoPager {
-	/**
-	 * @param {import("./types.d.ts").URLContext} context the context
-	 * @param {PlatformVideo[]} results the initial results
-	 * @param {boolean} hasNextPage if there is a next page
-	 */
-	constructor(context, results, hasNextPage) {
-		super(results, hasNextPage, context)
-	}
-
-	nextPage() {
-		return getChannelPager(this.context)
-	}
-}
-
-
-class SearchPlaylistPager extends VideoPager {
-	/**
-	 * @param {import("./types.d.ts").SearchContext} context the query params
-	 * @param {(PlatformVideo | PlatformChannel)[]} results the initial results
-	*/
-	constructor(results, hasMore, params, page) {
-		super(results, hasMore, { params, page });
-	}
-
-	nextPage() {
-
-		this.context.page = this.context.page + 1
-
-		const opts = {
-			q: this.context.params.query,
-			sort: this.context.params.sort,
-			page: this.context.page,
-			filters: this.context.params.filters
-		};
-
-		return searchPlaylists(opts);
-	}
-}
 
 
 //wip

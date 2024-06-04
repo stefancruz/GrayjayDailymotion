@@ -1045,7 +1045,7 @@ let plugin = {
 // Plugin configuration
 // To override by plugin
 interface Source {
-    
+
     getHome(): VideoPager;
 
     enable(conf: Config, settings: Map<string>, saveStateStr: string): void;
@@ -1311,14 +1311,15 @@ let bridge = {
 }
 
 //Package Http (variable: http)
-let http = {
+
+interface IHttp {
     /**
     * @param {String} url
     * @param {Map} headers
     * @param {Boolean} useAuth
     * @return {BridgeHttpResponse}
     **/
-    GET: function (url: string, headers: Map, useAuth: boolean): HttpResponse { },
+    GET(url: string, headers: Map<string, string>, useAuth: boolean): BridgeHttpResponse;
 
     /**
     * @param {String} url
@@ -1327,24 +1328,24 @@ let http = {
     * @param {Boolean} useAuth
     * @return {BridgeHttpResponse}
     **/
-    POST: function (url: string, body: string, headers: Map, useAuth: boolean): HttpResponse { },
+    POST(url: string, body: string, headers: Map<string, string>, useAuth: boolean): BridgeHttpResponse;
 
     /**
     * @return {BatchBuilder}
     **/
-    batch: function (): BatchBuilder { },
+    batch(): BatchBuilder;
 
     /**
     * @param {Boolean} withAuth
     * @return {PackageHttpClient}
     **/
-    getDefaultClient: function (withAuth: boolean): PackageHttpClient { },
+    getDefaultClient(withAuth: boolean): PackageHttpClient;
 
     /**
     * @param {Boolean} withAuth
     * @return {PackageHttpClient}
     **/
-    newClient: function (withAuth: boolean): PackageHttpClient { },
+    newClient(withAuth: boolean): PackageHttpClient;
 
     /**
     * @param {String} method
@@ -1353,7 +1354,7 @@ let http = {
     * @param {Boolean} useAuth
     * @return {BridgeHttpResponse}
     **/
-    request: function (method: string, url: string, headers: Map<string>, useAuth: boolean): BridgeHttpResponse { },
+    request(method: string, url: string, headers: Map<string, string>, useAuth: boolean): BridgeHttpResponse;
 
     /**
     * @param {String} method
@@ -1363,7 +1364,7 @@ let http = {
     * @param {Boolean} useAuth
     * @return {BridgeHttpResponse}
     **/
-    requestWithBody: function (method: string, url: string, body: string, headers: Map<string>, useAuth: boolean): BridgeHttpResponse { },
+    requestWithBody(method: string, url: string, body: string, headers: Map<string, string>, useAuth: boolean): BridgeHttpResponse;
 
     /**
     * @param {String} url
@@ -1371,6 +1372,14 @@ let http = {
     * @param {Boolean} useAuth
     * @return {SocketResult}
     **/
-    socket: function (url: string, headers: Map<string>, useAuth: boolean): SocketResult { },
+    socket(url: string, headers: Map<string, string>, useAuth: boolean): SocketResult;
 
+    /**
+    * @param {Map} headers
+    * @return {void}
+    **/
+    setDefaultHeaders(headers: Map<string, string>): void
 }
+
+
+let http: IHttp
