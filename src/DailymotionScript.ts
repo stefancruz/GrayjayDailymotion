@@ -12,8 +12,8 @@ const USER_AGENT = 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, l
 const CLIENT_ID = 'f1a362d288c1b98099c7';
 const CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
 
-var config: IPluginConfig = {};
-var _settings: DailymotionPluginSettings = {};
+var config: Config;
+var _settings: DailymotionPluginSettings;
 
 const X_DM_AppInfo_Id = "com.dailymotion.neon"
 const X_DM_AppInfo_Type = "website"
@@ -41,8 +41,8 @@ DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
-let AUTHORIZATION_TOKEN_ANONYMOUS_USER = null;
-let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = null;
+let AUTHORIZATION_TOKEN_ANONYMOUS_USER: string = "";
+let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE: number;
 
 import errorTypes from './errorTypes';
 import constants from './constants';
@@ -61,6 +61,7 @@ import {
 } from './gqlQueries';
 
 import util from './util';
+import { Channel, Collection, CollectionConnection, LiveConnection, LiveEdge, SuggestionConnection, Video, VideoConnection, VideoEdge } from '../types/CodeGenDailymotion';
 
 var httpClientAnonymous = null;
 var httpClientRequestToken = null;
@@ -81,9 +82,6 @@ source.enable = function (conf, settings, saveStateStr) {
 		_settings.avatarSize = 8;
 		_settings.thumbnailResolution = 7;
 	}
-
-
-
 }
 
 
@@ -104,7 +102,7 @@ source.searchSuggestions = function (query) {
 			query: SEARCH_SUGGESTIONS_QUERY
 		});
 
-		return jsonResponse?.data?.search?.suggestedVideos?.edges?.map(edge => edge?.node?.name);
+		return (jsonResponse?.data?.search?.suggestedVideos as SuggestionConnection)?.edges?.map(edge => edge?.node?.name);
 	} catch (error) {
 		log('Failed to get search suggestions:' + error?.message);
 		return [];
@@ -188,11 +186,9 @@ source.getChannel = function (url) {
 			query: CHANNEL_BY_URL_QUERY
 		});
 
-	const user = channelDetails.data.channel;
+	const channel: Channel = channelDetails.data.channel;
 
-	const banner = user?.coverURL1024x ?? user?.coverURL1920x;
-
-	const externalLinks = user?.externalLinks ?? {};
+	const externalLinks = channel?.externalLinks ?? {};
 
 	const links = {};
 
@@ -205,12 +201,12 @@ source.getChannel = function (url) {
 		});
 
 	return new PlatformChannel({
-		id: new PlatformID(PLATFORM, user?.id, config?.id, PLATFORM_CLAIMTYPE),
-		name: user?.displayName,
-		thumbnail: user?.avatar?.url,
-		banner,
-		subscribers: user?.metrics?.engagement?.followers?.edges[0]?.node?.total,
-		description: user?.description,
+		id: new PlatformID(PLATFORM, channel?.id, config.id, PLATFORM_CLAIMTYPE),
+		name: channel?.displayName ?? "",
+		thumbnail: channel?.avatar?.url ?? "",
+		banner: channel.banner?.url ?? "",
+		subscribers: channel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
+		description: channel?.description ?? "",
 		url,
 		links,
 	})
@@ -233,8 +229,7 @@ source.getContentDetails = function (url) {
 
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
-	var isPlaylist = url.startsWith(BASE_URL_PLAYLIST);
-	return isPlaylist;
+	return url.startsWith(BASE_URL_PLAYLIST);
 };
 
 source.searchPlaylists = (query, type, order, filters) => {
@@ -247,8 +242,8 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 	const variables = {
 		xid,
-		avatar_size: constants.creatorAvatarHeight[_settings?.avatarSize],
-		thumbnail_resolution: constants.thumbnailHeight[_settings?.thumbnailResolution],
+		avatar_size: constants.creatorAvatarHeight[_settings.avatarSize],
+		thumbnail_resolution: constants.thumbnailHeight[_settings.thumbnailResolution],
 	}
 
 	let jsonResponse = executeGqlQuery({
@@ -273,28 +268,25 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 		throw new UnavailableException(error);
 	}
 
-
-
-
 	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
-		const resource = edge.node;
+		const resource = edge.node as Video;
 		const opts: PlatformVideoDef = {
 			id: new PlatformID(PLATFORM, resource.id, config.id, PLATFORM_CLAIMTYPE),
-			name: resource.title,
+			name: resource.title ?? "",
 			thumbnails: new Thumbnails([
-				new Thumbnail(resource?.thumbnail?.url, 0)
+				new Thumbnail(resource?.thumbnail?.url ?? "", 0)
 			]),
 			author: new PlatformAuthorLink(
-				new PlatformID(PLATFORM, resource.creator.id, config.id, PLATFORM_CLAIMTYPE),
-				resource.creator.displayName,
-				`${BASE_URL}/${resource.creator.name}`,
-				resource.creator.avatar.url ?? "",
+				new PlatformID(PLATFORM, resource?.creator?.id ?? "", config.id, PLATFORM_CLAIMTYPE),
+				resource?.creator?.displayName ?? "",
+				`${BASE_URL}/${resource?.creator?.name}`,
+				resource?.creator?.avatar?.url ?? "",
 				0
 			),
 			uploadDate: parseInt(new Date(resource.createdAt).getTime() / 1000),
-			datetime: parseInt(new Date(resource.createdAt).getTime() / 1000),
-			url: resource.url,
-			duration: resource.duration,
+			// datetime: parseInt(new Date(resource.createdAt).getTime() / 1000),
+			url: resource.url ?? "",
+			duration: resource.duration ?? 0,
 			viewCount: resource?.viewCount ?? 0,
 			isLive: false
 		};
@@ -302,14 +294,14 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 		return opts;
 	});
 
-	const playlist = jsonResponse?.data?.collection;
+	const playlist = jsonResponse?.data?.collection as Collection;
 
 	return new PlatformPlaylistDetails({
 		url: `${BASE_URL_PLAYLIST}/${playlist?.xid}`,
-		id: new PlatformID(PLATFORM, playlist?.xid, config.id),
+		id: new PlatformID(PLATFORM, playlist?.xid, config.id, PLATFORM_CLAIMTYPE),
 		author: new PlatformAuthorLink(
 			new PlatformID(PLATFORM, playlist?.creator?.id, config.id, PLATFORM_CLAIMTYPE),
-			playlist?.creator?.displayName,
+			playlist?.creator?.displayName ?? "",
 			`${BASE_URL}/${playlist?.creator?.name}`,
 			playlist?.creator?.avatar?.url ?? "",
 			0
@@ -352,7 +344,7 @@ source.getUserSubscriptions = (): string[] => {
 	}
 
 
-	const fetchSubscriptions = (page, first) => {
+	const fetchSubscriptions = (page, first): string[] => {
 		const jsonResponse = executeGqlQuery({
 			operationName: 'SUBSCRIPTIONS_QUERY',
 			variables: {
@@ -365,7 +357,7 @@ source.getUserSubscriptions = (): string[] => {
 			usePlatformAuth: true
 		});
 
-		return jsonResponse?.data?.me?.channel?.followings?.edges?.map(edge => edge.node.creator.name);
+		return (jsonResponse?.data?.me?.channel as Channel)?.followings?.edges?.map(edge => edge?.node?.creator?.name ?? "") ?? [];
 	};
 
 	const first = 100;  // Number of records to fetch per page
@@ -376,7 +368,7 @@ source.getUserSubscriptions = (): string[] => {
 	// For example, it may return 0 even if there are subscriptions, or it may return a number that is not the actual number of subscriptions.
 	// For now, it's better to fetch until no more results are returned
 
-	let items = [];
+	let items: string[] = [];
 
 	do {
 		const response = fetchSubscriptions(page, first);
@@ -438,14 +430,14 @@ source.getUserPlaylists = (): string[] => {
 		usePlatformAuth: true
 	});
 
-	const userName = jsonResponse?.data?.me?.channel?.name;
+	const userName = (jsonResponse?.data?.me?.channel as Channel)?.name;
 
 	return getPlaylistsByUsername(userName, headers, true);
 
 }
 
 function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
-	
+
 	const jsonResponse1 = executeGqlQuery({
 		operationName: 'CHANNEL_PLAYLISTS_QUERY',
 		variables: {
@@ -524,27 +516,29 @@ function searchPlaylists(contextQuery) {
 		headers: undefined
 	});
 
-	var searchResults = jsonResponse?.data?.search?.playlists?.edges?.map(edge => {
+	const playlistConnection = jsonResponse?.data?.search?.playlists as CollectionConnection;
 
-		const playlist = edge.node;
+	var searchResults = playlistConnection?.edges?.map(edge => {
+
+		const playlist = edge?.node;
 
 		return new PlatformPlaylist({
 			url: `${BASE_URL_PLAYLIST}/${playlist?.xid}`,
-			id: new PlatformID(PLATFORM, playlist?.xid, config.id),
+			id: new PlatformID(PLATFORM, playlist?.xid ?? "", config.id, PLATFORM_CLAIMTYPE),
 			author: new PlatformAuthorLink(
-				new PlatformID(PLATFORM, playlist.creator.id, config.id, PLATFORM_CLAIMTYPE),
-				playlist.creator.displayName,
-				`${BASE_URL}/${playlist.creator.name}`,
-				playlist.creator.avatar.url ?? "",
+				new PlatformID(PLATFORM, playlist?.creator?.id ?? "", config.id, PLATFORM_CLAIMTYPE),
+				playlist?.creator?.displayName ?? "",
+				`${BASE_URL}/${playlist?.creator?.name}`,
+				playlist?.creator?.avatar?.url ?? "",
 				0
 			),
-			name: playlist.name,
+			name: playlist?.name,
 			thumbnail: playlist?.thumbnail?.url,
 			videoCount: playlist?.metrics?.engagement?.videos?.edges[0]?.node?.total,
 		});
 	});
 
-	const hasMore = jsonResponse?.data?.search?.playlists?.pageInfo?.hasNextPage;
+	const hasMore = playlistConnection?.pageInfo?.hasNextPage;
 
 	if (!searchResults || !searchResults?.length) {
 		return new PlaylistPager([]);
@@ -569,10 +563,8 @@ function getChannelNameFromUrl(url) {
 
 function isUsernameUrl(url) {
 
-	// Define the regex pattern to match the username URL
 	var regex = new RegExp('^' + BASE_URL.replace(/\./g, '\\.') + '/[^/]+$');
 
-	// Test the URL against the regex pattern
 	return regex.test(url);
 }
 
@@ -696,9 +688,9 @@ function getVideoPager(params, page) {
 		?.filter(edge => edge?.node?.id)
 		?.map(edge => {
 
-			const v = edge.node;
+			const v = edge.node as Video;
 
-			const metadata = GetVideoExtraDEtails(v.xid);
+			const metadata = GetVideoExtraDetails(v.xid);
 
 			return ToPlatformVideo({
 				id: v.id,
@@ -723,7 +715,7 @@ function getVideoPager(params, page) {
 	return new SearchPagerAll(results, hasMore, params, page);
 }
 
-function GetVideoExtraDEtails(xid) {
+function GetVideoExtraDetails(xid) {
 
 	const json = executeGqlQuery({
 		operationName: 'WATCHING_VIDEO',
@@ -763,20 +755,23 @@ function getChannelPager(context) {
 
 	let videos = edges.map((edge) => {
 
-		const metadata = GetVideoExtraDEtails(edge.node.xid);
+		const video: Video = edge.node;
+
+		const metadata = GetVideoExtraDetails(video.xid);
+
 
 		return ToPlatformVideo({
-			id: edge.node.id,
-			name: edge.node.title,
-			thumbnail: edge?.node?.thumbnail.url ?? "",
-			createdAt: edge?.node?.createdAt,
-			creatorId: edge?.node?.creator?.id,
-			creatorDisplayName: edge?.node?.creator?.displayName,
-			creatorName: edge.node.creator.name,
-			creatorAvatar: edge?.node?.creator?.avatar?.url,
-			creatorUrl: `${BASE_URL}/${edge?.node?.creator?.name}`,
-			duration: edge.node.duration,
-			url: `${BASE_URL_VIDEO}/${edge?.node?.xid}`,
+			id: video.id,
+			name: video.title,
+			thumbnail: video?.thumbnail?.url ?? "",
+			createdAt: video?.createdAt,
+			creatorId: video?.creator?.id,
+			creatorDisplayName: video?.creator?.displayName,
+			creatorName: video?.creator?.name,
+			creatorAvatar: video?.creator?.avatar?.url,
+			creatorUrl: `${BASE_URL}/${video?.creator?.name}`,
+			duration: video.duration,
+			url: `${BASE_URL_VIDEO}/${video?.xid}`,
 			viewCount: metadata.views ?? 0,
 			isLive: false
 		});
@@ -792,7 +787,7 @@ function getChannelPager(context) {
 
 function ToPlatformVideo(resource) {
 
-	const opts: PlatformVideoDef = {
+	return new PlatformVideo({
 		id: new PlatformID(PLATFORM, resource.id, config.id, PLATFORM_CLAIMTYPE),
 		name: resource.name,
 		thumbnails: new Thumbnails([new Thumbnail(resource.thumbnail, 0)]),
@@ -808,9 +803,7 @@ function ToPlatformVideo(resource) {
 		duration: resource.duration,
 		viewCount: resource.viewCount,
 		isLive: resource.isLive
-	};
-
-	return new PlatformVideo(opts)
+	})
 
 }
 
@@ -863,7 +856,7 @@ function parseUploadDateFilter(filter) {
 	return createdAfterVideos;
 }
 
-function getSearchPagerAll(contextQuery) {
+function getSearchPagerAll(contextQuery): VideoPager {
 
 	const context = getQuery(contextQuery);
 
@@ -891,33 +884,36 @@ function getSearchPagerAll(contextQuery) {
 		headers: undefined
 	});
 
-	const results = []
+	const results: PlatformVideo[] = []
 
-	const all = [
-		...(jsonResponse?.data?.search?.videos?.edges ?? []),
-		...(jsonResponse?.data?.search?.lives?.edges ?? [])
+	const videoConnection = jsonResponse?.data?.search?.videos as VideoConnection;
+	const liveConnection = jsonResponse?.data?.search?.videos as LiveConnection;
+
+	const all: (VideoEdge | LiveEdge | null)[] = [
+		...(videoConnection?.edges ?? []),
+		...(liveConnection?.edges ?? [])
 	]
 
 	for (const edge of all) {
 
-		const sv = edge.node;
+		const sv = edge?.node;
 
-		const isLive = sv.isOnAir == true;
-		const viewCount = isLive ? sv.audienceCount : sv?.stats?.views?.total;
+		const isLive = sv?.isOnAir == true;
+		const viewCount = isLive ? sv?.audienceCount : sv?.stats?.views?.total;
 
 		var video = ToPlatformVideo({
-			id: sv.id,
-			name: sv.title,
+			id: sv?.id,
+			name: sv?.title,
 			thumbnail: sv?.thumbnail?.url,
-			createdAt: sv.createdAt,
-			creatorId: sv.creator?.id,
-			creatorName: sv.creator?.name,
-			creatorDisplayName: sv.creator?.displayName,
+			createdAt: sv?.createdAt,
+			creatorId: sv?.creator?.id,
+			creatorName: sv?.creator?.name,
+			creatorDisplayName: sv?.creator?.displayName,
 			creatorUrl: `${BASE_URL}/${sv?.creator?.name}`,
-			creatorAvatar: sv.creator?.avatar?.url ?? "",
-			duration: sv.duration,
+			creatorAvatar: sv?.creator?.avatar?.url ?? "",
+			duration: sv?.duration,
 			viewCount,
-			url: `${BASE_URL_VIDEO}/${sv.xid}`,
+			url: `${BASE_URL_VIDEO}/${sv?.xid}`,
 			isLive,
 			description: sv?.description ?? '',
 		});
@@ -931,7 +927,7 @@ function getSearchPagerAll(contextQuery) {
 		sort: context.sort,
 		filters: context.filters,
 	}
-	return new SearchPagerAll(results, jsonResponse?.data?.search?.videos?.pageInfo?.hasNextPage, params, context.page);
+	return new SearchPagerAll(results, videoConnection?.pageInfo?.hasNextPage, params, context.page);
 }
 
 function executeGqlQuery(requestOptions) {
@@ -988,7 +984,7 @@ function executeGqlQuery(requestOptions) {
 
 function checkHLS(url, headersToAdd, use_authenticated = false) {
 	// const resp = http.GET(url, headersToAdd, true);
-	var resp = getHttpContext(use_authenticated).GET(url, headersToAdd, use_authenticated, use_authenticated);
+	var resp = getHttpContext(use_authenticated).GET(url, headersToAdd, use_authenticated);
 
 	if (!resp.isOk) {
 		throw new UnavailableException('This content is not available')
@@ -1188,7 +1184,7 @@ function getSearchChannelPager(context) {
 			subscribers: c?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
 			url: `${BASE_URL}/${c.name}`,
 			links: [],
-			banner: null,
+			banner: "",
 			description: c.description,
 		});
 	});
@@ -1201,7 +1197,7 @@ function getSearchChannelPager(context) {
 
 }
 
-function getHttpContext(usePlatformAuth = false) {
+function getHttpContext(usePlatformAuth: Boolean = false) {
 	return usePlatformAuth ? http : httpClientAnonymous;
 }
 

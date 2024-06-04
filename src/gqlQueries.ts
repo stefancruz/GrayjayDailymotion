@@ -29,8 +29,9 @@ query CHANNEL_QUERY_DESKTOP(
 		avatar(height:$avatar_size) {
 			url
 		}
-		coverURL1024x: coverURL(size: "1024x")
-		coverURL1920x: coverURL(size: "1920x")
+		banner(width:LANDSCAPE_1920) {
+			url
+		}
 		tagline
 		country {
 			id
