@@ -2978,7 +2978,7 @@
           },
           {
             "name": "post",
-            "description": "Filter bookmarks by post. Defaults to `post: { eq: VIDEO }`.",
+            "description": "Filter bookmarks by post.",
             "type": {
               "kind": "INPUT_OBJECT",
               "name": "PostOperator",
@@ -12598,7 +12598,20 @@
           {
             "name": "videos",
             "description": "The video metrics of the hashtag.",
-            "args": [],
+            "args": [
+              {
+                "name": "filter",
+                "description": "Filter the video metrics by the the available filters.",
+                "type": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "VideoFilter",
+                  "ofType": null
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
             "type": {
               "kind": "OBJECT",
               "name": "VideoMetricConnection",
@@ -26930,12 +26943,6 @@
           {
             "name": "CHILD_ABUSE",
             "description": "Content that contains child abuse.",
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "COPYRIGHT_INFRINGEMENT",
-            "description": "Content that is copyrighted.",
             "isDeprecated": false,
             "deprecationReason": null
           },
@@ -41388,6 +41395,32 @@
         ]
       },
       {
+        "name": "depthLimit",
+        "description": "Limit the complexity of queries by their depth.",
+        "isRepeatable": false,
+        "locations": [
+          "FIELD_DEFINITION"
+        ],
+        "args": [
+          {
+            "name": "int",
+            "description": "The number of levels for the nested field.",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ]
+      },
+      {
         "name": "hidden",
         "description": "Hide schema introspection.",
         "isRepeatable": false,
@@ -41453,40 +41486,6 @@
           "INPUT_FIELD_DEFINITION"
         ],
         "args": []
-      },
-      {
-        "name": "resolveOnly",
-        "description": null,
-        "isRepeatable": false,
-        "locations": [
-          "FIELD_DEFINITION"
-        ],
-        "args": [
-          {
-            "name": "paths",
-            "description": null,
-            "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "LIST",
-                "name": null,
-                "ofType": {
-                  "kind": "NON_NULL",
-                  "name": null,
-                  "ofType": {
-                    "kind": "SCALAR",
-                    "name": "String",
-                    "ofType": null
-                  }
-                }
-              }
-            },
-            "defaultValue": null,
-            "isDeprecated": false,
-            "deprecationReason": null
-          }
-        ]
       },
       {
         "name": "skip",

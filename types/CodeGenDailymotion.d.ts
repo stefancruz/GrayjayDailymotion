@@ -613,7 +613,7 @@ export type BehaviorRuleTagEdge = {
 export type BookmarkFilter = {
   /** Filter bookmarks by bookmark. */
   bookmark: BookmarkOperator;
-  /** Filter bookmarks by post. Defaults to `post: { eq: VIDEO }`. */
+  /** Filter bookmarks by post. */
   post?: InputMaybe<PostOperator>;
 };
 
@@ -2605,6 +2605,12 @@ export type HashtagEngagementMetrics = Node & {
   id: Scalars['ID']['output'];
   /** The video metrics of the hashtag. */
   videos?: Maybe<VideoMetricConnection>;
+};
+
+
+/** The engagement metrics of a Hashtag. */
+export type HashtagEngagementMetricsVideosArgs = {
+  filter?: InputMaybe<VideoFilter>;
 };
 
 /** The metrics of a Hashtag. */
@@ -5801,8 +5807,6 @@ export enum RecordingPrivacy {
 export enum RecordingViolation {
   /** Content that contains child abuse. */
   ChildAbuse = 'CHILD_ABUSE',
-  /** Content that is copyrighted. */
-  CopyrightInfringement = 'COPYRIGHT_INFRINGEMENT',
   /** Content that misrepresents the owner. */
   CopyrightOwner = 'COPYRIGHT_OWNER',
   /** Content that is against humanity, such as genocide. */
@@ -9832,6 +9836,12 @@ export type ConstraintDirectiveArgs = {
 
 export type ConstraintDirectiveResolver<Result, Parent, ContextType = any, Args = ConstraintDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
 
+export type DepthLimitDirectiveArgs = {
+  int: Scalars['Int']['input'];
+};
+
+export type DepthLimitDirectiveResolver<Result, Parent, ContextType = any, Args = DepthLimitDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
+
 export type HiddenDirectiveArgs = { };
 
 export type HiddenDirectiveResolver<Result, Parent, ContextType = any, Args = HiddenDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
@@ -9843,12 +9853,6 @@ export type NonIntrospectableDirectiveResolver<Result, Parent, ContextType = any
 export type ResetSecondsDirectiveArgs = { };
 
 export type ResetSecondsDirectiveResolver<Result, Parent, ContextType = any, Args = ResetSecondsDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
-
-export type ResolveOnlyDirectiveArgs = {
-  paths: Array<Scalars['String']['input']>;
-};
-
-export type ResolveOnlyDirectiveResolver<Result, Parent, ContextType = any, Args = ResolveOnlyDirectiveArgs> = DirectiveResolverFn<Result, Parent, ContextType, Args>;
 
 export type SkipResolveDirectiveArgs = {
   paths: Array<Scalars['String']['input']>;
@@ -10862,7 +10866,7 @@ export type HashtagEdgeResolvers<ContextType = any, ParentType extends Resolvers
 
 export type HashtagEngagementMetricsResolvers<ContextType = any, ParentType extends ResolversParentTypes['HashtagEngagementMetrics'] = ResolversParentTypes['HashtagEngagementMetrics']> = {
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
-  videos?: Resolver<Maybe<ResolversTypes['VideoMetricConnection']>, ParentType, ContextType>;
+  videos?: Resolver<Maybe<ResolversTypes['VideoMetricConnection']>, ParentType, ContextType, Partial<HashtagEngagementMetricsVideosArgs>>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -13076,10 +13080,10 @@ export type DirectiveResolvers<ContextType = any> = {
   auth?: AuthDirectiveResolver<any, any, ContextType>;
   beta?: BetaDirectiveResolver<any, any, ContextType>;
   constraint?: ConstraintDirectiveResolver<any, any, ContextType>;
+  depthLimit?: DepthLimitDirectiveResolver<any, any, ContextType>;
   hidden?: HiddenDirectiveResolver<any, any, ContextType>;
   nonIntrospectable?: NonIntrospectableDirectiveResolver<any, any, ContextType>;
   resetSeconds?: ResetSecondsDirectiveResolver<any, any, ContextType>;
-  resolveOnly?: ResolveOnlyDirectiveResolver<any, any, ContextType>;
   skipResolve?: SkipResolveDirectiveResolver<any, any, ContextType>;
   validateChoices?: ValidateChoicesDirectiveResolver<any, any, ContextType>;
   validateTimePeriodFrequency?: ValidateTimePeriodFrequencyDirectiveResolver<any, any, ContextType>;
