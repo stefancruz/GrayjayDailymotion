@@ -1213,11 +1213,6 @@ function ensureDefaults() {
 	ensureInitHttpClients();
 }
 
-//Pagers
-
-
-
-
 //wip
 ensureDefaults();
 

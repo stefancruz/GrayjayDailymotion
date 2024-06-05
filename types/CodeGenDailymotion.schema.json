@@ -493,6 +493,18 @@
             "description": "A selection of analytics aggregated over time.",
             "args": [
               {
+                "name": "cumulative",
+                "description": "Indicates whether the metric represents cumulative data.",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
                 "name": "dimension",
                 "description": "A field which the time series is aggregated by.",
                 "type": {
@@ -601,6 +613,18 @@
             "name": "topValues",
             "description": "A selection of top values of analytics aggregated over some dimensions.",
             "args": [
+              {
+                "name": "cumulative",
+                "description": "Indicates whether the metric represents cumulative data.",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "Boolean",
+                  "ofType": null
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
               {
                 "name": "dimensions",
                 "description": "Fields which the top values are aggregated by.",
@@ -4465,7 +4489,7 @@
             "args": [],
             "type": {
               "kind": "OBJECT",
-              "name": "ShareUrls",
+              "name": "ChannelShareUrls",
               "ofType": null
             },
             "isDeprecated": false,
@@ -5609,6 +5633,60 @@
             "deprecationReason": null
           }
         ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "ChannelShareUrls",
+        "description": "Information about the share urls of a Channel.",
+        "fields": [
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "permalink",
+            "description": "The permalink share url of the channel.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ShareUrls",
+            "ofType": null
+          }
+        ],
+        "enumValues": null,
         "possibleTypes": null
       },
       {
@@ -14502,6 +14580,18 @@
             "deprecationReason": null
           },
           {
+            "name": "shareUrls",
+            "description": "The share urls of the live.",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "LiveShareUrls",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "sharingURLs",
             "description": "The sharing URLs of the live.",
             "args": [
@@ -14535,8 +14625,8 @@
               "name": "SharingURLConnection",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `shareUrls` field."
           },
           {
             "name": "startAt",
@@ -14788,8 +14878,8 @@
               "name": "String",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `shareUrls.permalink` field."
           },
           {
             "name": "viewerEngagement",
@@ -15273,6 +15363,84 @@
           {
             "kind": "INTERFACE",
             "name": "PostMetrics",
+            "ofType": null
+          }
+        ],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "LiveShareUrls",
+        "description": "Information about the share urls of a Live.",
+        "fields": [
+          {
+            "name": "facebook",
+            "description": "The facebook share url of the live.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "permalink",
+            "description": "The permalink share url of the live.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "twitter",
+            "description": "The twitter share url of the live.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ShareUrls",
             "ofType": null
           }
         ],
@@ -19082,6 +19250,11 @@
           },
           {
             "kind": "OBJECT",
+            "name": "ChannelShareUrls",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "ChannelStats",
             "ofType": null
           },
@@ -19307,6 +19480,11 @@
           },
           {
             "kind": "OBJECT",
+            "name": "LiveShareUrls",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "LiveStats",
             "ofType": null
           },
@@ -19422,6 +19600,11 @@
           },
           {
             "kind": "OBJECT",
+            "name": "PollShareUrls",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "ProductUpdates",
             "ofType": null
           },
@@ -19438,6 +19621,11 @@
           {
             "kind": "OBJECT",
             "name": "ReactionMetrics",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "ReactionShareUrls",
             "ofType": null
           },
           {
@@ -19512,11 +19700,6 @@
           },
           {
             "kind": "OBJECT",
-            "name": "ShareUrls",
-            "ofType": null
-          },
-          {
-            "kind": "OBJECT",
             "name": "SharingURL",
             "ofType": null
           },
@@ -19563,6 +19746,11 @@
           {
             "kind": "OBJECT",
             "name": "TopicLabel",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "TopicShareUrls",
             "ofType": null
           },
           {
@@ -19673,6 +19861,11 @@
           {
             "kind": "OBJECT",
             "name": "VideoMetrics",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "VideoShareUrls",
             "ofType": null
           },
           {
@@ -22079,6 +22272,18 @@
             "deprecationReason": null
           },
           {
+            "name": "shareUrls",
+            "description": "The share urls of the poll.",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "PollShareUrls",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "url",
             "description": "The URL of the poll.",
             "args": [],
@@ -22091,8 +22296,8 @@
                 "ofType": null
               }
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `shareUrls.permalink` field."
           },
           {
             "name": "voterCount",
@@ -22431,6 +22636,60 @@
           {
             "kind": "INTERFACE",
             "name": "Node",
+            "ofType": null
+          }
+        ],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "PollShareUrls",
+        "description": "Information about the share urls of a Poll.",
+        "fields": [
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "permalink",
+            "description": "The permalink share url of the poll.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ShareUrls",
             "ofType": null
           }
         ],
@@ -24972,6 +25231,18 @@
             "deprecationReason": null
           },
           {
+            "name": "shareUrls",
+            "description": "The share urls of the reaction.",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "ReactionShareUrls",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "subtitles",
             "description": "The subtitles of the reaction.",
             "args": [
@@ -25070,8 +25341,8 @@
               "name": "String",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `shareUrls.permalink` field."
           },
           {
             "name": "viewerEngagement",
@@ -25558,6 +25829,60 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "ReactionShareUrls",
+        "description": "Information about the share urls of a Reaction.",
+        "fields": [
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "permalink",
+            "description": "The permalink share url of the reaction.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ShareUrls",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -29783,9 +30108,9 @@
         "possibleTypes": null
       },
       {
-        "kind": "OBJECT",
+        "kind": "INTERFACE",
         "name": "ShareUrls",
-        "description": "Information about the share urls of a Story.",
+        "description": "Information about the share urls.",
         "fields": [
           {
             "name": "id",
@@ -29821,15 +30146,40 @@
           }
         ],
         "inputFields": null,
-        "interfaces": [
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": [
           {
-            "kind": "INTERFACE",
-            "name": "Node",
+            "kind": "OBJECT",
+            "name": "ChannelShareUrls",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "LiveShareUrls",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "PollShareUrls",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "ReactionShareUrls",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "TopicShareUrls",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "VideoShareUrls",
             "ofType": null
           }
-        ],
-        "enumValues": null,
-        "possibleTypes": null
+        ]
       },
       {
         "kind": "OBJECT",
@@ -31221,6 +31571,18 @@
             "deprecationReason": null
           },
           {
+            "name": "shareUrls",
+            "description": "The share urls of the topic.",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "TopicShareUrls",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "stats",
             "description": "The stats of the topic.",
             "args": [],
@@ -31265,8 +31627,8 @@
               "name": "String",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `shareUrls.permalink` field."
           },
           {
             "name": "videos",
@@ -31643,6 +32005,60 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "TopicShareUrls",
+        "description": "Information about the share urls of a Topic.",
+        "fields": [
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "permalink",
+            "description": "The permalink share url of the topic.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ShareUrls",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -37661,6 +38077,18 @@
             "deprecationReason": null
           },
           {
+            "name": "shareUrls",
+            "description": "The share urls of the video.",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "VideoShareUrls",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "sharingURLs",
             "description": "The sharing URLs of the video.",
             "args": [
@@ -37694,8 +38122,8 @@
               "name": "SharingURLConnection",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `shareUrls` field."
           },
           {
             "name": "spritesheet",
@@ -37995,8 +38423,8 @@
               "name": "String",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `shareUrls.permalink` field."
           },
           {
             "name": "viewCount",
@@ -38621,6 +39049,84 @@
             "deprecationReason": null
           }
         ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "VideoShareUrls",
+        "description": "Information about the share urls of a Video.",
+        "fields": [
+          {
+            "name": "facebook",
+            "description": "The facebook share url of the video.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "permalink",
+            "description": "The permalink share url of the video.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "twitter",
+            "description": "The twitter share url of the video.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ShareUrls",
+            "ofType": null
+          }
+        ],
+        "enumValues": null,
         "possibleTypes": null
       },
       {
