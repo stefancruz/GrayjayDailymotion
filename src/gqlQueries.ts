@@ -814,6 +814,7 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 		}
 		creator {
 			id
+			name
 			displayName
 			xid
 			avatar(height:$avatar_size) {
@@ -857,6 +858,7 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 					}
 					creator {
 						id
+						name
 						displayName
 						xid
 						avatar(height:$avatar_size) {

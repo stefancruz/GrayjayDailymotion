@@ -81,6 +81,9 @@ let httpClientAnonymous: IHttp
 
 var httpClientRequestToken = null;
 
+// Will be used to store playlists that require authentication
+const authenticatedPlaylistCollection: string[] = [];
+
 source.setSettings = function (settings) {
 	_settings = settings;
 	http.GET(BASE_URL, {}, true);
@@ -96,6 +99,11 @@ source.enable = function (conf, settings, saveStateStr) {
 		_settings.hideSensitiveContent = false;
 		_settings.avatarSize = 8;
 		_settings.thumbnailResolution = 7;
+
+		if (!config) {
+			config = {}
+		}
+		config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5"
 	}
 }
 
@@ -258,32 +266,16 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 		thumbnail_resolution: thumbnailHeight[_settings.thumbnailResolution],
 	}
 
-
+	const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
+	
 	let jsonResponse = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: false }),
+		getHttpContext({ usePlatformAuth }),
 		{
 			operationName: 'PLAYLIST_VIDEO_QUERY',
 			variables,
 			query: PLAYLIST_DETAILS_QUERY,
-			throwOnError: false
+			usePlatformAuth
 		});
-
-	const error = jsonResponse?.errors?.[0]?.message;
-	const isForbideen = error?.includes('Access forbidden.');
-
-	if (isForbideen) {
-		//retry using authenticated user
-		jsonResponse = executeGqlQuery(
-			getHttpContext({ usePlatformAuth: true }),
-			{
-				operationName: 'PLAYLIST_VIDEO_QUERY',
-				variables,
-				query: PLAYLIST_DETAILS_QUERY,
-				usePlatformAuth: true,
-			});
-	} else {
-		throw new UnavailableException(error);
-	}
 
 	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
 		const resource = edge.node as Video;
@@ -301,7 +293,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 				0
 			),
 			uploadDate: parseInt(new Date(resource.createdAt).getTime() / 1000),
-			// datetime: parseInt(new Date(resource.createdAt).getTime() / 1000),
+			datetime: parseInt(new Date(resource.createdAt).getTime() / 1000),
 			url: resource.url ?? "",
 			duration: resource.duration ?? 0,
 			viewCount: resource?.viewCount ?? 0,
@@ -479,6 +471,9 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 
 	const playlists = jsonResponse1.data.channel.channel_playlist_collections.edges.map(edge => {
 		const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
+		if (!authenticatedPlaylistCollection.includes(playlistUrl)) {
+			authenticatedPlaylistCollection.push(playlistUrl);
+		}
 		return playlistUrl;
 	});
 

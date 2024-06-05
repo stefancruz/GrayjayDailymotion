@@ -588,6 +588,7 @@ declare interface PlatformVideoDef {
     thumbnails: Thumbnails,
     author: PlatformAuthorLink,
     uploadDate: number,
+    datetime: number,
     url: string,
     duration: number,
     viewCount: number,
