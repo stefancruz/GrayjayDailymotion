@@ -26,24 +26,14 @@
     "s3.dmcdn.net"
   ],
   "authentication": {
-    "loginUrl": "https://www.dailymotion.com/signin",  
+    "loginUrl": "https://www.dailymotion.com/signin?urlback=/video/x58d0gt",  
     "cookiesToFind": [
-      "_TEST_",
-      "client_token",
       "damd",
-      "dmaid",
-      "dmvk",
-      "v1st",
-      "ts",
-      "sdx",
       "refresh_token",
       "access_token"
     ],
     "headersToFind": [
-      "Authorization",
-      "X-DM-AppInfo-Version",
-      "X-DM-AppInfo-Type",
-      "X-DM-AppInfo-Id"
+      "Authorization"
     ],
     "userAgent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36"
   },
