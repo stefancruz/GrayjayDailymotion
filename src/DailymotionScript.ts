@@ -1,14 +1,10 @@
 var config: Config;
 var _settings: DailymotionPluginSettings;
 
-let AUTHORIZATION_TOKEN_ANONYMOUS_USER: string = "";
-let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE: number;
 
 import {
 	creatorAvatarHeight,
 	thumbnailHeight,
-	countryNames,
-	countryNamesToCode,
 	BASE_URL,
 	LESS_THAN_MINUTE,
 	ONE_TO_FIVE_MINUTES,
@@ -26,10 +22,6 @@ import {
 	X_DM_AppInfo_Version,
 	X_DM_Neon_SSR,
 	DURATION_THRESHOLDS,
-	CLIENT_ID,
-	CLIENT_SECRET,
-	BASE_URL_API_AUTH,
-	X_DM_Preferred_Country,
 	BASE_URL_API,
 	BASE_URL_METADATA,
 	errorTypes,
@@ -50,11 +42,11 @@ import {
 } from './gqlQueries';
 
 import {
-	objectToUrlEncodedString,
 	getChannelNameFromUrl,
 	isUsernameUrl,
 	executeGqlQuery,
-	getPreferredCountry
+	getPreferredCountry,
+	getAnonymousUserTokenSingleton
 } from './util';
 
 import {
@@ -77,9 +69,8 @@ import {
 } from './Pagers';
 
 
-let httpClientAnonymous: IHttp
+let httpClientAnonymous: IHttp = http.newClient(false);
 
-var httpClientRequestToken = null;
 
 // Will be used to store playlists that require authentication
 const authenticatedPlaylistCollection: string[] = [];
@@ -101,14 +92,18 @@ source.enable = function (conf, settings, saveStateStr) {
 		_settings.thumbnailResolution = 7;
 
 		if (!config) {
-			config = {}
+			config = {
+				id: "9c87e8db-e75d-48f4-afe5-2d203d4b95c5"
+			}
 		}
-		config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5"
 	}
 }
 
 
 source.getHome = function () {
+
+	getAnonymousUserTokenSingleton();
+
 	return getVideoPager({}, 0);
 };
 
@@ -267,7 +262,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 	}
 
 	const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
-	
+
 	let jsonResponse = executeGqlQuery(
 		getHttpContext({ usePlatformAuth }),
 		{
@@ -340,7 +335,7 @@ source.getUserSubscriptions = (): string[] => {
 		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
 		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
 		'X-DM-Neon-SSR': '0',
-		'X-DM-Preferred-Country': 'it',
+		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountry),
 		Origin: BASE_URL,
 		DNT: '1',
 		Connection: 'keep-alive',
@@ -352,10 +347,11 @@ source.getUserSubscriptions = (): string[] => {
 		'Cache-Control': 'no-cache',
 	}
 
+	const usePlatformAuth = true;
 
 	const fetchSubscriptions = (page, first): string[] => {
 		const jsonResponse = executeGqlQuery(
-			getHttpContext({ usePlatformAuth: true }),
+			getHttpContext({ usePlatformAuth }),
 			{
 				operationName: 'SUBSCRIPTIONS_QUERY',
 				variables: {
@@ -365,7 +361,7 @@ source.getUserSubscriptions = (): string[] => {
 				},
 				headers,
 				query: GET_USER_SUBSCRIPTIONS,
-				usePlatformAuth: true
+				usePlatformAuth
 			});
 
 		return (jsonResponse?.data?.me?.channel as Channel)?.followings?.edges?.map(edge => edge?.node?.creator?.name ?? "") ?? [];
@@ -383,7 +379,7 @@ source.getUserSubscriptions = (): string[] => {
 
 	do {
 		const response = fetchSubscriptions(page, first);
-
+		
 		items = response.map(creatorName => `${BASE_URL}/${creatorName}`);
 
 		subscriptions.push(...items);
@@ -411,7 +407,7 @@ source.getUserPlaylists = (): string[] => {
 		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
 		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
 		'X-DM-Neon-SSR': '0',
-		'X-DM-Preferred-Country': 'it',
+		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountry),
 		Origin: BASE_URL,
 		DNT: '1',
 		Connection: 'keep-alive',
@@ -579,63 +575,6 @@ function searchPlaylists(contextQuery) {
 
 
 //Internals
-
-
-function getAnonymousUserTokenSingleton() {
-	// Check if the anonymous user token is available and not expired
-	if (AUTHORIZATION_TOKEN_ANONYMOUS_USER) {
-
-		const isTokenValid = AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE && new Date().getTime() < AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE;
-
-		if (isTokenValid) {
-			return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
-		}
-	}
-
-	// Prepare the request body for obtaining a new token
-	const body = objectToUrlEncodedString({
-		client_id: CLIENT_ID,
-		client_secret: CLIENT_SECRET,
-		grant_type: 'client_credentials'
-	});
-
-	// Make the HTTP POST request to the authorization API
-	const res = httpClientRequestToken.POST(`${BASE_URL_API_AUTH}`, body, {
-		'User-Agent': USER_AGENT,
-		'Content-Type': 'application/x-www-form-urlencoded',
-		'Origin': BASE_URL,
-		'DNT': '1',
-		'Sec-GPC': '1',
-		'Connection': 'keep-alive',
-		'Sec-Fetch-Dest': 'empty',
-		'Sec-Fetch-Mode': 'cors',
-		'Sec-Fetch-Site': 'same-site',
-		'Priority': 'u=4',
-		'Pragma': 'no-cache',
-		'Cache-Control': 'no-cache'
-	}, false);
-
-	// Check if the response code indicates success
-	if (res.code !== 200) {
-		console.error('Failed to get token', res);
-		throw new ScriptException("", "Failed to get token: " + res.code + " - " + res.body);
-	}
-
-	// Parse the response JSON to extract the token information
-	const json = JSON.parse(res.body);
-
-	// Ensure the response contains the necessary token information
-	if (!json.token_type || !json.access_token) {
-		console.error('Invalid token response', res);
-		throw new ScriptException("", 'Invalid token response: ' + res.body);
-	}
-
-	// Store the token and its expiration date
-	AUTHORIZATION_TOKEN_ANONYMOUS_USER = `${json.token_type} ${json.access_token}`;
-	AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = new Date().getTime() + (json.expires_in * 1000);
-
-	return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
-}
 
 
 function getVideoPager(params, page) {
@@ -1161,55 +1100,5 @@ function getSearchChannelPager(context) {
 function getHttpContext(opts: { usePlatformAuth: Boolean } = { usePlatformAuth: false }): IHttp {
 	return opts.usePlatformAuth ? http : httpClientAnonymous;
 }
-
-function ensureDefaultSettings() {
-
-	if (!_settings) {
-		_settings = {};
-	}
-
-	if (_settings.hideSensitiveContent == undefined) {
-		_settings.hideSensitiveContent = true;
-	}
-
-	if (_settings.avatarSize == undefined) {
-		_settings.avatarSize = 8;
-	}
-
-	if (_settings.thumbnailResolution == undefined) {
-		_settings.thumbnailResolution = 7;
-	}
-
-	if (_settings.preferredCountry == undefined) {
-		const settingIndex = countryNames?.indexOf('');
-		_settings.preferredCountry = settingIndex;
-	}
-}
-
-function ensureInitHttpClients() {
-
-	try {
-		if (!httpClientRequestToken) {
-			httpClientRequestToken = http.newClient(false);
-			httpClientAnonymous = http.newClient(false);
-
-			const authorization = getAnonymousUserTokenSingleton();
-
-			httpClientAnonymous.setDefaultHeaders({ 'Authorization': authorization });
-
-		}
-	} catch (e) {
-		// log(e.message)
-	}
-}
-
-function ensureDefaults() {
-	ensureDefaultSettings();
-	ensureInitHttpClients();
-}
-
-//wip
-ensureDefaults();
-
 
 log("LOADED");
