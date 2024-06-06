@@ -29,8 +29,9 @@ query CHANNEL_QUERY_DESKTOP(
 		avatar(height:$avatar_size) {
 			url
 		}
-		coverURL1024x: coverURL(size: "1024x")
-		coverURL1920x: coverURL(size: "1920x")
+		banner(width:LANDSCAPE_1920) {
+			url
+		}
 		tagline
 		country {
 			id
@@ -491,252 +492,268 @@ export const MAIN_SEARCH_QUERY = `
 
 
 export const VIDEO_DETAILS_QUERY = `
-	fragment VIDEO_FRAGMENT on Video {
-		id
-		xid
-		isPublished
-		duration
-		title
-		description
-		thumbnail(height:$thumbnail_resolution) {
-			url
-		}
-		bestAvailableQuality
-		createdAt
-		isPrivate
-		isCreatedForKids
-		isExplicit
-		canDisplayAds
-		videoWidth: width
-		videoHeight: height
-		status
-		hashtags {
-			edges {
-				node {
-					id
-					name
-				}
-			}
-		}
-		stats {
-			id
-			views {
-				id
-				total
-			}
-		}
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height:$avatar_size) {
-				url
-				height
-				width
-			}
-			coverURLx375: coverURL(size: "x375")
-			stats {
-				id
-				views {
-					id
-					total
-				}
-				followers {
-					id
-					total
-				}
-				videos {
-					id
-					total
-				}
-			}
-			country {
-				id
-				codeAlpha2
-			}
-			organization @skip(if: $isSEO) {
-				id
-				xid
-				owner {
-					id
-					xid
-				}
-			}
-		}
-		language {
-			id
-			codeAlpha2
-		}
-		tags {
-			edges {
-				node {
-					id
-					label
-				}
-			}
-		}
-		moderation {
-			id
-			reviewedAt
-		}
-		topics(whitelistedOnly: true, first: 3, page: 1) {
-			edges {
-				node {
-					id
-					xid
-					name
-					names {
-						edges {
-							node {
-								id
-								name
-								language {
-									id
-									codeAlpha2
-								}
-							}
-						}
+fragment VIDEO_FRAGMENT on Video {
+	id
+	xid
+	isPublished
+	duration
+	title
+	description
+	thumbnail(height:$thumbnail_resolution) {
+		url
+	}
+	bestAvailableQuality
+	createdAt
+	isPrivate
+	isCreatedForKids
+	isExplicit
+	videoWidth: width
+	videoHeight: height
+	status
+	metrics {
+		engagement {
+			likes {
+				totalCount
+				edges {
+					node {
+						rating
+						total
 					}
 				}
 			}
 		}
-		geoblockedCountries {
+	}
+	stats {
+		id
+		views {
 			id
-			allowed
-			denied
+			total
 		}
 	}
-	
-	fragment LIVE_FRAGMENT on Live {
+	creator {
 		id
 		xid
-		startAt
-		endAt
-		isPublished
-		title
-		description
-		thumbnail(height:$thumbnail_resolution){
+		name
+		displayName
+		avatar(height:$avatar_size) {
 			url
 			height
 			width
 		}
-		category
-		createdAt
-		isPrivate
-		isExplicit
-		isCreatedForKids
-		bestAvailableQuality
-		canDisplayAds
-		videoWidth: width
-		videoHeight: height
+		coverURLx375: coverURL(size: "x375")
 		stats {
 			id
 			views {
 				id
 				total
 			}
-		}
-		creator {
-			id
-			xid
-			name
-			displayName
-			avatar(height:$avatar_size) {
-				url
-				height
-				width
-			}
-			coverURLx375: coverURL(size: "x375")
-			stats {
+			followers {
 				id
-				views {
-					id
-					total
-				}
-				followers {
-					id
-					total
-				}
-				videos {
-					id
-					total
-				}
+				total
 			}
-			country {
+			videos {
 				id
-				codeAlpha2
-			}
-			organization @skip(if: $isSEO) {
-				id
-				xid
-				owner {
-					id
-					xid
-				}
+				total
 			}
 		}
-		language {
+		country {
 			id
 			codeAlpha2
 		}
-		tags {
-			edges {
-				node {
-					id
-					label
-				}
+		organization @skip(if: $isSEO) {
+			id
+			xid
+			owner {
+				id
+				xid
 			}
 		}
-		moderation {
-			id
-			reviewedAt
+	}
+	language {
+		id
+		codeAlpha2
+	}
+	tags {
+		edges {
+			node {
+				id
+				label
+			}
 		}
-		topics(whitelistedOnly: true, first: 3, page: 1) {
-			edges {
-				node {
-					id
-					xid
-					name
-					names {
-						edges {
-							node {
+	}
+	moderation {
+		id
+		reviewedAt
+	}
+	topics(whitelistedOnly: true, first: 3, page: 1) {
+		edges {
+			node {
+				id
+				xid
+				name
+				names {
+					edges {
+						node {
+							id
+							name
+							language {
 								id
-								name
-								language {
-									id
-									codeAlpha2
-								}
+								codeAlpha2
 							}
 						}
 					}
 				}
 			}
 		}
-		geoblockedCountries {
-			id
-			allowed
-			denied
+	}
+	geoblockedCountries {
+		id
+		allowed
+		denied
+	}
+}
+
+fragment LIVE_FRAGMENT on Live {
+	id
+	xid
+	startAt
+	endAt
+	isPublished
+	title
+	description
+	thumbnail(height:$thumbnail_resolution){
+		url
+		height
+		width
+	}
+	category
+	createdAt
+	isPrivate
+	isExplicit
+	isCreatedForKids
+	bestAvailableQuality
+	canDisplayAds
+	videoWidth: width
+	videoHeight: height
+	metrics {
+		engagement {
+			likes {
+				edges {
+					node {
+						rating
+						total
+					}
+				}
+			}
 		}
 	}
-	
-	query WATCHING_VIDEO(
-		$xid: String!
-		$isSEO: Boolean!
-		$avatar_size: AvatarHeight!
-		$thumbnail_resolution: ThumbnailHeight!
-	) {
-		video: media(xid: $xid) {
-			... on Video {
+	stats {
+		id
+		views {
+			id
+			total
+		}
+	}
+	creator {
+		id
+		xid
+		name
+		displayName
+		avatar(height:$avatar_size) {
+			url
+			height
+			width
+		}
+		coverURLx375: coverURL(size: "x375")
+		stats {
+			id
+			views {
 				id
-				...VIDEO_FRAGMENT
+				total
 			}
-			... on Live {
+			followers {
 				id
-				...LIVE_FRAGMENT
+				total
+			}
+			videos {
+				id
+				total
 			}
 		}
-	}		
+		country {
+			id
+			codeAlpha2
+		}
+		organization @skip(if: $isSEO) {
+			id
+			xid
+			owner {
+				id
+				xid
+			}
+		}
+	}
+	language {
+		id
+		codeAlpha2
+	}
+	tags {
+		edges {
+			node {
+				id
+				label
+			}
+		}
+	}
+	moderation {
+		id
+		reviewedAt
+	}
+	topics(whitelistedOnly: true, first: 3, page: 1) {
+		edges {
+			node {
+				id
+				xid
+				name
+				names {
+					edges {
+						node {
+							id
+							name
+							language {
+								id
+								codeAlpha2
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	geoblockedCountries {
+		id
+		allowed
+		denied
+	}
+}
+
+query WATCHING_VIDEO(
+	$xid: String!
+	$isSEO: Boolean!
+	$avatar_size: AvatarHeight!
+	$thumbnail_resolution: ThumbnailHeight!
+) {
+	video: media(xid: $xid) {
+		... on Video {
+			id
+			...VIDEO_FRAGMENT
+		}
+		... on Live {
+			id
+			...LIVE_FRAGMENT
+		}
+	}
+}		
 	`
 
 
@@ -797,6 +814,7 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 		}
 		creator {
 			id
+			name
 			displayName
 			xid
 			avatar(height:$avatar_size) {
@@ -840,6 +858,7 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 					}
 					creator {
 						id
+						name
 						displayName
 						xid
 						avatar(height:$avatar_size) {
@@ -879,24 +898,66 @@ query WATCHING_VIDEO($xid: String!) {
 	`
 
 export const GET_USER_SUBSCRIPTIONS = `
-query SUBSCRIPTIONS_QUERY($first: Int, $page: Int, $avatar_size: AvatarHeight!) {
+query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 	me {
-		followingChannels(first: $first, page: $page) {
-			totalCount
-			edges {
-				node {
-					id
-					xid
-					name
-					displayName
-					avatar(height: $avatar_size) {
-						url
-						width
+		channel {
+			followings(first: $first, page: $page) {
+				totalCount
+				edges {
+					node {
+						creator {
+							name
+						}
 					}
-					coverURLx375: coverURL(size: "x375")
-					logoURLx60: logoURL(size: "x60")
 				}
 			}
 		}
 	}
-}`;
+}
+`;
+
+
+export const GET_CHANNEL_PLAYLISTS = `
+query CHANNEL_PLAYLISTS_QUERY(
+	$channel_name: String!
+	$sort: String
+	$page: Int!
+	$first: Int!
+) {
+	channel(name: $channel_name) {
+		id
+		xid
+		channel_playlist_collections: collections(
+			sort: $sort
+			page: $page
+			first: $first
+		) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			edges {
+				node {
+					id
+					xid
+					updatedAt
+					createdAt
+					name
+					description
+					thumbnailx60: thumbnailURL(size: "x60")
+					thumbnailx120: thumbnailURL(size: "x120")
+					thumbnailx240: thumbnailURL(size: "x240")
+					thumbnailx720: thumbnailURL(size: "x720")
+					stats {
+						id
+						videos {
+							id
+							total
+						}
+					}
+				}
+			}
+		}
+	}
+}
+`

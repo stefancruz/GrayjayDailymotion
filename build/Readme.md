@@ -4,13 +4,20 @@
 Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to install into Grayjay
 
 
+## Install
 npm install
 
-optional to update graphql types:
+## Update graphql types (optional)
+
 npm run get-token
+
 npm run codegen
 
+## Build
+
 npm run build
+
+npm start - will build and watch for changes
 
 # notes:
 - Content of the 'build' folder should not be manually changed because it's recreated for each build. 
