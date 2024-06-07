@@ -23,7 +23,8 @@
     "vod.cf.dmcdn.net",
     "s1.dmcdn.net",
     "s2.dmcdn.net",
-    "s3.dmcdn.net"
+    "static1.dmcdn.net",
+    "static2.dmcdn.net"
   ],
   "authentication": {
     "loginUrl": "https://www.dailymotion.com/signin?urlback=/video/x58d0gt",  
