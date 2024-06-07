@@ -623,7 +623,15 @@ declare interface PlatformVideoDetailsDef extends PlatformVideoDef {
     hls: HLSSource | null,
     live: IVideoSource | null,
     rating: RatingLikesDislikes,
-    subtitles: SubtitleSource[]
+    subtitles: ISubtitleSource[]
+}
+
+
+interface ISubtitleSource {
+    name: String;
+    url: String?;
+    format: String?;
+    getSubtitles?: Function;
 }
 
 declare class PlatformVideoDetails extends PlatformVideo {
