@@ -379,7 +379,7 @@ source.getUserSubscriptions = (): string[] => {
 
 	do {
 		const response = fetchSubscriptions(page, first);
-		
+
 		items = response.map(creatorName => `${BASE_URL}/${creatorName}`);
 
 		subscriptions.push(...items);
@@ -838,7 +838,7 @@ function getSearchPagerAll(contextQuery): VideoPager {
 	const results: PlatformVideo[] = []
 
 	const videoConnection = jsonResponse?.data?.search?.videos as VideoConnection;
-	const liveConnection = jsonResponse?.data?.search?.videos as LiveConnection;
+	const liveConnection = jsonResponse?.data?.search?.lives as LiveConnection;
 
 	const all: (VideoEdge | LiveEdge | null)[] = [
 		...(videoConnection?.edges ?? []),
@@ -881,14 +881,6 @@ function getSearchPagerAll(contextQuery): VideoPager {
 	return new SearchPagerAll(results, videoConnection?.pageInfo?.hasNextPage, params, context.page, getSearchPagerAll);
 }
 
-function checkHLS(url, headersToAdd, usePlatformAuth = false) {
-	// const resp = http.GET(url, headersToAdd, true);
-	var resp = getHttpContext({ usePlatformAuth }).GET(url, headersToAdd, usePlatformAuth);
-
-	if (!resp.isOk) {
-		throw new UnavailableException('This content is not available')
-	}
-}
 
 function getSavedVideo(url, usePlatformAuth = false) {
 
@@ -936,8 +928,6 @@ function getSavedVideo(url, usePlatformAuth = false) {
 	}
 
 	const hls_url = player_metadata?.qualities?.auto[0]?.url;
-
-	checkHLS(hls_url, headers1);
 
 	const videoDetailsRequestHeaders = {
 		"Content-Type": "application/json",

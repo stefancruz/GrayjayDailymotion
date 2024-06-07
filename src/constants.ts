@@ -19,7 +19,7 @@ export const X_DM_Neon_SSR = "0"
 export const X_DM_Preferred_Country = "";//TODO check how to get this from Grayjay
 
 export const PLATFORM = "Dailymotion";
-export const PLATFORM_CLAIMTYPE = 3;
+export const PLATFORM_CLAIMTYPE = 27;
 
 export const ITEMS_PER_PAGE = 5;
 

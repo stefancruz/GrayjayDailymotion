@@ -41,10 +41,10 @@
     <script>
         window.onload = function () {
             
-            const hostname = window.location.hostname.replace(/\/$/, '');
+            const hostname = window.location.hostname;
             
             if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-                const configUrl = `${window.location.href.replace(/\/$/, '')}/DailymotionConfig.json`;
+                const configUrl = new URL('DailymotionConfig.json', window.location.href).href;
 
                 let qr = qrcode(0, 'L');
                 qr.addData(configUrl);
@@ -60,7 +60,13 @@
                 qrImg.alt = title;
                 qrImg.title = title;
 
-                document.getElementById('qrCodeContainer').appendChild(qrImg);
+                let qrCodeContainer = document.getElementById('qrCodeContainer');
+                if (qrCodeContainer) {
+                    qrCodeContainer.appendChild(qrImg);
+                } else {
+                    console.error('QR code container not found');
+                }
+
                 document.getElementById('qr-code-text').style.display = 'inline';
 
                 const isSupported = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
@@ -68,7 +74,7 @@
                 if (isSupported) {
                     setTimeout(function () {
                         window.location.href = `grayjay://plugin/${configUrl}`;
-                    }, 1000); // Redirect after 2 seconds to allow the QR code to be seen
+                    }, 1000); // Redirect after 1 seconds to allow the QR code to be seen
                 } else {
                     console.log("Currently this link is supported on mobile devices only. Use the QR code to install it on Grayjay.");
                 }

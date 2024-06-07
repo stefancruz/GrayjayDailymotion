@@ -17,7 +17,7 @@ const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z"; //TODO check how to ge
 const X_DM_Neon_SSR = "0";
 const X_DM_Preferred_Country = ""; //TODO check how to get this from Grayjay
 const PLATFORM = "Dailymotion";
-const PLATFORM_CLAIMTYPE = 3;
+const PLATFORM_CLAIMTYPE = 27;
 const ITEMS_PER_PAGE = 5;
 // search capabilities - upload date
 const LESS_THAN_MINUTE = "LESS_THAN_MINUTE";
@@ -2040,7 +2040,7 @@ function getSearchPagerAll(contextQuery) {
     });
     const results = [];
     const videoConnection = jsonResponse?.data?.search?.videos;
-    const liveConnection = jsonResponse?.data?.search?.videos;
+    const liveConnection = jsonResponse?.data?.search?.lives;
     const all = [
         ...(videoConnection?.edges ?? []),
         ...(liveConnection?.edges ?? [])
@@ -2074,13 +2074,6 @@ function getSearchPagerAll(contextQuery) {
         filters: context.filters,
     };
     return new SearchPagerAll(results, videoConnection?.pageInfo?.hasNextPage, params, context.page, getSearchPagerAll);
-}
-function checkHLS(url, headersToAdd, usePlatformAuth = false) {
-    // const resp = http.GET(url, headersToAdd, true);
-    var resp = getHttpContext({ usePlatformAuth }).GET(url, headersToAdd, usePlatformAuth);
-    if (!resp.isOk) {
-        throw new UnavailableException('This content is not available');
-    }
 }
 function getSavedVideo(url, usePlatformAuth = false) {
     const id = url.split('/').pop();
@@ -2118,7 +2111,6 @@ function getSavedVideo(url, usePlatformAuth = false) {
         throw new UnavailableException('This content is not available');
     }
     const hls_url = player_metadata?.qualities?.auto[0]?.url;
-    checkHLS(hls_url, headers1);
     const videoDetailsRequestHeaders = {
         "Content-Type": "application/json",
         "User-Agent": USER_AGENT,

@@ -1,7 +1,22 @@
 # Dailymotion plugin for Grayjay - work in progress
 
-
 Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to install into Grayjay
+
+## Features
+- [x] - Home
+- [x] - Home search
+- [x] - Search autocomplete
+- [x] - Subscriptions
+- [x] - Channel search
+- [x] - Channel Details
+- [x] - Playlists search
+- [x] - Settings / Thumbnail resolution
+- [x] - Settings / Creator avatar resolution
+- [x] - Settings / Hide sensitive content
+- [x] - Settings / Prefered Country
+- [x] - Sign in (import subscriptions and playlists)
+- [x] - Policentric Comments
+
 
 
 ## Install
