@@ -46,7 +46,8 @@ import {
 	isUsernameUrl,
 	executeGqlQuery,
 	getPreferredCountry,
-	getAnonymousUserTokenSingleton
+	getAnonymousUserTokenSingleton,
+	convertSRTtoVTT
 } from './util';
 
 import {
@@ -1044,6 +1045,43 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		dash: null,
 		live: null,
 		hls: null,
+		subtitles: []
+	}
+
+	const subtitles = player_metadata?.subtitles;
+
+	if (subtitles?.enable && subtitles?.data) {
+		Object.keys(subtitles.data).forEach(key => {
+			const subtitleData = subtitles.data[key];
+
+			if (subtitleData) {
+				const subtitleUrl = subtitleData.urls[0];
+
+				platformVideoDetails.subtitles.push({
+					name: subtitleData.label,
+					url: subtitleUrl,
+					format: "text/vtt",
+					getSubtitles() {
+						try {
+							const subResp = http.GET(subtitleUrl, {});
+
+							if (!subResp.isOk) {
+								if (IS_TESTING) {
+									bridge.log(`Failed to fetch subtitles from ${subtitleUrl}`)
+								}
+								return "";
+							}
+							return convertSRTtoVTT(subResp.body);
+						} catch (error: any) {
+							if (IS_TESTING) {
+								bridge.log(`Error fetching subtitles: ${error?.message}`);
+							}
+							return "";
+						}
+					}
+				});
+			}
+		});
 	}
 
 	return new PlatformVideoDetails(platformVideoDetails)
@@ -1059,7 +1097,7 @@ function getSearchChannelPager(context) {
 	};
 
 	const json = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: false }),{
+		getHttpContext({ usePlatformAuth: false }), {
 		operationName: "SEARCH_QUERY",
 		variables,
 		query: SEARCH_CHANNEL
