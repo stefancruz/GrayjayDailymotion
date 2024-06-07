@@ -7579,7 +7579,7 @@
       {
         "kind": "OBJECT",
         "name": "CommentViewerEngagement",
-        "description": "Information about the viewer engagement of a comment.",
+        "description": "Information about the viewer engagement of a Comment.",
         "fields": [
           {
             "name": "id",
@@ -7598,8 +7598,20 @@
             "deprecationReason": null
           },
           {
+            "name": "likeRating",
+            "description": "Indicates the like rating of the comment from the viewer.",
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "LikeRating",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "liked",
-            "description": "Indicates whether the connected user has liked the comment.\n    Returns False if the user is not connected.",
+            "description": "Indicates whether the viewer has liked the comment. Returns False if the viewer is not connected.",
             "args": [],
             "type": {
               "kind": "NON_NULL",
@@ -7619,6 +7631,11 @@
           {
             "kind": "INTERFACE",
             "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ViewerEngagement",
             "ofType": null
           }
         ],
@@ -14887,7 +14904,7 @@
             "args": [],
             "type": {
               "kind": "OBJECT",
-              "name": "ViewerEngagement",
+              "name": "LiveViewerEngagement",
               "ofType": null
             },
             "isDeprecated": false,
@@ -15729,6 +15746,116 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "LiveViewerEngagement",
+        "description": "Information about the viewer engagement of a Live.",
+        "fields": [
+          {
+            "name": "bookmarked",
+            "description": "Indicates whether the live is bookmarked by the viewer. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "favorited",
+            "description": "Indicates whether the viewer has the live in its watch later list. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "likeRating",
+            "description": "Indicates the like rating of the live from the viewer.",
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "LikeRating",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "liked",
+            "description": "Indicates whether the viewer has liked the comment. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "reacted",
+            "description": "Indicates whether the viewer has reacted to the live. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "saved",
+            "description": "Indicates whether the viewer has added the live to one of its collections. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ViewerEngagement",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -19500,6 +19627,11 @@
           },
           {
             "kind": "OBJECT",
+            "name": "LiveViewerEngagement",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "Localization",
             "ofType": null
           },
@@ -19661,6 +19793,11 @@
           {
             "kind": "OBJECT",
             "name": "ReactionVideoStatsSaves",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "ReactionViewerEngagement",
             "ofType": null
           },
           {
@@ -19906,6 +20043,11 @@
           {
             "kind": "OBJECT",
             "name": "VideoStreams",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "VideoViewerEngagement",
             "ofType": null
           },
           {
@@ -25350,7 +25492,7 @@
             "args": [],
             "type": {
               "kind": "OBJECT",
-              "name": "ViewerEngagement",
+              "name": "ReactionViewerEngagement",
               "ofType": null
             },
             "isDeprecated": false,
@@ -26225,7 +26367,7 @@
             "args": [],
             "type": {
               "kind": "OBJECT",
-              "name": "ViewerEngagement",
+              "name": "ReactionViewerEngagement",
               "ofType": null
             },
             "isDeprecated": false,
@@ -26947,6 +27089,140 @@
           }
         ],
         "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "ReactionViewerEngagement",
+        "description": "Information about the viewer engagement of a Reaction.",
+        "fields": [
+          {
+            "name": "bookmarked",
+            "description": "Indicates whether the reaction is bookmarked by the viewer. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "favorited",
+            "description": "Indicates whether the viewer has the reaction in its watch later list. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "likeRating",
+            "description": "Indicates the like rating of the reaction from the viewer.",
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "LikeRating",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "liked",
+            "description": "Indicates whether the viewer has liked the comment. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "reacted",
+            "description": "Indicates whether the viewer has reacted to the reaction. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "saved",
+            "description": "Indicates whether the viewer has added the reaction to one of its collections. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "watchCompleted",
+            "description": "Indicates whether the viewer has completed watching the reaction. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "watchStarted",
+            "description": "Indicates whether the viewer has started watching the reaction. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ViewerEngagement",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -38444,7 +38720,7 @@
             "args": [],
             "type": {
               "kind": "OBJECT",
-              "name": "ViewerEngagement",
+              "name": "VideoViewerEngagement",
               "ofType": null
             },
             "isDeprecated": false,
@@ -39812,12 +40088,12 @@
       },
       {
         "kind": "OBJECT",
-        "name": "ViewerEngagement",
-        "description": "Information about the viewer engagement of a post.",
+        "name": "VideoViewerEngagement",
+        "description": "Information about the viewer engagement of a Video.",
         "fields": [
           {
             "name": "bookmarked",
-            "description": "Indicates whether the post is bookmarked by the connected user.\n  Returns False if the user is not connected.",
+            "description": "Indicates whether the video is bookmarked by the viewer. Returns False if the viewer is not connected.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -39829,7 +40105,7 @@
           },
           {
             "name": "favorited",
-            "description": "Indicates whether the post is in the watch later list of the connected user.\n    Returns False if the user is not connected.",
+            "description": "Indicates whether the viewer has the video in its watch later list. Returns False if the viewer is not connected.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -39839,6 +40115,116 @@
             "isDeprecated": false,
             "deprecationReason": null
           },
+          {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "likeRating",
+            "description": "Indicates the like rating of the video from the viewer.",
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "LikeRating",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "liked",
+            "description": "Indicates whether the viewer has liked the comment. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "reacted",
+            "description": "Indicates whether the viewer has reacted to the video. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "saved",
+            "description": "Indicates whether the viewer has added the video to one of its collections. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "watchCompleted",
+            "description": "Indicates whether the viewer has completed watching the video. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "watchStarted",
+            "description": "Indicates whether the viewer has started watching the video. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "ViewerEngagement",
+            "ofType": null
+          }
+        ],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INTERFACE",
+        "name": "ViewerEngagement",
+        "description": "Information about the viewer engagement of a Post.",
+        "fields": [
           {
             "name": "id",
             "description": "The ID of the object.",
@@ -39869,55 +40255,7 @@
           },
           {
             "name": "liked",
-            "description": "Indicates whether the connected user has liked the post.\n    Returns False if the user is not connected.",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "reacted",
-            "description": "Indicates whether the connected user has reacted to the post.\n    Returns False if the user is not connected.",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "saved",
-            "description": "Indicates whether the connected user added the post to a collection.\n    Returns False if the user is not connected.",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "watchCompleted",
-            "description": "Indicates whether the current user has completely watched the post.\n    Returns False if the user is not connected.\n    ",
-            "args": [],
-            "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
-            },
-            "isDeprecated": false,
-            "deprecationReason": null
-          },
-          {
-            "name": "watchStarted",
-            "description": "Indicates whether the current user has started watching the post.\n    Returns False if the user is not connected.\n    ",
+            "description": "Indicates whether the viewer has liked the post. Returns False if the viewer is not connected.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -39931,7 +40269,28 @@
         "inputFields": null,
         "interfaces": [],
         "enumValues": null,
-        "possibleTypes": null
+        "possibleTypes": [
+          {
+            "kind": "OBJECT",
+            "name": "CommentViewerEngagement",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "LiveViewerEngagement",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "ReactionViewerEngagement",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "VideoViewerEngagement",
+            "ofType": null
+          }
+        ]
       },
       {
         "kind": "OBJECT",
