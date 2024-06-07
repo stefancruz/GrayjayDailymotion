@@ -5,10 +5,13 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 ## Features
 - [x] - Home
 - [x] - Home search
+- [x] - Live videos from home search
 - [x] - Search autocomplete
+- [x] - Video details (likes, dislikes, views, publish date)
 - [x] - Subscriptions
 - [x] - Channel search
 - [x] - Channel Details
+- [x] - Downloads
 - [x] - Playlists search
 - [x] - Settings / Thumbnail resolution
 - [x] - Settings / Creator avatar resolution
@@ -16,6 +19,7 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Settings / Prefered Country
 - [x] - Sign in (import subscriptions and playlists)
 - [x] - Policentric Comments
+- [x] - Subtitles
 
 
 
