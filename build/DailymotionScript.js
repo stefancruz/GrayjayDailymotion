@@ -1392,6 +1392,33 @@ function executeGqlQuery(httpClient, requestOptions) {
     }
     return body;
 }
+/**
+ * Converts SRT subtitle format to VTT format.
+ *
+ * @param {string} srt - The SRT subtitle string.
+ * @returns {string} - The converted VTT subtitle string.
+ */
+const convertSRTtoVTT = (srt) => {
+    // Initialize the VTT output with the required header
+    const vtt = ['WEBVTT\n\n'];
+    // Split the SRT input into blocks based on double newlines
+    const srtBlocks = srt.split('\n\n');
+    // Process each block individually
+    srtBlocks.forEach((block) => {
+        // Split each block into lines
+        const lines = block.split('\n');
+        if (lines.length >= 3) {
+            // Extract and convert the timestamp line
+            const timestamp = lines[1].replace(/,/g, '.');
+            // Extract the subtitle text lines
+            const subtitleText = lines.slice(2).join('\n');
+            // Add the converted block to the VTT output
+            vtt.push(`${timestamp}\n${subtitleText}\n\n`);
+        }
+    });
+    // Join the VTT array into a single string and return it
+    return vtt.join('');
+};
 
 class SearchPagerAll extends VideoPager {
     /**
@@ -2202,7 +2229,40 @@ function getSavedVideo(url, usePlatformAuth = false) {
         dash: null,
         live: null,
         hls: null,
+        subtitles: []
     };
+    const subtitles = player_metadata?.subtitles;
+    if (subtitles?.enable && subtitles?.data) {
+        Object.keys(subtitles.data).forEach(key => {
+            const subtitleData = subtitles.data[key];
+            if (subtitleData) {
+                const subtitleUrl = subtitleData.urls[0];
+                platformVideoDetails.subtitles.push({
+                    name: subtitleData.label,
+                    url: subtitleUrl,
+                    format: "text/vtt",
+                    getSubtitles() {
+                        try {
+                            const subResp = http.GET(subtitleUrl, {});
+                            if (!subResp.isOk) {
+                                if (IS_TESTING) {
+                                    bridge.log(`Failed to fetch subtitles from ${subtitleUrl}`);
+                                }
+                                return "";
+                            }
+                            return convertSRTtoVTT(subResp.body);
+                        }
+                        catch (error) {
+                            if (IS_TESTING) {
+                                bridge.log(`Error fetching subtitles: ${error?.message}`);
+                            }
+                            return "";
+                        }
+                    }
+                });
+            }
+        });
+    }
     return new PlatformVideoDetails(platformVideoDetails);
 }
 function getSearchChannelPager(context) {

@@ -621,8 +621,17 @@ declare interface PlatformVideoDetailsDef extends PlatformVideoDef {
     video: VideoSourceDescriptor,
     dash: DashSource | null,
     hls: HLSSource | null,
-    live: SubtitleSource[] | null,
-    rating: RatingLikesDislikes
+    live: IVideoSource | null,
+    rating: RatingLikesDislikes,
+    subtitles: ISubtitleSource[]
+}
+
+
+interface ISubtitleSource {
+    name: String;
+    url: String?;
+    format: String?;
+    getSubtitles?: Function;
 }
 
 declare class PlatformVideoDetails extends PlatformVideo {
@@ -652,9 +661,25 @@ declare class PlatformVideoDetails extends PlatformVideo {
     }
 }
 
+declare interface PlatformContentDef {
+    id: PlatformID,
+    name: string,
+    thumbnails: Thumbnails,
+    author: PlatformAuthorLink,
+    datetime: integer,
+    url: string
+}
+
+declare interface PlatformPostDef extends PlatformContentDef {
+    thumbnails: string[],
+    thumbnails: Thumbnails[],
+    images: string[],
+    description: string
+}
+
 class PlatformPost extends PlatformContent {
     plugin_type: string;
-    thumbnails: any[];
+    thumbnails: Thumbnails[];
     images: any[];
     description: string;
 

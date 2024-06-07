@@ -23,7 +23,6 @@ module.exports = {
         { src: 'DailymotionConfig.json', dest },
         { src: 'assets/dailymotion.png', dest },
         { src: 'assets/index.html', dest },
-        { src: 'assets/qr.PNG', dest },
         { src: 'Readme.md', dest },
       ]
     })
