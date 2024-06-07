@@ -379,7 +379,7 @@ source.getUserSubscriptions = (): string[] => {
 
 	do {
 		const response = fetchSubscriptions(page, first);
-		
+
 		items = response.map(creatorName => `${BASE_URL}/${creatorName}`);
 
 		subscriptions.push(...items);
@@ -838,7 +838,7 @@ function getSearchPagerAll(contextQuery): VideoPager {
 	const results: PlatformVideo[] = []
 
 	const videoConnection = jsonResponse?.data?.search?.videos as VideoConnection;
-	const liveConnection = jsonResponse?.data?.search?.videos as LiveConnection;
+	const liveConnection = jsonResponse?.data?.search?.lives as LiveConnection;
 
 	const all: (VideoEdge | LiveEdge | null)[] = [
 		...(videoConnection?.edges ?? []),
