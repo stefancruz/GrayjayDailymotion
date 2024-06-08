@@ -21,7 +21,7 @@ export const X_DM_Preferred_Country = "";//TODO check how to get this from Grayj
 export const PLATFORM = "Dailymotion";
 export const PLATFORM_CLAIMTYPE = 27;
 
-export const ITEMS_PER_PAGE = 5;
+export const ITEMS_PER_PAGE = 20;
 
 // search capabilities - upload date
 export const LESS_THAN_MINUTE = "LESS_THAN_MINUTE"
