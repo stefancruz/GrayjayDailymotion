@@ -139,67 +139,105 @@ query SEACH_DISCOVERY_QUERY($avatar_size: AvatarHeight!, $thumbnail_resolution: 
 
 export const CHANNEL_VIDEOS_BY_CHANNEL_NAME = `
 query CHANNEL_VIDEOS_QUERY(
-  $channel_name: String!
-  $first: Int!
-  $sort: String
-  $page: Int!
-  $allowExplicit: Boolean
-  $avatar_size: AvatarHeight!
-  $thumbnail_resolution: ThumbnailHeight!
+	$channel_name: String!
+	$first: Int!
+	$sort: String
+	$page: Int!
+	$allowExplicit: Boolean
+	$avatar_size: AvatarHeight!
+	$thumbnail_resolution: ThumbnailHeight!
 ) {
-  channel(name: $channel_name) {
-    id
-    xid
-    videos(
-      sort: $sort
-      page: $page
-      first: $first
-      allowExplicit: $allowExplicit
-    ) {
-      pageInfo {
-        hasNextPage
-        nextPage
-      }
-      edges {
-        node {
-          id
-          xid
-          title
-          thumbnail(height: $thumbnail_resolution) {
-            url
-          }
-          bestAvailableQuality
-          duration
-          createdAt
-          creator {
-            id
-            name
-            displayName
-            avatar(height:$avatar_size) {
-              url
-            }
-
-          }
-          metrics {
-            engagement {
-              likes {
-                totalCount
-              }
-            }
-          }
-          viewCount
-          stats {
-            views {
-              total
-            }
-          }
-        }
-      }
-    }
-  }
+	channel(name: $channel_name) {
+		id
+		xid
+		lives(page: $page, first: $first, allowExplicit: $allowExplicit) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			totalCount
+			edges {
+				node {
+					id
+					xid
+					title
+					thumbnail(height: $thumbnail_resolution) {
+						url
+					}
+					description
+					metrics {
+						engagement {
+							audience {
+								totalCount
+							}
+						}
+					}
+					audienceCount
+					isOnAir
+					stats {
+						views {
+							total
+						}
+					}
+					creator {
+						id
+						xid
+						name
+						displayName
+						avatar(height: $avatar_size) {
+							url
+						}
+					}
+				}
+			}
+		}
+		videos(
+			page: $page
+			first: $first
+			allowExplicit: $allowExplicit
+			sort: $sort
+		) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			edges {
+				node {
+					id
+					xid
+					title
+					thumbnail(height: $thumbnail_resolution) {
+						url
+					}
+					bestAvailableQuality
+					duration
+					createdAt
+					creator {
+						id
+						name
+						displayName
+						avatar(height: $avatar_size) {
+							url
+						}
+					}
+					metrics {
+						engagement {
+							likes {
+								totalCount
+							}
+						}
+					}
+					viewCount
+					stats {
+						views {
+							total
+						}
+					}
+				}
+			}
+		}
+	}
 }
-
-
 	`
 
 export const MAIN_SEARCH_QUERY = ` 
@@ -494,6 +532,8 @@ fragment LIVE_FRAGMENT on Live {
 	isPublished
 	title
 	description
+	audienceCount
+	isOnAir
 	thumbnail(height:$thumbnail_resolution){
 		url
 		height

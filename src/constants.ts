@@ -38,6 +38,20 @@ DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
+
+// This platform uses a scale system for rating the videos.
+// Ratings are grouped into positive and negative to calculate likes and dislikes.
+export const POSITIVE_RATINGS_LABELS = [
+    "STAR_STRUCK", // amazing
+    "SMILING_FACE_WITH_SUNGLASSES", // cool
+    "WINKING_FACE" // interesting
+];
+
+export const NEGATIVE_RATINGS_LABELS = [
+    "SLEEPING_FACE", // boring
+    "FISHING_POLE" // waste of time
+];
+
 export const COUNTRY_NAMES_TO_CODE = {
     "": "",
     "Afghanistan": "AF",
