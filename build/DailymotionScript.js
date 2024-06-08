@@ -18,7 +18,7 @@ const X_DM_Neon_SSR = "0";
 const X_DM_Preferred_Country = ""; //TODO check how to get this from Grayjay
 const PLATFORM = "Dailymotion";
 const PLATFORM_CLAIMTYPE = 27;
-const ITEMS_PER_PAGE = 5;
+const ITEMS_PER_PAGE = 20;
 // search capabilities - upload date
 const LESS_THAN_MINUTE = "LESS_THAN_MINUTE";
 const ONE_TO_FIVE_MINUTES = "ONE_TO_FIVE_MINUTES";
