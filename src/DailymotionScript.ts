@@ -1,16 +1,12 @@
-var config: Config;
-var _settings: DailymotionPluginSettings;
+let config: Config;
+let _settings: DailymotionPluginSettings;
 
 
 import {
-	creatorAvatarHeight,
-	thumbnailHeight,
+	CREATOR_AVATAR_HEIGHT,
+	THUMBNAIL_HEIGHT,
 	BASE_URL,
-	LESS_THAN_MINUTE,
-	ONE_TO_FIVE_MINUTES,
-	FIVE_TO_THIRTY_MINUTES,
-	THIRTY_TO_ONE_HOUR,
-	MORE_THAN_ONE_HOUR,
+	SEARCH_CAPABILITIES,
 	PLATFORM,
 	PLATFORM_CLAIMTYPE,
 	ITEMS_PER_PAGE,
@@ -21,10 +17,9 @@ import {
 	X_DM_AppInfo_Type,
 	X_DM_AppInfo_Version,
 	X_DM_Neon_SSR,
-	DURATION_THRESHOLDS,
 	BASE_URL_API,
 	BASE_URL_METADATA,
-	errorTypes,
+	ERROR_TYPES,
 } from './constants';
 
 import {
@@ -34,11 +29,11 @@ import {
 	GET_USER_SUBSCRIPTIONS,
 	MAIN_SEARCH_QUERY,
 	HOME_QUERY,
-	GET_VIDEO_EXTRA_DETAILS,
 	CHANNEL_VIDEOS_BY_CHANNEL_NAME,
 	VIDEO_DETAILS_QUERY,
 	SEARCH_CHANNEL,
-	GET_CHANNEL_PLAYLISTS
+	GET_CHANNEL_PLAYLISTS,
+	SUBSCRIPTIONS_QUERY
 } from './gqlQueries';
 
 import {
@@ -47,7 +42,8 @@ import {
 	executeGqlQuery,
 	getPreferredCountry,
 	getAnonymousUserTokenSingleton,
-	convertSRTtoVTT
+	convertSRTtoVTT,
+	getQuery
 } from './util';
 
 import {
@@ -69,6 +65,13 @@ import {
 	SearchPlaylistPager
 } from './Pagers';
 
+
+import {
+	SourceChannelToGrayjayChannel,
+	SourceCollectionToGrayjayPlaylist,
+	SourceCollectionToGrayjayPlaylistDetails,
+	SourceVideoToGrayjayVideo
+} from './Mappers';
 
 let httpClientAnonymous: IHttp = http.newClient(false);
 
@@ -110,17 +113,15 @@ source.getHome = function () {
 
 source.searchSuggestions = function (query): string[] {
 
-	const variables = {
-		"query": query
-	}
-
 	try {
 
 		const jsonResponse = executeGqlQuery(
 			getHttpContext({ usePlatformAuth: false }),
 			{
 				operationName: 'AUTOCOMPLETE_QUERY',
-				variables: variables,
+				variables: {
+					query
+				},
 				query: SEARCH_SUGGESTIONS_QUERY
 			});
 
@@ -132,46 +133,7 @@ source.searchSuggestions = function (query): string[] {
 };
 
 
-source.getSearchCapabilities = () => {
-	//TODO: refact this to use more constants
-	return {
-		types: [
-			Type.Feed.Videos,
-			Type.Feed.Live
-		],
-		sorts: [
-			"Most Recent",
-			"Most Viewed",
-			"Most Relevant"
-		],
-		filters: [
-			{
-				id: "uploaddate",
-				name: "Upload Date",
-				isMultiSelect: false,
-				filters: [
-					{ name: "Today", value: "today" },
-					{ name: "Past week", value: "thisweek" },
-					{ name: "Past month", value: "thismonth" },
-					{ name: "Past year", value: "thisyear" }
-				]
-			},
-			{
-				id: "duration",
-				name: "Duration",
-				isMultiSelect: false,
-				filters: [
-					{ name: "< 1 min", value: LESS_THAN_MINUTE },
-					{ name: "1 - 5 min", value: ONE_TO_FIVE_MINUTES },
-					{ name: "5 - 30 min", value: FIVE_TO_THIRTY_MINUTES },
-					{ name: "30 min - 1 hour", value: THIRTY_TO_ONE_HOUR },
-					{ name: "> 1 hour", value: MORE_THAN_ONE_HOUR }
-				]
-			}
-		]
-	};
-
-}
+source.getSearchCapabilities = () => SEARCH_CAPABILITIES;
 
 
 source.search = function (query: string, type: string, order: string, filters) {
@@ -196,36 +158,13 @@ source.getChannel = function (url) {
 		{
 			operationName: 'CHANNEL_QUERY_DESKTOP',
 			variables: {
-				channel_name: channel_name,
-				avatar_size: creatorAvatarHeight[_settings?.avatarSize]
+				channel_name,
+				avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize]
 			},
 			query: CHANNEL_BY_URL_QUERY
 		});
 
-	const channel: Channel = channelDetails.data.channel;
-
-	const externalLinks = channel?.externalLinks ?? {};
-
-	const links = {};
-
-	Object
-		.keys(externalLinks)
-		.forEach(key => {
-			if (externalLinks[key]) {
-				links[key.replace('URL', '')] = externalLinks[key];
-			}
-		});
-
-	return new PlatformChannel({
-		id: new PlatformID(PLATFORM, channel?.id, config.id, PLATFORM_CLAIMTYPE),
-		name: channel?.displayName ?? "",
-		thumbnail: channel?.avatar?.url ?? "",
-		banner: channel.banner?.url ?? "",
-		subscribers: channel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
-		description: channel?.description ?? "",
-		url,
-		links,
-	})
+	return SourceChannelToGrayjayChannel(config.id, url, channelDetails.data.channel as Channel);
 
 };
 
@@ -258,8 +197,8 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 	const variables = {
 		xid,
-		avatar_size: creatorAvatarHeight[_settings.avatarSize],
-		thumbnail_resolution: thumbnailHeight[_settings.thumbnailResolution],
+		avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSize],
+		thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
 	}
 
 	const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
@@ -273,49 +212,11 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 			usePlatformAuth
 		});
 
-	const videos = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
-		const resource = edge.node as Video;
-		const opts: PlatformVideoDef = {
-			id: new PlatformID(PLATFORM, resource.id, config.id, PLATFORM_CLAIMTYPE),
-			name: resource.title ?? "",
-			thumbnails: new Thumbnails([
-				new Thumbnail(resource?.thumbnail?.url ?? "", 0)
-			]),
-			author: new PlatformAuthorLink(
-				new PlatformID(PLATFORM, resource?.creator?.id ?? "", config.id, PLATFORM_CLAIMTYPE),
-				resource?.creator?.displayName ?? "",
-				`${BASE_URL}/${resource?.creator?.name}`,
-				resource?.creator?.avatar?.url ?? "",
-				0
-			),
-			uploadDate: parseInt(new Date(resource.createdAt).getTime() / 1000),
-			datetime: parseInt(new Date(resource.createdAt).getTime() / 1000),
-			url: resource.url ?? "",
-			duration: resource.duration ?? 0,
-			viewCount: resource?.viewCount ?? 0,
-			isLive: false
-		};
-
-		return opts;
+	const videos: PlatformVideoDef[] = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
+		return SourceVideoToGrayjayVideo(config.id, edge.node as Video);
 	});
 
-	const playlist = jsonResponse?.data?.collection as Collection;
-
-	return new PlatformPlaylistDetails({
-		url: `${BASE_URL_PLAYLIST}/${playlist?.xid}`,
-		id: new PlatformID(PLATFORM, playlist?.xid, config.id, PLATFORM_CLAIMTYPE),
-		author: new PlatformAuthorLink(
-			new PlatformID(PLATFORM, playlist?.creator?.id ?? "", config.id, PLATFORM_CLAIMTYPE),
-			playlist?.creator?.displayName ?? "",
-			`${BASE_URL}/${playlist?.creator?.name}`,
-			playlist?.creator?.avatar?.url ?? "",
-			0
-		),
-		name: playlist.name,
-		thumbnail: playlist?.thumbnail?.url,
-		videoCount: playlist?.metrics?.engagement?.videos?.edges[0]?.node?.total,
-		contents: new VideoPager(videos)
-	});
+	return SourceCollectionToGrayjayPlaylistDetails(config.id, jsonResponse?.data?.collection as Collection, videos);
 
 }
 
@@ -358,7 +259,7 @@ source.getUserSubscriptions = (): string[] => {
 				variables: {
 					first: first,
 					page: page,
-					avatar_size: creatorAvatarHeight[_settings?.avatarSize],
+					avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
 				},
 				headers,
 				query: GET_USER_SUBSCRIPTIONS,
@@ -420,16 +321,6 @@ source.getUserPlaylists = (): string[] => {
 		'Cache-Control': 'no-cache',
 	}
 
-	const userInfoQuery = `
-	query SUBSCRIPTIONS_QUERY {
-		me {
-			xid
-			channel {
-				name
-			}
-		}
-	}	
-	`;
 
 
 	const jsonResponse = executeGqlQuery(
@@ -437,7 +328,7 @@ source.getUserPlaylists = (): string[] => {
 		{
 			operationName: 'SUBSCRIPTIONS_QUERY',
 			headers,
-			query: userInfoQuery,
+			query: SUBSCRIPTIONS_QUERY,
 			usePlatformAuth: true
 		});
 
@@ -479,32 +370,6 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 
 }
 
-function getQuery(context) {
-	context.sort = parseSort(context.order);
-
-	if (!context.filters) {
-		context.filters = {};
-	}
-
-	if (!context.page) {
-		context.page = 1;
-	}
-
-	if (context?.filters.duration) {
-		context.filters.durationMinVideos = DURATION_THRESHOLDS[context.filters.duration].min;
-		context.filters.durationMaxVideos = DURATION_THRESHOLDS[context.filters.duration].max;
-	} else {
-		context.filters.durationMinVideos = null;
-		context.filters.durationMaxVideos = null;
-	}
-
-	if (context.filters.uploaddate) {
-		context.filters.createdAfterVideos = parseUploadDateFilter(context.filters.uploaddate[0]);
-	}
-
-	return context;
-}
-
 
 function searchPlaylists(contextQuery) {
 
@@ -518,13 +383,12 @@ function searchPlaylists(contextQuery) {
 		"createdAfterVideos": context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
 		"shouldIncludeChannels": false,
 		"shouldIncludePlaylists": true,
-		"shouldIncludeTopics": false,
 		"shouldIncludeVideos": false,
 		"shouldIncludeLives": false,
 		"page": context.page,
 		"limit": ITEMS_PER_PAGE,
-		"thumbnail_resolution": thumbnailHeight[_settings?.thumbnailResolution],
-		"avatar_size": creatorAvatarHeight[_settings?.avatarSize],
+		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
+		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
 	}
 
 
@@ -539,33 +403,17 @@ function searchPlaylists(contextQuery) {
 
 	const playlistConnection = jsonResponse?.data?.search?.playlists as CollectionConnection;
 
-	var searchResults = playlistConnection?.edges?.map(edge => {
-
-		const playlist = edge?.node;
-
-		return new PlatformPlaylist({
-			url: `${BASE_URL_PLAYLIST}/${playlist?.xid}`,
-			id: new PlatformID(PLATFORM, playlist?.xid ?? "", config.id, PLATFORM_CLAIMTYPE),
-			author: new PlatformAuthorLink(
-				new PlatformID(PLATFORM, playlist?.creator?.id ?? "", config.id, PLATFORM_CLAIMTYPE),
-				playlist?.creator?.displayName ?? "",
-				`${BASE_URL}/${playlist?.creator?.name}`,
-				playlist?.creator?.avatar?.url ?? "",
-				0
-			),
-			name: playlist?.name,
-			thumbnail: playlist?.thumbnail?.url,
-			videoCount: playlist?.metrics?.engagement?.videos?.edges[0]?.node?.total,
-		});
+	const searchResults = playlistConnection?.edges?.map(edge => {
+		return SourceCollectionToGrayjayPlaylist(config.id, edge?.node);
 	});
 
 	const hasMore = playlistConnection?.pageInfo?.hasNextPage;
 
-	if (!searchResults || !searchResults?.length) {
+	if (!searchResults || searchResults.length === 0) {
 		return new PlaylistPager([]);
 	}
 
-	var params = {
+	const params = {
 		query: context.q,
 		sort: context.sort,
 		filters: context.filters,
@@ -581,7 +429,6 @@ function searchPlaylists(contextQuery) {
 function getVideoPager(params, page) {
 
 	const count = ITEMS_PER_PAGE;
-	const start = (page ?? 0) * count;
 
 	if (!params) {
 		params = {};
@@ -592,7 +439,6 @@ function getVideoPager(params, page) {
 
 	const headersToAdd = {
 		"User-Agent": USER_AGENT,
-		// "Accept-Language": Accept_Language,
 		"Referer": BASE_URL,
 		"Content-Type": "application/json",
 		"X-DM-AppInfo-Id": X_DM_AppInfo_Id,
@@ -611,15 +457,16 @@ function getVideoPager(params, page) {
 
 	let obj;
 
+	const anonymousHttpClient = getHttpContext({ usePlatformAuth: false });
+
 	try {
 		obj = executeGqlQuery(
-			getHttpContext({ usePlatformAuth: false }),
+			anonymousHttpClient,
 			{
 				operationName: 'SEACH_DISCOVERY_QUERY',
 				variables: {
-					shouldQueryPromotedHashtag: false,
-					avatar_size: creatorAvatarHeight[_settings?.avatarSize],
-					thumbnail_resolution: thumbnailHeight[_settings?.thumbnailResolution],
+					avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+					thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
 				},
 				query: HOME_QUERY,
 				headers: headersToAdd,
@@ -629,31 +476,11 @@ function getVideoPager(params, page) {
 		return new VideoPager([], false, { params });
 	}
 
-	var results = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.edges
-		// ?.filter(edge => edge?.node?.__typename === 'Video')
+	const results = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.edges
 		?.filter(edge => edge?.node?.id)
 		?.map(edge => {
 
-			const v = edge.node as Video;
-
-			const metadata = GetVideoExtraDetails(v.xid);
-
-			return ToPlatformVideo({
-				id: v.id,
-				name: v.title ?? "",
-				thumbnail: v.thumbnail?.url ?? "",
-				createdAt: v.createdAt,
-				creatorId: v?.creator?.id,
-				creatorName: v?.creator?.name,
-				creatorDisplayName: v.creator?.displayName,
-				creatorAvatar: v?.creator?.avatar?.url ?? "",
-				creatorUrl: `${BASE_URL}/${v.creator?.name}`,
-				duration: v.duration,
-				viewCount: metadata.views ?? 0,
-				url: `${BASE_URL_VIDEO}/${v.xid}`,
-				isLive: false,
-				description: v?.description ?? '',
-			});
+			return SourceVideoToGrayjayVideo(config.id, edge.node as Video);
 
 		})
 
@@ -661,21 +488,6 @@ function getVideoPager(params, page) {
 	return new SearchPagerAll(results, hasMore, params, page, getVideoPager);
 }
 
-function GetVideoExtraDetails(xid) {
-
-
-	const json = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: false }), {
-		operationName: 'WATCHING_VIDEO',
-		variables: { xid },
-		query: GET_VIDEO_EXTRA_DETAILS
-	});
-
-
-	return {
-		views: json?.data?.video?.stats?.views?.total
-	}
-}
 
 
 function getChannelPager(context) {
@@ -684,8 +496,9 @@ function getChannelPager(context) {
 
 	const channel_name = getChannelNameFromUrl(url);
 
+	const anonymousHttpClient = getHttpContext({ usePlatformAuth: false });
 	const json = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: false }),
+		anonymousHttpClient,
 		{
 			operationName: 'CHANNEL_VIDEOS_QUERY',
 			variables: {
@@ -694,36 +507,17 @@ function getChannelPager(context) {
 				"page": context.page ?? 1,
 				"allowExplicit": !_settings.hideSensitiveContent,
 				"first": context.page_size ?? ITEMS_PER_PAGE,
-				"avatar_size": creatorAvatarHeight[_settings?.avatarSize],
-				"thumbnail_resolution": thumbnailHeight[_settings?.thumbnailResolution],
+				"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+				"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
 			},
 			query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
 		});
 
-	const edges = json?.data?.channel?.channel_videos_all_videos?.edges ?? [];
+
+	const edges = json?.data?.channel?.videos?.edges ?? [];
 
 	let videos = edges.map((edge) => {
-
-		const video: Video = edge.node;
-
-		const metadata = GetVideoExtraDetails(video.xid);
-
-
-		return ToPlatformVideo({
-			id: video.id,
-			name: video.title,
-			thumbnail: video?.thumbnail?.url ?? "",
-			createdAt: video?.createdAt,
-			creatorId: video?.creator?.id,
-			creatorDisplayName: video?.creator?.displayName,
-			creatorName: video?.creator?.name,
-			creatorAvatar: video?.creator?.avatar?.url,
-			creatorUrl: `${BASE_URL}/${video?.creator?.name}`,
-			duration: video.duration,
-			url: `${BASE_URL_VIDEO}/${video?.xid}`,
-			viewCount: metadata.views ?? 0,
-			isLive: false
-		});
+		return SourceVideoToGrayjayVideo(config.id, edge.node as Video);
 
 	})
 
@@ -731,78 +525,8 @@ function getChannelPager(context) {
 		context.page++;
 	}
 
-	return new ChannelVideoPager(context, videos, json?.data?.channel?.channel_videos_all_videos?.pageInfo?.hasNextPage, getChannelPager);
-}
 
-function ToPlatformVideo(resource) {
-
-	return new PlatformVideo({
-		id: new PlatformID(PLATFORM, resource.id, config.id, PLATFORM_CLAIMTYPE),
-		name: resource.name,
-		thumbnails: new Thumbnails([new Thumbnail(resource.thumbnail, 0)]),
-		author: new PlatformAuthorLink(
-			new PlatformID(PLATFORM, resource.creatorId, config.id, PLATFORM_CLAIMTYPE),
-			resource.creatorDisplayName,
-			resource.creatorUrl,
-			resource.creatorAvatar ?? "",
-			0
-		),
-		uploadDate: parseInt(new Date(resource.createdAt).getTime() / 1000),
-		url: resource.url,
-		duration: resource.duration,
-		viewCount: resource.viewCount,
-		isLive: resource.isLive
-	})
-
-}
-
-function parseSort(order) {
-	let sort;
-	switch (order) {
-		//TODO: refact this to use constants
-		case "Most Recent":
-			sort = "RECENT";
-			break;
-		case "Most Viewed":
-			sort = "VIEW_COUNT";
-			break;
-		case "Most Relevant":
-			sort = "RELEVANCE";
-			break;
-		default:
-			sort = order; // Default to the original order if no match
-	}
-	return sort
-}
-
-function parseUploadDateFilter(filter) {
-	let createdAfterVideos;
-
-	const now = new Date();
-
-	switch (filter) {
-		case "today":
-			// Last 24 hours from now
-			const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-			createdAfterVideos = yesterday.toISOString();
-			break;
-		case "thisweek":
-			// Adjusts to the start of the current week (assuming week starts on Sunday)
-			const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-			createdAfterVideos = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()).toISOString();
-			break;
-		case "thismonth":
-			// Adjusts to the start of the month
-			createdAfterVideos = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-			break;
-		case "thisyear":
-			// Adjusts to the start of the year
-			createdAfterVideos = new Date(now.getFullYear(), 0, 1).toISOString();
-			break;
-		default:
-			createdAfterVideos = null;
-	}
-	return createdAfterVideos;
+	return new ChannelVideoPager(context, videos, json?.data?.channel?.videos?.pageInfo?.hasNextPage, getChannelPager);
 }
 
 function getSearchPagerAll(contextQuery): VideoPager {
@@ -817,13 +541,12 @@ function getSearchPagerAll(contextQuery): VideoPager {
 		"createdAfterVideos": context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
 		"shouldIncludeChannels": false,
 		"shouldIncludePlaylists": false,
-		"shouldIncludeTopics": false,
 		"shouldIncludeVideos": true,
 		"shouldIncludeLives": true,
 		"page": context.page ?? 1,
 		"limit": ITEMS_PER_PAGE,
-		"avatar_size": creatorAvatarHeight[_settings?.avatarSize],
-		"thumbnail_resolution": thumbnailHeight[_settings?.thumbnailResolution]
+		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution]
 	}
 
 
@@ -847,34 +570,12 @@ function getSearchPagerAll(contextQuery): VideoPager {
 	]
 
 	for (const edge of all) {
-
-		const sv = edge?.node;
-
-		const isLive = sv?.isOnAir == true;
-		const viewCount = isLive ? sv?.audienceCount : sv?.stats?.views?.total;
-
-		var video = ToPlatformVideo({
-			id: sv?.id,
-			name: sv?.title,
-			thumbnail: sv?.thumbnail?.url,
-			createdAt: sv?.createdAt,
-			creatorId: sv?.creator?.id,
-			creatorName: sv?.creator?.name,
-			creatorDisplayName: sv?.creator?.displayName,
-			creatorUrl: `${BASE_URL}/${sv?.creator?.name}`,
-			creatorAvatar: sv?.creator?.avatar?.url ?? "",
-			duration: sv?.duration,
-			viewCount,
-			url: `${BASE_URL_VIDEO}/${sv?.xid}`,
-			isLive,
-			description: sv?.description ?? '',
-		});
-
+		const video = SourceVideoToGrayjayVideo(config.id, edge?.node as Video);
 		results.push(video)
 	}
 
 	//results, hasMore, path, params, page
-	var params = {
+	const params = {
 		query: context.q,
 		sort: context.sort,
 		filters: context.filters,
@@ -889,10 +590,9 @@ function getSavedVideo(url, usePlatformAuth = false) {
 
 	const player_metadata_url = `${BASE_URL_METADATA}/${id}?embedder=https%3A%2F%2Fwww.dailymotion.com%2Fvideo%2Fx8yb2e8&geo=1&player-id=xjnde&locale=en-GB&dmV1st=ce2035cd-bdca-4d7b-baa4-127a17490ca5&dmTs=747022&is_native_app=0&app=com.dailymotion.neon&client_type=webapp&section_type=player&component_style=_`;
 
-	var headers1 = {
+	const headers1 = {
 		"User-Agent": USER_AGENT,
 		"Accept": "*/*",
-		// "Accept-Language": Accept_Language,
 		// "Accept-Encoding": "gzip, deflate, br, zstd",
 		"Referer": "https://geo.dailymotion.com/",
 		"Origin": "https://geo.dailymotion.com",
@@ -911,30 +611,27 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		headers1["Cookie"] = "ff=off"
 	}
 
-	var player_metadataResponse = getHttpContext({ usePlatformAuth }).GET(player_metadata_url, headers1, usePlatformAuth);
+	const player_metadataResponse = getHttpContext({ usePlatformAuth }).GET(player_metadata_url, headers1, usePlatformAuth);
 
 	if (!player_metadataResponse.isOk) {
 		throw new UnavailableException('Unable to get player metadata');
 	}
 
-	var player_metadata = JSON.parse(player_metadataResponse.body);
+	const player_metadata = JSON.parse(player_metadataResponse.body);
 
 	if (player_metadata.error) {
 
-		if (player_metadata.error.code && errorTypes[player_metadata.error.code] !== undefined) {
-			throw new UnavailableException(errorTypes[player_metadata.error.code]);
+		if (player_metadata.error.code && ERROR_TYPES[player_metadata.error.code] !== undefined) {
+			throw new UnavailableException(ERROR_TYPES[player_metadata.error.code]);
 		}
 
 		throw new UnavailableException('This content is not available');
 	}
 
-	const hls_url = player_metadata?.qualities?.auto[0]?.url;
-
 	const videoDetailsRequestHeaders = {
 		"Content-Type": "application/json",
 		"User-Agent": USER_AGENT,
 		"Accept": "*/*, */*",
-		// "Accept-Language": Accept_Language,
 		"Referer": `${BASE_URL_VIDEO}/${id}`,
 		"X-DM-AppInfo-Id": X_DM_AppInfo_Id,
 		"X-DM-AppInfo-Type": X_DM_AppInfo_Type,
@@ -958,9 +655,8 @@ function getSavedVideo(url, usePlatformAuth = false) {
 
 	const variables = {
 		"xid": id,
-		"isSEO": false,
-		"avatar_size": creatorAvatarHeight[_settings?.avatarSize],
-		"thumbnail_resolution": thumbnailHeight[_settings?.thumbnailResolution]
+		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution]
 	};
 
 	const videoDetailsRequestBody = JSON.stringify(
@@ -983,18 +679,17 @@ function getSavedVideo(url, usePlatformAuth = false) {
 			{
 				name: 'source',
 				duration: player_metadata?.duration,
-				url: hls_url,
+				url: player_metadata?.qualities?.auto[0]?.url,
 				// priority: true,
 			}
 		)
 	]
 
-	const video = video_details?.data?.video;
+	const video = video_details?.data?.video as Video;
 
 
 	// This platform uses a scale system for rating the videos.
 	// Ratings are grouped into positive and negative to calculate likes and dislikes.
-
 	const positiveRatings = [
 		"STAR_STRUCK", // amazing
 		"SMILING_FACE_WITH_SUNGLASSES", // cool
@@ -1022,24 +717,25 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		}
 	}
 
-	var platformVideoDetails: PlatformVideoDetailsDef = {
+	const platformVideoDetails: PlatformVideoDetailsDef = {
 		id: new PlatformID(PLATFORM, id, config.id, PLATFORM_CLAIMTYPE),
-		name: video.title,
-		thumbnails: new Thumbnails([new Thumbnail(video.thumbnail.url, 0)]),
+		name: video?.title ?? "",
+		thumbnails: new Thumbnails([new Thumbnail(video?.thumbnail?.url ?? "", 0)]),
 		author: new PlatformAuthorLink(
-			new PlatformID(PLATFORM, video?.creator?.id, config.id, PLATFORM_CLAIMTYPE),
-			video?.creator?.displayName,
+			new PlatformID(PLATFORM, video?.creator?.id ?? "", config.id, PLATFORM_CLAIMTYPE),
+			video?.creator?.displayName ?? "",
 			`${BASE_URL}/${video?.creator?.name}`,
 			`${video?.creator?.avatar?.url}`,
 			0 //subscribers
 		),
 		// datetime: new Date(video?.createdAt).getTime(),
-		uploadDate: parseInt(new Date(video.createdAt).getTime() / 1000),
-		duration: video?.duration,
-		viewCount: video?.stats?.views?.total,
+		uploadDate: parseInt(new Date(video?.createdAt).getTime() / 1000),
+		datetime: parseInt(new Date(video?.createdAt).getTime() / 1000),
+		duration: video?.duration ?? 0,
+		viewCount: video?.stats?.views?.total ?? 0,
 		url: `${BASE_URL_VIDEO}/${id}`,
 		isLive: video?.duration == undefined,
-		description: video?.description,
+		description: video?.description ?? "",
 		video: new VideoSourceDescriptor(sources),
 		rating: new RatingLikesDislikes(positiveRatingCount, negativeRatingCount),
 		dash: null,
@@ -1093,7 +789,7 @@ function getSearchChannelPager(context) {
 		query: context.q,
 		page: context.page ?? 1,
 		limit: ITEMS_PER_PAGE,
-		avatar_size: creatorAvatarHeight[_settings?.avatarSize]
+		avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize]
 	};
 
 	const json = executeGqlQuery(
@@ -1104,20 +800,11 @@ function getSearchChannelPager(context) {
 	});
 
 	const results = json?.data?.search?.channels?.edges.map(edge => {
-		const c = edge.node;
-		return new PlatformChannel({
-			id: new PlatformID(PLATFORM, c.id, config.id, PLATFORM_CLAIMTYPE),
-			name: c.displayName,
-			thumbnail: c?.avatar?.url,
-			subscribers: c?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
-			url: `${BASE_URL}/${c.name}`,
-			links: [],
-			banner: "",
-			description: c.description,
-		});
+		const channel = edge.node as Channel;
+		return SourceChannelToGrayjayChannel(config.id, `${BASE_URL}/${channel.name}`, channel);
 	});
 
-	var params = {
+	const params = {
 		query: context.q,
 	}
 
@@ -1125,7 +812,7 @@ function getSearchChannelPager(context) {
 
 }
 
-function getHttpContext(opts: { usePlatformAuth: Boolean } = { usePlatformAuth: false }): IHttp {
+function getHttpContext(opts: { usePlatformAuth: boolean } = { usePlatformAuth: false }): IHttp {
 	return opts.usePlatformAuth ? http : httpClientAnonymous;
 }
 

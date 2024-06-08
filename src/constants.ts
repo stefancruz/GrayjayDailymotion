@@ -21,7 +21,7 @@ export const X_DM_Preferred_Country = "";//TODO check how to get this from Grayj
 export const PLATFORM = "Dailymotion";
 export const PLATFORM_CLAIMTYPE = 27;
 
-export const ITEMS_PER_PAGE = 5;
+export const ITEMS_PER_PAGE = 20;
 
 // search capabilities - upload date
 export const LESS_THAN_MINUTE = "LESS_THAN_MINUTE"
@@ -38,7 +38,7 @@ DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
-export const countryNamesToCode = {
+export const COUNTRY_NAMES_TO_CODE = {
     "": "",
     "Afghanistan": "AF",
     "Aland Islands": "AX",
@@ -291,7 +291,7 @@ export const countryNamesToCode = {
     "Zimbabwe": "ZW"
 }
 
-export const creatorAvatarHeight = [
+export const CREATOR_AVATAR_HEIGHT = [
     "SQUARE_25",
     "SQUARE_60",
     "SQUARE_80",
@@ -303,7 +303,7 @@ export const creatorAvatarHeight = [
     "SQUARE_720"
 ]
 
-export const thumbnailHeight = [
+export const THUMBNAIL_HEIGHT = [
     "PORTRAIT_60",
     "PORTRAIT_120",
     "PORTRAIT_180",
@@ -314,9 +314,9 @@ export const thumbnailHeight = [
     "PORTRAIT_1080"
 ]
 
-export const countryNames = Object.keys(countryNamesToCode);
+export const COUNTRY_NAMES = Object.keys(COUNTRY_NAMES_TO_CODE);
 
-export const errorTypes = {
+export const ERROR_TYPES = {
     "DM001": "No video has been specified, you need to specify one.",
     "DM002": "Content has been deleted.",
     "DM003": "Live content is not available, i.e. it may not have started yet.",
@@ -335,3 +335,41 @@ export const errorTypes = {
     "DM016": "Content not available on this website, it can only be watched on Dailymotion",
     "DM019": "This content has been uploaded by an inactive channel and its access is limited"
 };
+
+
+export const SEARCH_CAPABILITIES = {
+    types: [
+        Type.Feed.Videos,
+        Type.Feed.Live
+    ],
+    sorts: [
+        "Most Recent",
+        "Most Viewed",
+        "Most Relevant"
+    ],
+    filters: [
+        {
+            id: "uploaddate",
+            name: "Upload Date",
+            isMultiSelect: false,
+            filters: [
+                { name: "Today", value: "today" },
+                { name: "Past week", value: "thisweek" },
+                { name: "Past month", value: "thismonth" },
+                { name: "Past year", value: "thisyear" }
+            ]
+        },
+        {
+            id: "duration",
+            name: "Duration",
+            isMultiSelect: false,
+            filters: [
+                { name: "< 1 min", value: LESS_THAN_MINUTE },
+                { name: "1 - 5 min", value: ONE_TO_FIVE_MINUTES },
+                { name: "5 - 30 min", value: FIVE_TO_THIRTY_MINUTES },
+                { name: "30 min - 1 hour", value: THIRTY_TO_ONE_HOUR },
+                { name: "> 1 hour", value: MORE_THAN_ONE_HOUR }
+            ]
+        }
+    ]
+}

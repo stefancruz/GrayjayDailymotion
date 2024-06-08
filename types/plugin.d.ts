@@ -585,6 +585,7 @@ declare class PlatformAuthorMembershipLink {
 declare interface PlatformVideoDef {
     id: PlatformID,
     name: string,
+    description: string,
     thumbnails: Thumbnails,
     author: PlatformAuthorLink,
     uploadDate: number,
@@ -592,7 +593,8 @@ declare interface PlatformVideoDef {
     url: string,
     duration: number,
     viewCount: number,
-    isLive: boolean
+    isLive: boolean,
+    shareUrl?: any
 }
 
 declare class PlatformVideo extends PlatformContent {

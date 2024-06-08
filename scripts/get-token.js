@@ -1,7 +1,6 @@
 const axios = require("axios").default;
 const fs = require('fs');
 const path = require("path");
-const currentDirectory = process.cwd();
 
 const options = {
     method: 'POST',
@@ -32,7 +31,6 @@ const options = {
 };
 
 axios.request(options).then(function (response) {
-    // console.log(response.data);
     const token = response.data.access_token;
     const filepath = path.join('./scripts', '.env');
     fs.writeFileSync(filepath, `GRAPHQL_ACCESS_TOKEN=${token}\n`);

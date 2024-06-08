@@ -33,10 +33,6 @@ query CHANNEL_QUERY_DESKTOP(
 			url
 		}
 		tagline
-		country {
-			id
-			codeAlpha2
-		}
 		metrics {
 			engagement {
 				followers {
@@ -82,7 +78,6 @@ fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 	xid
 	title
 	isPublished
-	embedURL
 	thumbnail(height:$thumbnail_resolution) {
 		url
 	}
@@ -97,10 +92,15 @@ fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 		}
 	}
 	duration
-	
+	viewCount
+	stats {
+		views {
+			total
+		}
+	}
 }
 
-query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!, $avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
+query SEACH_DISCOVERY_QUERY($avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	home: views {
 		id
 		neon {
@@ -130,44 +130,8 @@ query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!, $avatar_size:
 			}
 		}
 	}
-	featuredContent {
-		id
-		channels(first: 10) {
-			edges {
-				node {
-					id
-					xid
-					displayName
-					name
-					logoURL(size: "x120")
-					stats {
-						id
-						followers {
-							id
-							total
-						}
-					}
-				}
-			}
-		}
-	}
-	conversations(
-		filter: { story: { eq: HASHTAG }, algorithm: { eq: SPONSORED } }
-		first: 1
-	) @include(if: $shouldQueryPromotedHashtag) {
-		edges {
-			node {
-				id
-				story {
-					... on Hashtag {
-						id
-						name
-					}
-				}
-			}
-		}
-	}
 }
+
 
 
 `
@@ -175,62 +139,67 @@ query SEACH_DISCOVERY_QUERY($shouldQueryPromotedHashtag: Boolean!, $avatar_size:
 
 export const CHANNEL_VIDEOS_BY_CHANNEL_NAME = `
 query CHANNEL_VIDEOS_QUERY(
-	$channel_name: String!
-	$first: Int!
-	$sort: String
-	$page: Int!
-	$allowExplicit: Boolean
-	$avatar_size: AvatarHeight!
-	$thumbnail_resolution: ThumbnailHeight!
+  $channel_name: String!
+  $first: Int!
+  $sort: String
+  $page: Int!
+  $allowExplicit: Boolean
+  $avatar_size: AvatarHeight!
+  $thumbnail_resolution: ThumbnailHeight!
 ) {
-	channel(name: $channel_name) {
-		id
-		xid
-		channel_videos_all_videos: videos(
-			sort: $sort
-			page: $page
-			first: $first
-			allowExplicit: $allowExplicit
-		) {
-			pageInfo {
-				hasNextPage
-				nextPage
-			}
-			edges {
-				node {
-					id
-					xid
-					title
-					thumbnail(height:$thumbnail_resolution) {
-						url
-					}
-					bestAvailableQuality
-					duration
-					createdAt
-					creator {
-						id
-						name
-						displayName
-						avatar(height:$avatar_size) {
-							url
-						}
+  channel(name: $channel_name) {
+    id
+    xid
+    videos(
+      sort: $sort
+      page: $page
+      first: $first
+      allowExplicit: $allowExplicit
+    ) {
+      pageInfo {
+        hasNextPage
+        nextPage
+      }
+      edges {
+        node {
+          id
+          xid
+          title
+          thumbnail(height: $thumbnail_resolution) {
+            url
+          }
+          bestAvailableQuality
+          duration
+          createdAt
+          creator {
+            id
+            name
+            displayName
+            avatar(height:$avatar_size) {
+              url
+            }
 
-					}
-					metrics {
-						engagement {
-							likes {
-								totalCount
-							}
-						}
-					}
-
-				}
-			}
-		}
-	}
+          }
+          metrics {
+            engagement {
+              likes {
+                totalCount
+              }
+            }
+          }
+          viewCount
+          stats {
+            views {
+              total
+            }
+          }
+        }
+      }
+    }
+  }
 }
-		
-	  
+
+
 	`
 
 export const MAIN_SEARCH_QUERY = ` 
@@ -341,38 +310,11 @@ export const MAIN_SEARCH_QUERY = `
 		}
 	}
 	
-	fragment TOPIC_BASE_FRAG on Topic {
-		id
-		xid
-		name
-		videos(sort: "recent", first: 5) {
-			pageInfo {
-				hasNextPage
-				nextPage
-			}
-			edges {
-				node {
-					id
-					...VIDEO_BASE_FRAGMENT
-					...VIDEO_FAVORITES_FRAGMENT
-				}
-			}
-		}
-		stats {
-			id
-			videos {
-				id
-				total
-			}
-		}
-	}
-	
 	query SEARCH_QUERY(
 		$query: String!
 		$shouldIncludeVideos: Boolean!
 		$shouldIncludeChannels: Boolean!
 		$shouldIncludePlaylists: Boolean!
-		$shouldIncludeTopics: Boolean!
 		$shouldIncludeLives: Boolean!
 		$page: Int
 		$limit: Int
@@ -472,20 +414,6 @@ export const MAIN_SEARCH_QUERY = `
 					}
 				}
 			}
-			topics(query: $query, first: $limit, page: $page)
-				@include(if: $shouldIncludeTopics) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						...TOPIC_BASE_FRAG
-					}
-				}
-			}
 		}
 	}		
 	`;
@@ -540,7 +468,6 @@ fragment VIDEO_FRAGMENT on Video {
 			height
 			width
 		}
-		coverURLx375: coverURL(size: "x375")
 		stats {
 			id
 			views {
@@ -556,60 +483,6 @@ fragment VIDEO_FRAGMENT on Video {
 				total
 			}
 		}
-		country {
-			id
-			codeAlpha2
-		}
-		organization @skip(if: $isSEO) {
-			id
-			xid
-			owner {
-				id
-				xid
-			}
-		}
-	}
-	language {
-		id
-		codeAlpha2
-	}
-	tags {
-		edges {
-			node {
-				id
-				label
-			}
-		}
-	}
-	moderation {
-		id
-		reviewedAt
-	}
-	topics(whitelistedOnly: true, first: 3, page: 1) {
-		edges {
-			node {
-				id
-				xid
-				name
-				names {
-					edges {
-						node {
-							id
-							name
-							language {
-								id
-								codeAlpha2
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	geoblockedCountries {
-		id
-		allowed
-		denied
 	}
 }
 
@@ -684,14 +557,6 @@ fragment LIVE_FRAGMENT on Live {
 			id
 			codeAlpha2
 		}
-		organization @skip(if: $isSEO) {
-			id
-			xid
-			owner {
-				id
-				xid
-			}
-		}
 	}
 	language {
 		id
@@ -739,7 +604,6 @@ fragment LIVE_FRAGMENT on Live {
 
 query WATCHING_VIDEO(
 	$xid: String!
-	$isSEO: Boolean!
 	$avatar_size: AvatarHeight!
 	$thumbnail_resolution: ThumbnailHeight!
 ) {
@@ -883,20 +747,6 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 }
 `
 
-export const GET_VIDEO_EXTRA_DETAILS = `
-query WATCHING_VIDEO($xid: String!) {
-	video: media(xid: $xid)  {
-		... on Video {
-			stats {
-				views {
-					total
-				}
-			}
-		}
-	}
-}	
-	`
-
 export const GET_USER_SUBSCRIPTIONS = `
 query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 	me {
@@ -925,8 +775,6 @@ query CHANNEL_PLAYLISTS_QUERY(
 	$first: Int!
 ) {
 	channel(name: $channel_name) {
-		id
-		xid
 		channel_playlist_collections: collections(
 			sort: $sort
 			page: $page
@@ -938,26 +786,22 @@ query CHANNEL_PLAYLISTS_QUERY(
 			}
 			edges {
 				node {
-					id
 					xid
-					updatedAt
-					createdAt
-					name
-					description
-					thumbnailx60: thumbnailURL(size: "x60")
-					thumbnailx120: thumbnailURL(size: "x120")
-					thumbnailx240: thumbnailURL(size: "x240")
-					thumbnailx720: thumbnailURL(size: "x720")
-					stats {
-						id
-						videos {
-							id
-							total
+
 						}
 					}
 				}
 			}
 		}
+`
+
+export const SUBSCRIPTIONS_QUERY = `
+query SUBSCRIPTIONS_QUERY {
+	me {
+		xid
+		channel {
+			name
+		}
 	}
 }
-`
+`;

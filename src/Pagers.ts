@@ -79,7 +79,6 @@ export class SearchPlaylistPager extends VideoPager {
             filters: this.context.params.filters
         };
 
-        // return searchPlaylists(opts);
         return this.cb(opts)
     }
 }
