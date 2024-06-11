@@ -1121,6 +1121,8 @@ interface Source {
     searchChannels(query: string): ChannelPager;
 
     getContentDetails(url: string): PlatformVideoDetails;
+
+    getChannelPlaylists(url: string): PlaylistPager;
 }
 
 
@@ -1411,3 +1413,10 @@ interface IHttp {
 
 
 let http: IHttp
+
+
+interface IPager<T> {
+    hasMorePages() : Boolean;
+    nextPage();
+    getResults() : List<T>;
+}

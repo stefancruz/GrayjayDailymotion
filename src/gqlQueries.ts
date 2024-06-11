@@ -146,11 +146,13 @@ query CHANNEL_VIDEOS_QUERY(
 	$allowExplicit: Boolean
 	$avatar_size: AvatarHeight!
 	$thumbnail_resolution: ThumbnailHeight!
+	$shouldLoadLives: Boolean!
+	$shouldLoadVideos: Boolean!
 ) {
 	channel(name: $channel_name) {
 		id
 		xid
-		lives(page: $page, first: $first, allowExplicit: $allowExplicit) {
+		lives(page: $page, first: $first, allowExplicit: $allowExplicit) @include(if: $shouldLoadLives) {
 			pageInfo {
 				hasNextPage
 				nextPage
@@ -196,7 +198,7 @@ query CHANNEL_VIDEOS_QUERY(
 			first: $first
 			allowExplicit: $allowExplicit
 			sort: $sort
-		) {
+		) @include(if: $shouldLoadVideos) {
 			pageInfo {
 				hasNextPage
 				nextPage
@@ -807,7 +809,7 @@ query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 `;
 
 
-export const GET_CHANNEL_PLAYLISTS = `
+export const GET_CHANNEL_PLAYLISTS_XID = `
 query CHANNEL_PLAYLISTS_QUERY(
 	$channel_name: String!
 	$sort: String
@@ -815,7 +817,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 	$first: Int!
 ) {
 	channel(name: $channel_name) {
-		channel_playlist_collections: collections(
+		collections(
 			sort: $sort
 			page: $page
 			first: $first
@@ -827,7 +829,6 @@ query CHANNEL_PLAYLISTS_QUERY(
 			edges {
 				node {
 					xid
-
 						}
 					}
 				}
@@ -845,3 +846,75 @@ query SUBSCRIPTIONS_QUERY {
 	}
 }
 `;
+
+
+export const GET_CHANNEL_PLAYLISTS = `
+query CHANNEL_PLAYLISTS_QUERY(
+	$channel_name: String!
+	$sort: String
+	$page: Int!
+	$first: Int!
+	$avatar_size: AvatarHeight!, 
+	$thumbnail_resolution: ThumbnailHeight!
+) {
+	channel(name: $channel_name) {
+		id
+		xid
+		collections(sort: $sort, page: $page, first: $first) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			edges {
+				node {
+					id
+					xid
+					updatedAt
+					createdAt
+					name
+					description
+					metrics {
+						engagement {
+							videos {
+								edges {
+									node {
+										total
+									}
+								}
+								totalCount
+							}
+						}
+					}
+					thumbnail(height:$thumbnail_resolution) {
+						url
+					}
+					stats {
+						id
+						videos {
+							id
+							total
+						}
+					}
+					videos {
+						edges {
+							node {
+								createdAt
+								creator {
+									id
+									name
+									xid
+									avatar(height:$avatar_size) {
+										url
+									}
+									displayName
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+`

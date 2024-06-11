@@ -31,7 +31,8 @@ import {
 	VIDEO_DETAILS_QUERY,
 	SEARCH_CHANNEL,
 	GET_CHANNEL_PLAYLISTS,
-	SUBSCRIPTIONS_QUERY
+	SUBSCRIPTIONS_QUERY,
+	GET_CHANNEL_PLAYLISTS_XID
 } from './gqlQueries';
 
 import {
@@ -59,7 +60,8 @@ import {
 	SearchPagerAll,
 	SearchChannelPager,
 	ChannelVideoPager,
-	SearchPlaylistPager
+	SearchPlaylistPager,
+	ChannelPlaylistPager
 } from './Pagers';
 
 
@@ -170,6 +172,14 @@ source.getChannelContents = function (url) {
 	return getChannelPager({ url, page_size: ITEMS_PER_PAGE, page: 1 })
 }
 
+source.getChannelPlaylists = (url): SearchPlaylistPager => {
+	try {
+		return getChannelPlaylists(url, 1);
+	} catch (error) {
+		log('Failed to get channel playlists:' + error?.message);
+		return new ChannelPlaylistPager([]);
+	}
+}
 
 //Video
 source.isContentDetailsUrl = function (url) {
@@ -345,15 +355,17 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 				channel_name: userName,
 				sort: "recent",
 				page: 1,
-				first: 99
+				first: 99,
+				avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSize],
+				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
 			},
 			headers,
-			query: GET_CHANNEL_PLAYLISTS,
+			query: GET_CHANNEL_PLAYLISTS_XID,
 			usePlatformAuth
 		}
 	);
 
-	const playlists = jsonResponse1.data.channel.channel_playlist_collections.edges.map(edge => {
+	const playlists = jsonResponse1.data.channel.collections.edges.map(edge => {
 		const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
 		if (!authenticatedPlaylistCollection.includes(playlistUrl)) {
 			authenticatedPlaylistCollection.push(playlistUrl);
@@ -505,6 +517,8 @@ function getChannelPager(context) {
 				"first": context.page_size ?? ITEMS_PER_PAGE,
 				"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
 				"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
+				shouldLoadLives: true,
+				shouldLoadVideos: true
 			},
 			query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
 		});
@@ -714,6 +728,71 @@ function getSearchChannelPager(context) {
 
 	return new SearchChannelPager(results, searchResponse?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page, getSearchChannelPager);
 
+}
+
+function getChannelPlaylists(url, page = 1): SearchPlaylistPager {
+
+	getAnonymousUserTokenSingleton();
+
+	const headers = {
+		'Content-Type': 'application/json',
+		'User-Agent': USER_AGENT,
+		'Accept-Language': 'en-GB',
+		Referer: `${BASE_URL}/library/subscriptions`,
+		'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
+		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
+		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
+		'X-DM-Neon-SSR': '0',
+		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountry),
+		Origin: BASE_URL,
+		DNT: '1',
+		Connection: 'keep-alive',
+		'Sec-Fetch-Dest': 'empty',
+		'Sec-Fetch-Mode': 'cors',
+		'Sec-Fetch-Site': 'same-site',
+		Priority: 'u=4',
+		Pragma: 'no-cache',
+		'Cache-Control': 'no-cache',
+	};
+
+	const usePlatformAuth = false;
+	const channel_name = getChannelNameFromUrl(url);
+
+	const jsonResponse1 = executeGqlQuery(
+		http,
+		{
+			operationName: 'CHANNEL_PLAYLISTS_QUERY',
+			variables: {
+				channel_name,
+				sort: "recent",
+				page,
+				first: ITEMS_PER_PAGE,
+				avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSize],
+				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
+			},
+			headers,
+			query: GET_CHANNEL_PLAYLISTS,
+			usePlatformAuth
+		}
+	)
+
+	const channel = (jsonResponse1.data.channel as Channel);
+
+	const content = channel?.collections?.edges?.map(edge => {
+		return SourceCollectionToGrayjayPlaylist(config.id, edge.node);
+	});
+
+	if (content?.length === 0) {
+		return new ChannelPlaylistPager([]);
+	}
+
+	const params = {
+		url
+	}
+
+	const hasMore = jsonResponse1.data.channel.collections.pageInfo.hasNextPage;
+
+	return new ChannelPlaylistPager(content, hasMore, params, page, getChannelPlaylists);
 }
 
 function getHttpContext(opts: { usePlatformAuth: boolean } = { usePlatformAuth: false }): IHttp {
