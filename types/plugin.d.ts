@@ -484,7 +484,7 @@ declare class Config {
     repositoryUrl?: string;
     version?: number;
     iconUrl?: string;
-    id?: string | null;
+    id: string;
     scriptSignature?: string;
     scriptPublicKey?: string;
     packages?: string[];
@@ -591,7 +591,7 @@ declare interface PlatformVideoDef {
     uploadDate: number,
     datetime: number,
     url: string,
-    duration: number,
+    duration?: number,
     viewCount: number,
     isLive: boolean,
     shareUrl?: any
@@ -1032,7 +1032,7 @@ declare class PlaylistPager {
     hasMore: boolean;
     context: any
 
-    constructor(results: [], hasMore?: boolean, context?: any) {
+    constructor(results: PlatformPlaylist[], hasMore?: boolean, context?: any) {
         this.plugin_type = "PlaylistPager";
         this.results = results ?? [];
         this.hasMore = hasMore ?? false;
@@ -1116,7 +1116,7 @@ interface Source {
 
     isContentDetailsUrl(url: string): boolean;
 
-    getChannelContents(url: string): VideoPager;
+    getChannelContents(url: string, type?: string, order?: string, filters?: Map<String, List<String>>): VideoPager;
 
     searchChannels(query: string): ChannelPager;
 
@@ -1254,7 +1254,8 @@ let Type = {
         Subscriptions: "SUBSCRIPTIONS"
     },
     Order: {
-        Chronological: "CHRONOLOGICAL"
+        Chronological: "CHRONOLOGICAL",
+        Popular: "POPULAR",
     },
     Date: {
         LastHour: "LAST_HOUR",
@@ -1349,7 +1350,7 @@ interface IHttp {
     * @param {Boolean} useAuth
     * @return {BridgeHttpResponse}
     **/
-    GET(url: string, headers: Map<string, string>, useAuth: boolean): BridgeHttpResponse;
+    GET(url: string, headers: Map<string, string>, useAuth?: boolean): BridgeHttpResponse;
 
     /**
     * @param {String} url

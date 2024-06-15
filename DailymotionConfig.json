@@ -340,6 +340,33 @@
         "Zambia",
         "Zimbabwe"
       ]
+    },
+    {
+      "variable": "videosPerPageIndex",
+      "name": "Videos per page",
+      "description": "Select the number of videos to load per page",
+      "type": "Dropdown",
+      "default": "3",
+      "options": [
+        "5",
+        "10",
+        "15",
+        "20",
+        "25"
+      ]
+    },
+    {
+      "variable": "playlistsPerPageIndex",
+      "name": "Playlists per page",
+      "description": "Select the number of playlists to load per page",
+      "type": "Dropdown",
+      "default": "0",
+      "options": [
+        "5",
+        "10",
+        "15",
+        "20"
+      ]
     }
   ]
 }

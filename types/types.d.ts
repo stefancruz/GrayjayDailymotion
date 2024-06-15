@@ -1,9 +1,11 @@
 
 interface IDailymotionPluginSettings {
-    hideSensitiveContent?: boolean;
-    preferredCountry?: number;
-    avatarSize?: number;
-    thumbnailResolution?: number;
+    hideSensitiveContent: boolean;
+    preferredCountry: number;
+    avatarSize: number;
+    thumbnailResolution: number;
+    videosPerPageIndex: number;
+    playlistsPerPageIndex: number;
 }
 
 

@@ -21,7 +21,6 @@ export const X_DM_Preferred_Country = "";//TODO check how to get this from Grayj
 export const PLATFORM = "Dailymotion";
 export const PLATFORM_CLAIMTYPE = 27;
 
-export const ITEMS_PER_PAGE = 20;
 
 // search capabilities - upload date
 export const LESS_THAN_MINUTE = "LESS_THAN_MINUTE"
@@ -39,6 +38,15 @@ DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
 
+/** The possible values which liked media connections can be sorted by. */
+export enum LikedMediaSort {
+    /** Sort liked medias by most recent. */
+    Recent = 'recent',
+    /** Sort liked medias by most viewed. */
+    Visited = 'visited'
+}
+
+
 // This platform uses a scale system for rating the videos.
 // Ratings are grouped into positive and negative to calculate likes and dislikes.
 export const POSITIVE_RATINGS_LABELS = [
@@ -51,6 +59,22 @@ export const NEGATIVE_RATINGS_LABELS = [
     "SLEEPING_FACE", // boring
     "FISHING_POLE" // waste of time
 ];
+
+
+export const VIDEOS_PER_PAGE_OPTIONS = [
+    5,
+    10,
+    15,
+    20,
+    25
+]
+
+export const PLAYLISTS_PER_PAGE_OPTIONS = [
+    5,
+    10,
+    15,
+    20
+]
 
 export const COUNTRY_NAMES_TO_CODE = {
     "": "",

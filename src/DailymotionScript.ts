@@ -7,7 +7,6 @@ import {
 	THUMBNAIL_HEIGHT,
 	BASE_URL,
 	SEARCH_CAPABILITIES,
-	ITEMS_PER_PAGE,
 	BASE_URL_VIDEO,
 	BASE_URL_PLAYLIST,
 	USER_AGENT,
@@ -17,7 +16,10 @@ import {
 	X_DM_Neon_SSR,
 	BASE_URL_API,
 	BASE_URL_METADATA,
-	ERROR_TYPES
+	ERROR_TYPES,
+	LikedMediaSort,
+	VIDEOS_PER_PAGE_OPTIONS,
+	PLAYLISTS_PER_PAGE_OPTIONS
 } from './constants';
 
 import {
@@ -73,10 +75,32 @@ import {
 	SourceVideoToPlatformVideoDetailsDef
 } from './Mappers';
 
+
+if (IS_TESTING) {
+
+
+	if (!_settings) {
+		_settings = {}
+	}
+
+	_settings.hideSensitiveContent = false;
+	_settings.avatarSize = 8;
+	_settings.thumbnailResolution = 7;
+	_settings.preferredCountry = 0;
+	_settings.videosPerPageIndex = 4;
+	_settings.playlistsPerPageIndex = 0;
+
+	if (!config) {
+		config = {
+			id: "9c87e8db-e75d-48f4-afe5-2d203d4b95c5"
+		}
+	}
+}
+
 let httpClientAnonymous: IHttp = http.newClient(false);
 
 
-// Will be used to store playlists that require authentication
+// Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection: string[] = [];
 
 source.setSettings = function (settings) {
@@ -90,17 +114,6 @@ source.enable = function (conf, settings, saveStateStr) {
 	config = conf ?? {};
 	_settings = settings ?? {};
 
-	if (IS_TESTING) {
-		_settings.hideSensitiveContent = false;
-		_settings.avatarSize = 8;
-		_settings.thumbnailResolution = 7;
-
-		if (!config) {
-			config = {
-				id: "9c87e8db-e75d-48f4-afe5-2d203d4b95c5"
-			}
-		}
-	}
 }
 
 
@@ -126,7 +139,7 @@ source.searchSuggestions = function (query): string[] {
 			});
 
 		return (jsonResponse?.data?.search?.suggestedVideos as SuggestionConnection)?.edges?.map(edge => edge?.node?.name ?? "") ?? [];
-	} catch (error) {
+	} catch (error: any) {
 		log('Failed to get search suggestions:' + error?.message);
 		return [];
 	}
@@ -168,8 +181,15 @@ source.getChannel = function (url) {
 
 };
 
-source.getChannelContents = function (url) {
-	return getChannelPager({ url, page_size: ITEMS_PER_PAGE, page: 1 })
+source.getChannelContents = function (url, type, order) {
+
+	return getChannelPager({
+		url,
+		page_size: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
+		page: 1,
+		type,
+		order
+	})
 }
 
 source.getChannelPlaylists = (url): SearchPlaylistPager => {
@@ -180,6 +200,14 @@ source.getChannelPlaylists = (url): SearchPlaylistPager => {
 		return new ChannelPlaylistPager([]);
 	}
 }
+
+source.getChannelCapabilities = (): ResultCapabilities => {
+	return {
+		types: [Type.Feed.Mixed],
+		sorts: [Type.Order.Chronological, Type.Order.Popular],
+		filters: []
+	};
+};
 
 //Video
 source.isContentDetailsUrl = function (url) {
@@ -394,7 +422,7 @@ function searchPlaylists(contextQuery) {
 		"shouldIncludeVideos": false,
 		"shouldIncludeLives": false,
 		"page": context.page,
-		"limit": ITEMS_PER_PAGE,
+		"limit": VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
 		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
 		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
 	}
@@ -436,7 +464,7 @@ function searchPlaylists(contextQuery) {
 
 function getVideoPager(params, page) {
 
-	const count = ITEMS_PER_PAGE;
+	const count = VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex];
 
 	if (!params) {
 		params = {};
@@ -504,21 +532,46 @@ function getChannelPager(context) {
 
 	const channel_name = getChannelNameFromUrl(url);
 
+	let shouldLoadLives = true;
+	let shouldLoadVideos = true;
+
+	if (context.shouldLoadVideos === undefined) {
+		shouldLoadVideos = context.type === Type.Feed.Videos || context.type === Type.Feed.Mixed;
+	}
+
+	if (context.shouldLoadLives === undefined) {
+		shouldLoadLives = context.type === Type.Feed.Live || context.type === Type.Feed.Mixed;
+	}
+
+	/** 
+		Recent = Sort liked medias by most recent.
+		Visited - Sort liked medias by most viewed
+	*/
+	let sort: string;
+
+	if (context.order == Type.Order.Chronological) {
+		sort = LikedMediaSort.Recent;
+	} else if (context.order == Type.Order.Popular) {
+		sort = LikedMediaSort.Visited;
+	} else {
+		sort = LikedMediaSort.Recent;
+	}
+
 	const anonymousHttpClient = getHttpContext({ usePlatformAuth: false });
 	const jsonResponse = executeGqlQuery(
 		anonymousHttpClient,
 		{
 			operationName: 'CHANNEL_VIDEOS_QUERY',
 			variables: {
-				"channel_name": channel_name,
-				"sort": "recent",
-				"page": context.page ?? 1,
-				"allowExplicit": !_settings.hideSensitiveContent,
-				"first": context.page_size ?? ITEMS_PER_PAGE,
-				"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-				"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
-				shouldLoadLives: true,
-				shouldLoadVideos: true
+				channel_name,
+				sort,
+				page: context.page ?? 1,
+				allowExplicit: !_settings.hideSensitiveContent,
+				first: context.page_size ?? VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
+				avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
+				shouldLoadLives,
+				shouldLoadVideos
 			},
 			query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
 		});
@@ -528,17 +581,19 @@ function getChannelPager(context) {
 	const all: (VideoEdge | LiveEdge | null)[] = [
 		...(channel?.lives?.edges ?? []),
 		...(channel?.videos?.edges ?? [])
-	]
+	];
 
-	let videos = all.map((edge) => SourceVideoToGrayjayVideo(config.id, edge.node))
+	let videos = all
+		.map((edge => SourceVideoToGrayjayVideo(config.id, edge.node)));
 
-	if (all.length > 0) {
-		context.page++;
-	}
 
 	const videosHasNext = channel?.videos?.pageInfo?.hasNextPage;
 	const livesHasNext = channel?.lives?.pageInfo?.hasNextPage;
-	const hasNext = videosHasNext || livesHasNext;
+	const hasNext = videosHasNext || livesHasNext || false;
+
+
+	context.shouldLoadVideos = videosHasNext;
+	context.shouldLoadLives = livesHasNext;
 
 
 	return new ChannelVideoPager(context, videos, hasNext, getChannelPager);
@@ -559,7 +614,7 @@ function getSearchPagerAll(contextQuery): VideoPager {
 		"shouldIncludeVideos": true,
 		"shouldIncludeLives": true,
 		"page": context.page ?? 1,
-		"limit": ITEMS_PER_PAGE,
+		"limit": VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
 		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
 		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution]
 	}
@@ -711,7 +766,7 @@ function getSearchChannelPager(context) {
 		variables: {
 			query: context.q,
 			page: context.page ?? 1,
-			limit: ITEMS_PER_PAGE,
+			limit: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
 			avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize]
 		},
 		query: SEARCH_CHANNEL
@@ -730,9 +785,8 @@ function getSearchChannelPager(context) {
 
 }
 
-function getChannelPlaylists(url, page = 1): SearchPlaylistPager {
+function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager {
 
-	getAnonymousUserTokenSingleton();
 
 	const headers = {
 		'Content-Type': 'application/json',
@@ -766,7 +820,7 @@ function getChannelPlaylists(url, page = 1): SearchPlaylistPager {
 				channel_name,
 				sort: "recent",
 				page,
-				first: ITEMS_PER_PAGE,
+				first: PLAYLISTS_PER_PAGE_OPTIONS[_settings.playlistsPerPageIndex],
 				avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSize],
 				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
 			},
@@ -790,7 +844,7 @@ function getChannelPlaylists(url, page = 1): SearchPlaylistPager {
 		url
 	}
 
-	const hasMore = jsonResponse1.data.channel.collections.pageInfo.hasNextPage;
+	const hasMore = channel?.collections?.pageInfo?.hasNextPage ?? false;
 
 	return new ChannelPlaylistPager(content, hasMore, params, page, getChannelPlaylists);
 }

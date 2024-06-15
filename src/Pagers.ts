@@ -1,7 +1,7 @@
 export class SearchPagerAll extends VideoPager {
-    cb: (opts: any) => VideoPager;
+    cb: Function;
 
-    constructor(results: PlatformVideo[], hasMore: boolean, params: any, page: number, cb: (opts: any) => VideoPager) {
+    constructor(results: PlatformVideo[], hasMore: boolean, params: any, page: number, cb: Function) {
         super(results, hasMore, { params, page });
         this.cb = cb;
     }
@@ -36,13 +36,8 @@ export class SearchChannelPager extends ChannelPager {
 
 
 export class ChannelVideoPager extends VideoPager {
-    /**
-     * @param {import("./types.d.ts").URLContext} context the context
-     * @param {PlatformVideo[]} results the initial results
-     * @param {boolean} hasNextPage if there is a next page
-     */
-    cb: any;
-    constructor(context, results, hasNextPage, cb) {
+    cb: Function;
+    constructor(context: any, results: PlatformVideo[], hasNextPage: boolean, cb: Function) {
         super(results, hasNextPage, context);
         this.cb = cb;
     }
@@ -55,22 +50,22 @@ export class ChannelVideoPager extends VideoPager {
 
 export class ChannelPlaylistPager extends PlaylistPager {
     cb: Function;
-    constructor(results, hasMore: false, params: any, page: number, cb: Function) {
+    constructor(results: [], hasMore: boolean, params: any, page: number, cb: Function) {
         super(results, hasMore, { params, page });
         this.cb = cb;
     }
 
     nextPage() {
 
-        this.context.page = this.context.page + 1;
+        this.context.page += 1;
 
         return this.cb(this.context.params.url, this.context.page)
     }
 }
 
-export class SearchPlaylistPager extends VideoPager {
-    cb: any;
-    constructor(results, hasMore, params, page, cb) {
+export class SearchPlaylistPager extends PlaylistPager {
+    cb: Function;
+    constructor(results: PlatformPlaylist[], hasMore: boolean, params: any, page: number, cb: Function) {
         super(results, hasMore, { params, page });
         this.cb = cb;
     }
