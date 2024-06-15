@@ -1751,6 +1751,27 @@ export type CreateCollectionPayload = {
   status?: Maybe<Status>;
 };
 
+/** The input fields to create a comment. */
+export type CreateCommentInput = {
+  /** The ID generated for the client performing the mutation. */
+  clientMutationId?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of the post that the comment is created for. */
+  postId: Scalars['ID']['input'];
+  /** The text on the comment. */
+  text: Scalars['String']['input'];
+};
+
+/** The return fields from creating a comment. */
+export type CreateCommentPayload = {
+  __typename?: 'CreateCommentPayload';
+  /** The ID generated for the client performing the mutation. */
+  clientMutationId?: Maybe<Scalars['String']['output']>;
+  /** The new comment. */
+  comment?: Maybe<Comment>;
+  /** The status of the mutation. */
+  status?: Maybe<Status>;
+};
+
 /** The input fields to create a reaction. */
 export type CreateReactionInput = {
   /** The ID generated for the client performing the mutation. */
@@ -1911,6 +1932,23 @@ export type DeleteBehaviorRulePayload = {
   clientMutationId?: Maybe<Scalars['String']['output']>;
   /** Indicates whether the mutation was successful. */
   success?: Maybe<Scalars['Boolean']['output']>;
+};
+
+/** The input fields to delete a comment. */
+export type DeleteCommentInput = {
+  /** The ID generated for the client performing the mutation. */
+  clientMutationId?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of the comment to delete. */
+  id: Scalars['ID']['input'];
+};
+
+/** The return fields from deleting a comment. */
+export type DeleteCommentPayload = {
+  __typename?: 'DeleteCommentPayload';
+  /** The ID generated for the client performing the mutation. */
+  clientMutationId?: Maybe<Scalars['String']['output']>;
+  /** The status of the mutation. */
+  status?: Maybe<Status>;
 };
 
 /** The input fields to delete a reaction. */
@@ -3637,6 +3675,8 @@ export type Mutation = {
   createBehaviorRule?: Maybe<CreateBehaviorRulePayload>;
   /** Create a collection. */
   createCollection?: Maybe<CreateCollectionPayload>;
+  /** Create a comment. */
+  createComment?: Maybe<CreateCommentPayload>;
   /** Create a reaction in a recording format to respond to a story. */
   createReaction?: Maybe<ReactionPayload>;
   /** Creates a user. */
@@ -3645,6 +3685,8 @@ export type Mutation = {
   createVideo?: Maybe<CreateVideoPayload>;
   /** Delete a rule used for feature flipping or AB experiments. */
   deleteBehaviorRule?: Maybe<DeleteBehaviorRulePayload>;
+  /** Delete a comment. */
+  deleteComment?: Maybe<DeleteCommentPayload>;
   /** Delete a reaction. */
   deleteReaction?: Maybe<DeleteReactionPayload>;
   /** Delete a user. */
@@ -3857,6 +3899,12 @@ export type MutationCreateCollectionArgs = {
 
 
 /** The mutation root of Dailymotion's GraphQL API. */
+export type MutationCreateCommentArgs = {
+  input: CreateCommentInput;
+};
+
+
+/** The mutation root of Dailymotion's GraphQL API. */
 export type MutationCreateReactionArgs = {
   input: CreateReactionInput;
 };
@@ -3877,6 +3925,12 @@ export type MutationCreateVideoArgs = {
 /** The mutation root of Dailymotion's GraphQL API. */
 export type MutationDeleteBehaviorRuleArgs = {
   input: DeleteBehaviorRuleInput;
+};
+
+
+/** The mutation root of Dailymotion's GraphQL API. */
+export type MutationDeleteCommentArgs = {
+  input: DeleteCommentInput;
 };
 
 
@@ -9025,6 +9079,8 @@ export type ResolversTypes = {
   CreateBehaviorRulePayload: ResolverTypeWrapper<CreateBehaviorRulePayload>;
   CreateCollectionInput: CreateCollectionInput;
   CreateCollectionPayload: ResolverTypeWrapper<CreateCollectionPayload>;
+  CreateCommentInput: CreateCommentInput;
+  CreateCommentPayload: ResolverTypeWrapper<CreateCommentPayload>;
   CreateReactionInput: CreateReactionInput;
   CreateUserInput: CreateUserInput;
   CreateUserPayload: ResolverTypeWrapper<CreateUserPayload>;
@@ -9039,6 +9095,8 @@ export type ResolversTypes = {
   DateTime: ResolverTypeWrapper<Scalars['DateTime']['output']>;
   DeleteBehaviorRuleInput: DeleteBehaviorRuleInput;
   DeleteBehaviorRulePayload: ResolverTypeWrapper<DeleteBehaviorRulePayload>;
+  DeleteCommentInput: DeleteCommentInput;
+  DeleteCommentPayload: ResolverTypeWrapper<DeleteCommentPayload>;
   DeleteReactionInput: DeleteReactionInput;
   DeleteReactionPayload: ResolverTypeWrapper<DeleteReactionPayload>;
   DeleteUserInput: DeleteUserInput;
@@ -9564,6 +9622,8 @@ export type ResolversParentTypes = {
   CreateBehaviorRulePayload: CreateBehaviorRulePayload;
   CreateCollectionInput: CreateCollectionInput;
   CreateCollectionPayload: CreateCollectionPayload;
+  CreateCommentInput: CreateCommentInput;
+  CreateCommentPayload: CreateCommentPayload;
   CreateReactionInput: CreateReactionInput;
   CreateUserInput: CreateUserInput;
   CreateUserPayload: CreateUserPayload;
@@ -9577,6 +9637,8 @@ export type ResolversParentTypes = {
   DateTime: Scalars['DateTime']['output'];
   DeleteBehaviorRuleInput: DeleteBehaviorRuleInput;
   DeleteBehaviorRulePayload: DeleteBehaviorRulePayload;
+  DeleteCommentInput: DeleteCommentInput;
+  DeleteCommentPayload: DeleteCommentPayload;
   DeleteReactionInput: DeleteReactionInput;
   DeleteReactionPayload: DeleteReactionPayload;
   DeleteUserInput: DeleteUserInput;
@@ -10634,6 +10696,13 @@ export type CreateCollectionPayloadResolvers<ContextType = any, ParentType exten
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type CreateCommentPayloadResolvers<ContextType = any, ParentType extends ResolversParentTypes['CreateCommentPayload'] = ResolversParentTypes['CreateCommentPayload']> = {
+  clientMutationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  comment?: Resolver<Maybe<ResolversTypes['Comment']>, ParentType, ContextType>;
+  status?: Resolver<Maybe<ResolversTypes['Status']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type CreateUserPayloadResolvers<ContextType = any, ParentType extends ResolversParentTypes['CreateUserPayload'] = ResolversParentTypes['CreateUserPayload']> = {
   clientMutationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<Maybe<ResolversTypes['Status']>, ParentType, ContextType>;
@@ -10686,6 +10755,12 @@ export interface DateTimeScalarConfig extends GraphQLScalarTypeConfig<ResolversT
 export type DeleteBehaviorRulePayloadResolvers<ContextType = any, ParentType extends ResolversParentTypes['DeleteBehaviorRulePayload'] = ResolversParentTypes['DeleteBehaviorRulePayload']> = {
   clientMutationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   success?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type DeleteCommentPayloadResolvers<ContextType = any, ParentType extends ResolversParentTypes['DeleteCommentPayload'] = ResolversParentTypes['DeleteCommentPayload']> = {
+  clientMutationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  status?: Resolver<Maybe<ResolversTypes['Status']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -11420,10 +11495,12 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
   clearWatchedVideos?: Resolver<Maybe<ResolversTypes['ClearWatchedVideosPayload']>, ParentType, ContextType, RequireFields<MutationClearWatchedVideosArgs, 'input'>>;
   createBehaviorRule?: Resolver<Maybe<ResolversTypes['CreateBehaviorRulePayload']>, ParentType, ContextType, RequireFields<MutationCreateBehaviorRuleArgs, 'input'>>;
   createCollection?: Resolver<Maybe<ResolversTypes['CreateCollectionPayload']>, ParentType, ContextType, RequireFields<MutationCreateCollectionArgs, 'input'>>;
+  createComment?: Resolver<Maybe<ResolversTypes['CreateCommentPayload']>, ParentType, ContextType, RequireFields<MutationCreateCommentArgs, 'input'>>;
   createReaction?: Resolver<Maybe<ResolversTypes['ReactionPayload']>, ParentType, ContextType, RequireFields<MutationCreateReactionArgs, 'input'>>;
   createUser?: Resolver<Maybe<ResolversTypes['CreateUserPayload']>, ParentType, ContextType, RequireFields<MutationCreateUserArgs, 'input'>>;
   createVideo?: Resolver<Maybe<ResolversTypes['CreateVideoPayload']>, ParentType, ContextType, RequireFields<MutationCreateVideoArgs, 'input'>>;
   deleteBehaviorRule?: Resolver<Maybe<ResolversTypes['DeleteBehaviorRulePayload']>, ParentType, ContextType, RequireFields<MutationDeleteBehaviorRuleArgs, 'input'>>;
+  deleteComment?: Resolver<Maybe<ResolversTypes['DeleteCommentPayload']>, ParentType, ContextType, RequireFields<MutationDeleteCommentArgs, 'input'>>;
   deleteReaction?: Resolver<Maybe<ResolversTypes['DeleteReactionPayload']>, ParentType, ContextType, RequireFields<MutationDeleteReactionArgs, 'input'>>;
   deleteUser?: Resolver<Maybe<ResolversTypes['DeleteUserPayload']>, ParentType, ContextType, RequireFields<MutationDeleteUserArgs, 'input'>>;
   deleteVideo?: Resolver<Maybe<ResolversTypes['DeleteVideoPayload']>, ParentType, ContextType, RequireFields<MutationDeleteVideoArgs, 'input'>>;
@@ -13008,6 +13085,7 @@ export type Resolvers<ContextType = any> = {
   CountryEdge?: CountryEdgeResolvers<ContextType>;
   CreateBehaviorRulePayload?: CreateBehaviorRulePayloadResolvers<ContextType>;
   CreateCollectionPayload?: CreateCollectionPayloadResolvers<ContextType>;
+  CreateCommentPayload?: CreateCommentPayloadResolvers<ContextType>;
   CreateUserPayload?: CreateUserPayloadResolvers<ContextType>;
   CreateVideoPayload?: CreateVideoPayloadResolvers<ContextType>;
   CuratedCategory?: CuratedCategoryResolvers<ContextType>;
@@ -13017,6 +13095,7 @@ export type Resolvers<ContextType = any> = {
   Date?: GraphQLScalarType;
   DateTime?: GraphQLScalarType;
   DeleteBehaviorRulePayload?: DeleteBehaviorRulePayloadResolvers<ContextType>;
+  DeleteCommentPayload?: DeleteCommentPayloadResolvers<ContextType>;
   DeleteReactionPayload?: DeleteReactionPayloadResolvers<ContextType>;
   DeleteUserPayload?: DeleteUserPayloadResolvers<ContextType>;
   DeleteVideoPayload?: DeleteVideoPayloadResolvers<ContextType>;
