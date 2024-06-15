@@ -497,7 +497,7 @@ declare class ResultCapabilities {
 
     types: string[];
     sorts: string[];
-    filters: FilterGroup[];
+    filters?: FilterGroup[];
 
     constructor(types: string[], sorts: string[], filters: FilterGroup[]) {
         this.types = types ?? [];
@@ -1085,17 +1085,17 @@ interface Source {
     searchSuggestions(query: string): string[];
     search(query: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getSearchCapabilities(): ResultCapabilities;
-
+    
     // Optional
     searchChannelVideos?(channelUrl: string, query: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getSearchChannelVideoCapabilities?(): ResultCapabilities;
-
+    
     isChannelUrl(url: string): boolean;
     getChannel(url: string): PlatformChannel | null;
-
+    
     getChannelVideos(url: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getChannelCapabilities(): ResultCapabilities;
-
+    
     isVideoDetailsUrl(url: string): boolean;
     getVideoDetails(url: string): PlatformVideoDetails;
 
@@ -1254,8 +1254,7 @@ let Type = {
         Subscriptions: "SUBSCRIPTIONS"
     },
     Order: {
-        Chronological: "CHRONOLOGICAL",
-        Popular: "POPULAR",
+        Chronological: "CHRONOLOGICAL"
     },
     Date: {
         LastHour: "LAST_HOUR",

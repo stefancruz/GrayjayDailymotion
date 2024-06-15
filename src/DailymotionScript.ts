@@ -183,7 +183,7 @@ source.getChannel = function (url) {
 
 source.getChannelContents = function (url, type, order) {
 
-	return getChannelPager({
+	return getChannelContentsPager({
 		url,
 		page_size: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
 		page: 1,
@@ -204,7 +204,7 @@ source.getChannelPlaylists = (url): SearchPlaylistPager => {
 source.getChannelCapabilities = (): ResultCapabilities => {
 	return {
 		types: [Type.Feed.Mixed],
-		sorts: [Type.Order.Chronological, Type.Order.Popular],
+		sorts: [Type.Order.Chronological, "Popular"],
 		filters: []
 	};
 };
@@ -526,7 +526,7 @@ function getVideoPager(params, page) {
 
 
 
-function getChannelPager(context) {
+function getChannelContentsPager(context) {
 
 	const url = context.url;
 
@@ -596,7 +596,7 @@ function getChannelPager(context) {
 	context.shouldLoadLives = livesHasNext;
 
 
-	return new ChannelVideoPager(context, videos, hasNext, getChannelPager);
+	return new ChannelVideoPager(context, videos, hasNext, getChannelContentsPager);
 }
 
 function getSearchPagerAll(contextQuery): VideoPager {
