@@ -551,7 +551,7 @@ function getChannelContentsPager(context) {
 
 	if (context.order == Type.Order.Chronological) {
 		sort = LikedMediaSort.Recent;
-	} else if (context.order == Type.Order.Popular) {
+	} else if (context.order == "Popular") {
 		sort = LikedMediaSort.Visited;
 	} else {
 		sort = LikedMediaSort.Recent;
@@ -594,6 +594,8 @@ function getChannelContentsPager(context) {
 
 	context.shouldLoadVideos = videosHasNext;
 	context.shouldLoadLives = livesHasNext;
+
+	context.page++;
 
 
 	return new ChannelVideoPager(context, videos, hasNext, getChannelContentsPager);

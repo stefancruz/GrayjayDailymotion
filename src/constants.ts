@@ -39,11 +39,11 @@ DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
 
 /** The possible values which liked media connections can be sorted by. */
-export enum LikedMediaSort {
+export const LikedMediaSort = {
     /** Sort liked medias by most recent. */
-    Recent = 'recent',
+    Recent : 'recent',
     /** Sort liked medias by most viewed. */
-    Visited = 'visited'
+    Visited : 'visited'
 }
 
 
