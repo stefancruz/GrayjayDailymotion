@@ -347,6 +347,12 @@
             "deprecationReason": null
           },
           {
+            "name": "PERSONALIZED",
+            "description": "A personalized algorithm.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "SPONSORED",
             "description": "A sponsored algorithm.",
             "isDeprecated": false,
@@ -8042,6 +8048,41 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "ConversationContext",
+        "description": "The input fields of a conversations context argument.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "personalizationOptOut",
+            "description": "Indicate whether the user wants to opt out of personalized content. Defaults to true.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "defaultValue": "true",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "viewId",
+            "description": "The ID of the view.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
@@ -24072,6 +24113,18 @@
             "description": "A list of conversations.",
             "args": [
               {
+                "name": "context",
+                "description": "Additional arguments to contextualize the request.",
+                "type": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "ConversationContext",
+                  "ofType": null
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
                 "name": "filter",
                 "description": "Filter conversations by the the available filters.",
                 "type": {
@@ -25406,8 +25459,8 @@
               "name": "Views",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `conversations(filter: { algorithm: { eq: PERSONALIZED }})`."
           }
         ],
         "inputFields": null,
@@ -27782,6 +27835,12 @@
             "deprecationReason": null
           },
           {
+            "name": "COPYRIGHT_INFRINGEMENT",
+            "description": "Content that is copyrighted.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "COPYRIGHT_OWNER",
             "description": "Content that misrepresents the owner.",
             "isDeprecated": false,
@@ -27814,6 +27873,12 @@
           {
             "name": "HATEFUL_CONTENT",
             "description": "Content that is hateful.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "PRIVACY",
+            "description": "Content that contains personal or confidential information.",
             "isDeprecated": false,
             "deprecationReason": null
           },
@@ -30379,7 +30444,7 @@
           },
           {
             "name": "personalizationOptOut",
-            "description": "Indicate whether the user wants to opt out of personalized content. Defaults to true.",
+            "description": "Indicates whether to opt out of personalized content. Defaults to true.",
             "type": {
               "kind": "SCALAR",
               "name": "Boolean",
@@ -40328,6 +40393,18 @@
           {
             "name": "bookmarked",
             "description": "Indicates whether the video is bookmarked by the viewer. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "commented",
+            "description": "Indicates whether the post is commented by the connected user. Returns False if the user is not connected. ",
             "args": [],
             "type": {
               "kind": "SCALAR",

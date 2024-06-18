@@ -100,6 +100,8 @@ export type Algorithm = {
 export enum AlgorithmName {
   /** An algorithm that considers what content to feature. */
   Featured = 'FEATURED',
+  /** A personalized algorithm. */
+  Personalized = 'PERSONALIZED',
   /** A sponsored algorithm. */
   Sponsored = 'SPONSORED'
 }
@@ -1644,6 +1646,14 @@ export type ConversationConnection = {
   pageInfo: PageInfo;
   /** The total number of items. A null value indicates that the information is unavailable for the connection. */
   totalCount?: Maybe<Scalars['Int']['output']>;
+};
+
+/** The input fields of a conversations context argument. */
+export type ConversationContext = {
+  /** Indicate whether the user wants to opt out of personalized content. Defaults to true. */
+  personalizationOptOut?: InputMaybe<Scalars['Boolean']['input']>;
+  /** The ID of the view. */
+  viewId?: InputMaybe<Scalars['String']['input']>;
 };
 
 /** An edge in a connection. */
@@ -5207,7 +5217,10 @@ export type Query = {
   videoStreams?: Maybe<VideoStreamsConnection>;
   /** A list of videos. */
   videos?: Maybe<VideoConnection>;
-  /** The views of NEON. */
+  /**
+   * The views of NEON.
+   * @deprecated Use `conversations(filter: { algorithm: { eq: PERSONALIZED }})`.
+   */
   views?: Maybe<Views>;
 };
 
@@ -5270,6 +5283,7 @@ export type QueryContentFeedArgs = {
 
 /** The query root of Dailymotion's GraphQL API. */
 export type QueryConversationsArgs = {
+  context?: InputMaybe<ConversationContext>;
   filter?: InputMaybe<ConversationFilter>;
   first?: InputMaybe<Scalars['Int']['input']>;
   page?: InputMaybe<Scalars['Int']['input']>;
@@ -5962,6 +5976,8 @@ export enum RecordingPrivacy {
 export enum RecordingViolation {
   /** Content that contains child abuse. */
   ChildAbuse = 'CHILD_ABUSE',
+  /** Content that is copyrighted. */
+  CopyrightInfringement = 'COPYRIGHT_INFRINGEMENT',
   /** Content that misrepresents the owner. */
   CopyrightOwner = 'COPYRIGHT_OWNER',
   /** Content that is against humanity, such as genocide. */
@@ -5974,6 +5990,8 @@ export enum RecordingViolation {
   HarmfulContent = 'HARMFUL_CONTENT',
   /** Content that is hateful. */
   HatefulContent = 'HATEFUL_CONTENT',
+  /** Content that contains personal or confidential information. */
+  Privacy = 'PRIVACY',
   /** Content that contains nudity. */
   SexualContent = 'SEXUAL_CONTENT',
   /** Content that contains spam. */
@@ -6510,7 +6528,7 @@ export type SectionContextArgument = {
   collectionXid?: InputMaybe<Scalars['String']['input']>;
   /** The Dailymotion ID of the media. */
   mediaXid?: InputMaybe<Scalars['String']['input']>;
-  /** Indicate whether the user wants to opt out of personalized content. Defaults to true. */
+  /** Indicates whether to opt out of personalized content. Defaults to true. */
   personalizationOptOut?: InputMaybe<Scalars['Boolean']['input']>;
   /** The Dailymotion ID of the topic. */
   topicXid?: InputMaybe<Scalars['String']['input']>;
@@ -8682,6 +8700,8 @@ export type VideoViewerEngagement = Node & ViewerEngagement & {
   __typename?: 'VideoViewerEngagement';
   /** Indicates whether the video is bookmarked by the viewer. Returns False if the viewer is not connected. */
   bookmarked?: Maybe<Scalars['Boolean']['output']>;
+  /** Indicates whether the post is commented by the connected user. Returns False if the user is not connected.  */
+  commented?: Maybe<Scalars['Boolean']['output']>;
   /** Indicates whether the viewer has the video in its watch later list. Returns False if the viewer is not connected. */
   favorited?: Maybe<Scalars['Boolean']['output']>;
   /** The ID of the object. */
@@ -9070,6 +9090,7 @@ export type ResolversTypes = {
   ContentCategory: ResolverTypeWrapper<ContentCategory>;
   Conversation: ResolverTypeWrapper<Omit<Conversation, 'story'> & { story?: Maybe<ResolversTypes['Story']> }>;
   ConversationConnection: ResolverTypeWrapper<ConversationConnection>;
+  ConversationContext: ConversationContext;
   ConversationEdge: ResolverTypeWrapper<ConversationEdge>;
   ConversationFilter: ConversationFilter;
   Country: ResolverTypeWrapper<Country>;
@@ -9613,6 +9634,7 @@ export type ResolversParentTypes = {
   ContentCategory: ContentCategory;
   Conversation: Omit<Conversation, 'story'> & { story?: Maybe<ResolversParentTypes['Story']> };
   ConversationConnection: ConversationConnection;
+  ConversationContext: ConversationContext;
   ConversationEdge: ConversationEdge;
   ConversationFilter: ConversationFilter;
   Country: Country;
@@ -12927,6 +12949,7 @@ export type VideoStreamsEdgeResolvers<ContextType = any, ParentType extends Reso
 
 export type VideoViewerEngagementResolvers<ContextType = any, ParentType extends ResolversParentTypes['VideoViewerEngagement'] = ResolversParentTypes['VideoViewerEngagement']> = {
   bookmarked?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  commented?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   favorited?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   likeRating?: Resolver<Maybe<ResolversTypes['LikeRating']>, ParentType, ContextType>;
