@@ -1488,8 +1488,8 @@ export type Comment = Node & {
   id: Scalars['ID']['output'];
   /** The metrics of the comment. */
   metrics?: Maybe<CommentMetrics>;
-  /** The commented post. */
-  post: Post;
+  /** The commented story. */
+  opener: Story;
   /** The content of the comment. */
   text: Scalars['String']['output'];
   /** The last update date (DateTime ISO8601) of the comment. */
@@ -1581,6 +1581,12 @@ export type CommentViewerEngagement = Node & ViewerEngagement & {
   /** Indicates whether the viewer has liked the comment. Returns False if the viewer is not connected. */
   liked: Scalars['Boolean']['output'];
 };
+
+/** The violation reasons to report the `Comment`. */
+export enum CommentViolation {
+  /** Content that deceives or attempts to mislead users. */
+  Spam = 'SPAM'
+}
 
 /** Types that can be a Component. */
 export type Component = Channel | Collection | Live | Poll | Reaction | ReactionVideo | Topic | Video;
@@ -3767,6 +3773,8 @@ export type Mutation = {
   removeWatchedVideo?: Maybe<RemoveWatchedVideoPayload>;
   /** Reorder a media in a collection. */
   reorderCollectionMedia?: Maybe<ReorderCollectionMediaPayload>;
+  /** Report a comment for violating the community guidelines. */
+  reportComment: ReportCommentPayload;
   /** Report a creator for violating the community guidelines. */
   reportCreator: ReportCreatorPayload;
   /** Report an inappropriate video. */
@@ -4085,6 +4093,12 @@ export type MutationRemoveWatchedVideoArgs = {
 /** The mutation root of Dailymotion's GraphQL API. */
 export type MutationReorderCollectionMediaArgs = {
   input: ReorderCollectionMediaInput;
+};
+
+
+/** The mutation root of Dailymotion's GraphQL API. */
+export type MutationReportCommentArgs = {
+  input: ReportCommentInput;
 };
 
 
@@ -6121,6 +6135,25 @@ export type ReorderCollectionMediaInput = {
 /** The return fields from reordering a media in a collection. */
 export type ReorderCollectionMediaPayload = {
   __typename?: 'ReorderCollectionMediaPayload';
+  /** The ID generated for the client performing the mutation. */
+  clientMutationId?: Maybe<Scalars['String']['output']>;
+  /** The status of the mutation. */
+  status?: Maybe<Status>;
+};
+
+/** The available input fields to report a `Comment`. */
+export type ReportCommentInput = {
+  /** The ID generated for the client performing the mutation. */
+  clientMutationId?: InputMaybe<Scalars['String']['input']>;
+  /** The ID of the comment to report. */
+  commentId: Scalars['ID']['input'];
+  /** The violation reason to report the comment. */
+  violation?: CommentViolation;
+};
+
+/** The return fields from reporting a comment. */
+export type ReportCommentPayload = {
+  __typename?: 'ReportCommentPayload';
   /** The ID generated for the client performing the mutation. */
   clientMutationId?: Maybe<Scalars['String']['output']>;
   /** The status of the mutation. */
@@ -8962,7 +8995,7 @@ export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = 
   Content: ( Collection ) | ( Live ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( Video );
   History: ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } );
   Metric: ( BookmarkMetric ) | ( ChannelMetric ) | ( CollectionMetric ) | ( CommentMetric ) | ( LikeMetric ) | ( LiveMetric ) | ( ReactionMetric ) | ( VideoMetric );
-  Node: ( Omit<Analytics, 'timeSeries' | 'topValues'> & { timeSeries: _RefType['AnalyticsPayload'], topValues: _RefType['AnalyticsPayload'] } ) | ( AnalyticsGroupedPayloadItem ) | ( AnalyticsReport ) | ( Attribute ) | ( Behavior ) | ( BehaviorRuleTag ) | ( Channel ) | ( ChannelEngagementMetrics ) | ( ChannelExternalLinks ) | ( ChannelMetrics ) | ( ChannelShareUrls ) | ( ChannelStats ) | ( ChannelStatsFollowers ) | ( ChannelStatsReactions ) | ( ChannelStatsVideos ) | ( ChannelStatsViews ) | ( Collection ) | ( CollectionEngagementMetrics ) | ( CollectionMetrics ) | ( CollectionStats ) | ( CollectionStatsVideos ) | ( Omit<Comment, 'post'> & { post: _RefType['Post'] } ) | ( CommentEngagementMetrics ) | ( CommentMetrics ) | ( CommentViewerEngagement ) | ( ContentCategory ) | ( Omit<Conversation, 'story'> & { story?: Maybe<_RefType['Story']> } ) | ( Country ) | ( CuratedCategory ) | ( DailymotionAd ) | ( EmailChangeRequest ) | ( ExperimentMatch ) | ( FallbackCountry ) | ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( FeatureMatch ) | ( FeaturedContent ) | ( FileUpload ) | ( FollowedChannel ) | ( FollowedTopic ) | ( Follower ) | ( FollowerEngagement ) | ( Following ) | ( FollowingChannelStartsLive ) | ( FollowingChannelUploadsVideo ) | ( FollowingStartsLive ) | ( GeoblockedCountries ) | ( Geoblocking ) | ( Hashtag ) | ( HashtagEngagementMetrics ) | ( HashtagMetrics ) | ( Image ) | ( Interest ) | ( Language ) | ( Live ) | ( LiveEngagementMetrics ) | ( LiveMetrics ) | ( LiveShareUrls ) | ( LiveStats ) | ( LiveStatsViews ) | ( LiveStreams ) | ( LiveViewerEngagement ) | ( Localization ) | ( LocalizationMe ) | ( MediaModeration ) | ( MediaTag ) | ( MediaUploadInfo ) | ( Metadata ) | ( MonetizationInsights ) | ( Neon ) | ( NotificationSettings ) | ( Organization ) | ( OrganizationAnalysis ) | ( OrganizationStats ) | ( OrganizationStatsChannels ) | ( Partner ) | ( PartnerReportFile ) | ( PartnerSpace ) | ( Player ) | ( PlayerQueue ) | ( Omit<Poll, 'component' | 'post'> & { component?: Maybe<_RefType['Component']>, post?: Maybe<_RefType['Post']> } ) | ( PollOption ) | ( PollShareUrls ) | ( ProductUpdates ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( ReactionEngagementMetrics ) | ( ReactionMetrics ) | ( ReactionShareUrls ) | ( ReactionVideo ) | ( ReactionVideoStats ) | ( ReactionVideoStatsBookmarks ) | ( ReactionVideoStatsFavorites ) | ( ReactionVideoStatsLikes ) | ( ReactionVideoStatsReactionVideos ) | ( ReactionVideoStatsSaves ) | ( ReactionViewerEngagement ) | ( Omit<RecommendedRecording, 'recording'> & { recording?: Maybe<_RefType['Recording']> } ) | ( RemindUnwatchedVideos ) | ( ReportFileDownloadLink ) | ( Restriction ) | ( Rule ) | ( Search ) | ( Omit<Section, 'relatedComponent'> & { relatedComponent?: Maybe<_RefType['Component']> } ) | ( SharingUrl ) | ( Subdivision ) | ( Subtitle ) | ( Suggestion ) | ( SupportedCountry ) | ( SupportedLanguage ) | ( Thumbnails ) | ( Tips ) | ( Topic ) | ( TopicLabel ) | ( TopicShareUrls ) | ( TopicStats ) | ( TopicStatsFollowers ) | ( TopicStatsVideos ) | ( TopicWhitelistStatus ) | ( User ) | ( UserInterest ) | ( UserPollAnswer ) | ( UserStats ) | ( UserStatsCollections ) | ( UserStatsFollowers ) | ( UserStatsFollowingChannels ) | ( UserStatsFollowingTopics ) | ( UserStatsLikedVideos ) | ( UserStatsReactionVideos ) | ( UserStatsUploadedVideos ) | ( UserStatsVideos ) | ( UserStatsWatchLater ) | ( UserStatsWatchedVideos ) | ( Video ) | ( VideoDigest ) | ( VideoEngagementMetrics ) | ( VideoMetrics ) | ( VideoShareUrls ) | ( VideoStats ) | ( VideoStatsBookmarks ) | ( VideoStatsFavorites ) | ( VideoStatsLikes ) | ( VideoStatsReactionVideos ) | ( VideoStatsSaves ) | ( VideoStatsViews ) | ( VideoStreams ) | ( VideoViewerEngagement ) | ( Views ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } ) | ( Web ) | ( WebMetadata ) | ( WebMetadataConnection );
+  Node: ( Omit<Analytics, 'timeSeries' | 'topValues'> & { timeSeries: _RefType['AnalyticsPayload'], topValues: _RefType['AnalyticsPayload'] } ) | ( AnalyticsGroupedPayloadItem ) | ( AnalyticsReport ) | ( Attribute ) | ( Behavior ) | ( BehaviorRuleTag ) | ( Channel ) | ( ChannelEngagementMetrics ) | ( ChannelExternalLinks ) | ( ChannelMetrics ) | ( ChannelShareUrls ) | ( ChannelStats ) | ( ChannelStatsFollowers ) | ( ChannelStatsReactions ) | ( ChannelStatsVideos ) | ( ChannelStatsViews ) | ( Collection ) | ( CollectionEngagementMetrics ) | ( CollectionMetrics ) | ( CollectionStats ) | ( CollectionStatsVideos ) | ( Omit<Comment, 'opener'> & { opener: _RefType['Story'] } ) | ( CommentEngagementMetrics ) | ( CommentMetrics ) | ( CommentViewerEngagement ) | ( ContentCategory ) | ( Omit<Conversation, 'story'> & { story?: Maybe<_RefType['Story']> } ) | ( Country ) | ( CuratedCategory ) | ( DailymotionAd ) | ( EmailChangeRequest ) | ( ExperimentMatch ) | ( FallbackCountry ) | ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( FeatureMatch ) | ( FeaturedContent ) | ( FileUpload ) | ( FollowedChannel ) | ( FollowedTopic ) | ( Follower ) | ( FollowerEngagement ) | ( Following ) | ( FollowingChannelStartsLive ) | ( FollowingChannelUploadsVideo ) | ( FollowingStartsLive ) | ( GeoblockedCountries ) | ( Geoblocking ) | ( Hashtag ) | ( HashtagEngagementMetrics ) | ( HashtagMetrics ) | ( Image ) | ( Interest ) | ( Language ) | ( Live ) | ( LiveEngagementMetrics ) | ( LiveMetrics ) | ( LiveShareUrls ) | ( LiveStats ) | ( LiveStatsViews ) | ( LiveStreams ) | ( LiveViewerEngagement ) | ( Localization ) | ( LocalizationMe ) | ( MediaModeration ) | ( MediaTag ) | ( MediaUploadInfo ) | ( Metadata ) | ( MonetizationInsights ) | ( Neon ) | ( NotificationSettings ) | ( Organization ) | ( OrganizationAnalysis ) | ( OrganizationStats ) | ( OrganizationStatsChannels ) | ( Partner ) | ( PartnerReportFile ) | ( PartnerSpace ) | ( Player ) | ( PlayerQueue ) | ( Omit<Poll, 'component' | 'post'> & { component?: Maybe<_RefType['Component']>, post?: Maybe<_RefType['Post']> } ) | ( PollOption ) | ( PollShareUrls ) | ( ProductUpdates ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( ReactionEngagementMetrics ) | ( ReactionMetrics ) | ( ReactionShareUrls ) | ( ReactionVideo ) | ( ReactionVideoStats ) | ( ReactionVideoStatsBookmarks ) | ( ReactionVideoStatsFavorites ) | ( ReactionVideoStatsLikes ) | ( ReactionVideoStatsReactionVideos ) | ( ReactionVideoStatsSaves ) | ( ReactionViewerEngagement ) | ( Omit<RecommendedRecording, 'recording'> & { recording?: Maybe<_RefType['Recording']> } ) | ( RemindUnwatchedVideos ) | ( ReportFileDownloadLink ) | ( Restriction ) | ( Rule ) | ( Search ) | ( Omit<Section, 'relatedComponent'> & { relatedComponent?: Maybe<_RefType['Component']> } ) | ( SharingUrl ) | ( Subdivision ) | ( Subtitle ) | ( Suggestion ) | ( SupportedCountry ) | ( SupportedLanguage ) | ( Thumbnails ) | ( Tips ) | ( Topic ) | ( TopicLabel ) | ( TopicShareUrls ) | ( TopicStats ) | ( TopicStatsFollowers ) | ( TopicStatsVideos ) | ( TopicWhitelistStatus ) | ( User ) | ( UserInterest ) | ( UserPollAnswer ) | ( UserStats ) | ( UserStatsCollections ) | ( UserStatsFollowers ) | ( UserStatsFollowingChannels ) | ( UserStatsFollowingTopics ) | ( UserStatsLikedVideos ) | ( UserStatsReactionVideos ) | ( UserStatsUploadedVideos ) | ( UserStatsVideos ) | ( UserStatsWatchLater ) | ( UserStatsWatchedVideos ) | ( Video ) | ( VideoDigest ) | ( VideoEngagementMetrics ) | ( VideoMetrics ) | ( VideoShareUrls ) | ( VideoStats ) | ( VideoStatsBookmarks ) | ( VideoStatsFavorites ) | ( VideoStatsLikes ) | ( VideoStatsReactionVideos ) | ( VideoStatsSaves ) | ( VideoStatsViews ) | ( VideoStreams ) | ( VideoViewerEngagement ) | ( Views ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } ) | ( Web ) | ( WebMetadata ) | ( WebMetadataConnection );
   PostEngagementMetrics: ( LiveEngagementMetrics ) | ( ReactionEngagementMetrics ) | ( VideoEngagementMetrics );
   PostMetrics: ( LiveMetrics ) | ( ReactionMetrics ) | ( VideoMetrics );
   Recording: ( Live ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( Video );
@@ -9073,7 +9106,7 @@ export type ResolversTypes = {
   CollectionMetrics: ResolverTypeWrapper<CollectionMetrics>;
   CollectionStats: ResolverTypeWrapper<CollectionStats>;
   CollectionStatsVideos: ResolverTypeWrapper<CollectionStatsVideos>;
-  Comment: ResolverTypeWrapper<Omit<Comment, 'post'> & { post: ResolversTypes['Post'] }>;
+  Comment: ResolverTypeWrapper<Omit<Comment, 'opener'> & { opener: ResolversTypes['Story'] }>;
   CommentConnection: ResolverTypeWrapper<CommentConnection>;
   CommentEdge: ResolverTypeWrapper<CommentEdge>;
   CommentEngagementMetrics: ResolverTypeWrapper<CommentEngagementMetrics>;
@@ -9083,6 +9116,7 @@ export type ResolversTypes = {
   CommentMetrics: ResolverTypeWrapper<CommentMetrics>;
   CommentSort: CommentSort;
   CommentViewerEngagement: ResolverTypeWrapper<CommentViewerEngagement>;
+  CommentViolation: CommentViolation;
   Component: ResolverTypeWrapper<ResolversUnionTypes<ResolversTypes>['Component']>;
   ComponentConnection: ResolverTypeWrapper<ComponentConnection>;
   ComponentEdge: ResolverTypeWrapper<Omit<ComponentEdge, 'node'> & { node?: Maybe<ResolversTypes['Component']> }>;
@@ -9357,6 +9391,8 @@ export type ResolversTypes = {
   RemoveWatchedVideoPayload: ResolverTypeWrapper<RemoveWatchedVideoPayload>;
   ReorderCollectionMediaInput: ReorderCollectionMediaInput;
   ReorderCollectionMediaPayload: ResolverTypeWrapper<ReorderCollectionMediaPayload>;
+  ReportCommentInput: ReportCommentInput;
+  ReportCommentPayload: ResolverTypeWrapper<ReportCommentPayload>;
   ReportCreatorInput: ReportCreatorInput;
   ReportCreatorPayload: ResolverTypeWrapper<ReportCreatorPayload>;
   ReportFileDownloadLink: ResolverTypeWrapper<ReportFileDownloadLink>;
@@ -9617,7 +9653,7 @@ export type ResolversParentTypes = {
   CollectionMetrics: CollectionMetrics;
   CollectionStats: CollectionStats;
   CollectionStatsVideos: CollectionStatsVideos;
-  Comment: Omit<Comment, 'post'> & { post: ResolversParentTypes['Post'] };
+  Comment: Omit<Comment, 'opener'> & { opener: ResolversParentTypes['Story'] };
   CommentConnection: CommentConnection;
   CommentEdge: CommentEdge;
   CommentEngagementMetrics: CommentEngagementMetrics;
@@ -9869,6 +9905,8 @@ export type ResolversParentTypes = {
   RemoveWatchedVideoPayload: RemoveWatchedVideoPayload;
   ReorderCollectionMediaInput: ReorderCollectionMediaInput;
   ReorderCollectionMediaPayload: ReorderCollectionMediaPayload;
+  ReportCommentInput: ReportCommentInput;
+  ReportCommentPayload: ReportCommentPayload;
   ReportCreatorInput: ReportCreatorInput;
   ReportCreatorPayload: ReportCreatorPayload;
   ReportFileDownloadLink: ReportFileDownloadLink;
@@ -10576,7 +10614,7 @@ export type CommentResolvers<ContextType = any, ParentType extends ResolversPare
   creator?: Resolver<ResolversTypes['Channel'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   metrics?: Resolver<Maybe<ResolversTypes['CommentMetrics']>, ParentType, ContextType>;
-  post?: Resolver<ResolversTypes['Post'], ParentType, ContextType>;
+  opener?: Resolver<ResolversTypes['Story'], ParentType, ContextType>;
   text?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updateDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   viewerEngagement?: Resolver<Maybe<ResolversTypes['CommentViewerEngagement']>, ParentType, ContextType>;
@@ -11547,6 +11585,7 @@ export type MutationResolvers<ContextType = any, ParentType extends ResolversPar
   removeWatchLaterVideo?: Resolver<Maybe<ResolversTypes['RemoveWatchLaterVideoPayload']>, ParentType, ContextType, RequireFields<MutationRemoveWatchLaterVideoArgs, 'input'>>;
   removeWatchedVideo?: Resolver<Maybe<ResolversTypes['RemoveWatchedVideoPayload']>, ParentType, ContextType, RequireFields<MutationRemoveWatchedVideoArgs, 'input'>>;
   reorderCollectionMedia?: Resolver<Maybe<ResolversTypes['ReorderCollectionMediaPayload']>, ParentType, ContextType, RequireFields<MutationReorderCollectionMediaArgs, 'input'>>;
+  reportComment?: Resolver<ResolversTypes['ReportCommentPayload'], ParentType, ContextType, RequireFields<MutationReportCommentArgs, 'input'>>;
   reportCreator?: Resolver<ResolversTypes['ReportCreatorPayload'], ParentType, ContextType, RequireFields<MutationReportCreatorArgs, 'input'>>;
   reportVideo?: Resolver<Maybe<ResolversTypes['ReportVideoPayload']>, ParentType, ContextType, RequireFields<MutationReportVideoArgs, 'input'>>;
   reporterEmailVerify?: Resolver<ResolversTypes['ReporterEmailVerifyPayload'], ParentType, ContextType, RequireFields<MutationReporterEmailVerifyArgs, 'input'>>;
@@ -12092,6 +12131,12 @@ export type RemoveWatchedVideoPayloadResolvers<ContextType = any, ParentType ext
 };
 
 export type ReorderCollectionMediaPayloadResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReorderCollectionMediaPayload'] = ResolversParentTypes['ReorderCollectionMediaPayload']> = {
+  clientMutationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  status?: Resolver<Maybe<ResolversTypes['Status']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type ReportCommentPayloadResolvers<ContextType = any, ParentType extends ResolversParentTypes['ReportCommentPayload'] = ResolversParentTypes['ReportCommentPayload']> = {
   clientMutationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<Maybe<ResolversTypes['Status']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -13287,6 +13332,7 @@ export type Resolvers<ContextType = any> = {
   RemoveWatchLaterVideoPayload?: RemoveWatchLaterVideoPayloadResolvers<ContextType>;
   RemoveWatchedVideoPayload?: RemoveWatchedVideoPayloadResolvers<ContextType>;
   ReorderCollectionMediaPayload?: ReorderCollectionMediaPayloadResolvers<ContextType>;
+  ReportCommentPayload?: ReportCommentPayloadResolvers<ContextType>;
   ReportCreatorPayload?: ReportCreatorPayloadResolvers<ContextType>;
   ReportFileDownloadLink?: ReportFileDownloadLinkResolvers<ContextType>;
   ReportFileDownloadLinkConnection?: ReportFileDownloadLinkConnectionResolvers<ContextType>;

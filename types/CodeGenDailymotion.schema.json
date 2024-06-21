@@ -7157,15 +7157,15 @@
             "deprecationReason": null
           },
           {
-            "name": "post",
-            "description": "The commented post.",
+            "name": "opener",
+            "description": "The commented story.",
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "UNION",
-                "name": "Post",
+                "name": "Story",
                 "ofType": null
               }
             },
@@ -7646,6 +7646,23 @@
           }
         ],
         "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "ENUM",
+        "name": "CommentViolation",
+        "description": "The violation reasons to report the `Comment`.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "SPAM",
+            "description": "Content that deceives or attempts to mislead users.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
         "possibleTypes": null
       },
       {
@@ -18568,6 +18585,39 @@
             "deprecationReason": null
           },
           {
+            "name": "reportComment",
+            "description": "Report a comment for violating the community guidelines.",
+            "args": [
+              {
+                "name": "input",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "ReportCommentInput",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "ReportCommentPayload",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "reportCreator",
             "description": "Report a creator for violating the community guidelines.",
             "args": [
@@ -28450,6 +28500,96 @@
         "kind": "OBJECT",
         "name": "ReorderCollectionMediaPayload",
         "description": "The return fields from reordering a media in a collection.",
+        "fields": [
+          {
+            "name": "clientMutationId",
+            "description": "The ID generated for the client performing the mutation.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "status",
+            "description": "The status of the mutation.",
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "Status",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "ReportCommentInput",
+        "description": "The available input fields to report a `Comment`.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "clientMutationId",
+            "description": "The ID generated for the client performing the mutation.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "commentId",
+            "description": "The ID of the comment to report.",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "violation",
+            "description": "The violation reason to report the comment.",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "CommentViolation",
+                "ofType": null
+              }
+            },
+            "defaultValue": "SPAM",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "ReportCommentPayload",
+        "description": "The return fields from reporting a comment.",
         "fields": [
           {
             "name": "clientMutationId",
