@@ -27,15 +27,15 @@
     "static2.dmcdn.net"
   ],
   "authentication": {
-    "loginUrl": "https://www.dailymotion.com/signin?urlback=/video/x58d0gt",  
+    "loginUrl": "https://www.dailymotion.com/signin?urlback=/video/x34e1fp",
     "cookiesToFind": [
       "damd",
       "refresh_token",
       "access_token"
     ],
-    "headersToFind": [
-      "Authorization"
-    ],
+    "domainHeadersToFind": { 
+			".graphql.api.dailymotion.com": ["Authorization"]
+		},
     "userAgent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36"
   },
   "supportedClaimTypes": [27],
