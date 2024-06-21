@@ -34,26 +34,24 @@ export const SourceAuthorToGrayjayPlatformAuthorLink = (pluginId: string, creato
     );
 }
 
-export const SourceVideoToGrayjayVideo = (pluginId: string, sourceVideo: Video | Live): PlatformVideo => {
+export const SourceVideoToGrayjayVideo = (pluginId: string, sourceVideo?: Video | Live): PlatformVideo => {
 
-    // const metadata = GetVideoExtraDetails(anonymousHttpClient, sv.xid);
-    // const viewCount = metadata.views ?? 0;
 
     const isLive = getIsLive(sourceVideo);
-    let viewCount = getViewCount(sourceVideo);
+    const viewCount = getViewCount(sourceVideo);
 
     const video: PlatformVideoDef = {
-        id: new PlatformID(PLATFORM, sourceVideo.id, pluginId, PLATFORM_CLAIMTYPE),
+        id: new PlatformID(PLATFORM, sourceVideo?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
         description: sourceVideo?.description ?? '',
         name: sourceVideo?.title ?? "",
         thumbnails: new Thumbnails([
             new Thumbnail(sourceVideo?.thumbnail?.url ?? "", 0)
         ]),
-        author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceVideo.creator),
-        uploadDate: Math.floor(new Date(sourceVideo.createdAt).getTime() / 1000),
-        datetime: Math.floor(new Date(sourceVideo.createdAt).getTime() / 1000),
+        author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceVideo?.creator),
+        uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+        datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         url: `${BASE_URL_VIDEO}/${sourceVideo?.xid}`,
-        duration: sourceVideo?.duration ?? 0,
+        duration: (sourceVideo as Video)?.duration ?? 0,
         viewCount,
         isLive
     };
@@ -73,20 +71,19 @@ export const SourceCollectionToGrayjayPlaylistDetails = (pluginId: string, sourc
     });
 }
 
-export const SourceCollectionToGrayjayPlaylist = (pluginId: string, sourceCollection: Collection): PlatformPlaylist => {
+export const SourceCollectionToGrayjayPlaylist = (pluginId: string, sourceCollection?: Maybe<Collection>): PlatformPlaylist => {
     return new PlatformPlaylist({
         url: `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}`,
         id: new PlatformID(PLATFORM, sourceCollection?.xid ?? "", pluginId, PLATFORM_CLAIMTYPE),
-        author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceCollection.creator),
+        author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceCollection?.creator),
         name: sourceCollection?.name,
         thumbnail: sourceCollection?.thumbnail?.url,
         videoCount: sourceCollection?.metrics?.engagement?.videos?.edges[0]?.node?.total,
     });
 }
 
-const getIsLive = (sourceVideo: Video | Live): boolean => {
-    return sourceVideo?.duration == undefined;
-    // return sourceVideo?.isOnAir === true;
+const getIsLive = (sourceVideo?: Video | Live): boolean => {
+    return (sourceVideo as Live)?.isOnAir === true || (sourceVideo as Video)?.duration == undefined;
 }
 
 const getViewCount = (sourceVideo: Video | Live): number => {
@@ -104,7 +101,7 @@ const getViewCount = (sourceVideo: Video | Live): number => {
 
 export const SourceVideoToPlatformVideoDetailsDef = (
     pluginId: string,
-    sourceVideo: Video,
+    sourceVideo: Video | Live,
     sources: HLSSource[],
     sourceSubtitle: IDailymotionSubtitle
 ): PlatformVideoDetailsDef => {
@@ -127,20 +124,20 @@ export const SourceVideoToPlatformVideoDetailsDef = (
 
     const isLive = getIsLive(sourceVideo);
     const viewCount = getViewCount(sourceVideo);
+    const duration = isLive ? 0 : (sourceVideo as Video)?.duration ?? 0;
 
     const platformVideoDetails: PlatformVideoDetailsDef = {
-        id: new PlatformID(PLATFORM, sourceVideo.id, pluginId, PLATFORM_CLAIMTYPE),
+        id: new PlatformID(PLATFORM, sourceVideo?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
         name: sourceVideo?.title ?? "",
         thumbnails: new Thumbnails([new Thumbnail(sourceVideo?.thumbnail?.url ?? "", 0)]),
         author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceVideo?.creator),
         uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
-        duration: sourceVideo?.duration ?? 0,
+        duration,
         // viewCount,
-        viewCount: sourceVideo?.stats?.views?.total ?? 0,
-        url: `${BASE_URL_VIDEO}/${sourceVideo.xid}`,
-        // isLive,
-        isLive: sourceVideo?.duration == undefined,
+        viewCount,
+        url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : "",
+        isLive,
         description: sourceVideo?.description ?? "",
         video: new VideoSourceDescriptor(sources),
         rating: new RatingLikesDislikes(positiveRatingCount, negativeRatingCount),

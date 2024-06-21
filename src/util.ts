@@ -52,6 +52,7 @@ export function isUsernameUrl(url) {
 }
 
 
+// TODO: save to state
 export function getAnonymousUserTokenSingleton() {
     // Check if the anonymous user token is available and not expired
     if (AUTHORIZATION_TOKEN_ANONYMOUS_USER) {

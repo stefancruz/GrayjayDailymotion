@@ -50,6 +50,7 @@ import {
 	Channel,
 	Collection,
 	CollectionConnection,
+	Live,
 	LiveConnection,
 	LiveEdge,
 	SuggestionConnection,
@@ -146,7 +147,7 @@ source.searchSuggestions = function (query): string[] {
 };
 
 
-source.getSearchCapabilities = () => SEARCH_CAPABILITIES;
+source.getSearchCapabilities = (): ResultCapabilities => SEARCH_CAPABILITIES;
 
 
 source.search = function (query: string, type: string, order: string, filters) {
@@ -181,15 +182,16 @@ source.getChannel = function (url) {
 
 };
 
-source.getChannelContents = function (url, type, order) {
+source.getChannelContents = function (url, type, order, filters) {
 
-	return getChannelContentsPager({
+	const page = 1;
+	return getChannelContentsPager(
 		url,
-		page_size: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
-		page: 1,
+		page,
 		type,
-		order
-	})
+		order,
+		filters
+	)
 }
 
 source.getChannelPlaylists = (url): SearchPlaylistPager => {
@@ -248,7 +250,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 			usePlatformAuth
 		});
 
-	const videos: PlatformVideoDef[] = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
+	const videos: PlatformVideo[] = jsonResponse?.data?.collection?.videos?.edges.map(edge => {
 		return SourceVideoToGrayjayVideo(config.id, edge.node as Video);
 	});
 
@@ -524,23 +526,15 @@ function getVideoPager(params, page) {
 	return new SearchPagerAll(results, hasMore, params, page, getVideoPager);
 }
 
-
-
-function getChannelContentsPager(context) {
-
-	const url = context.url;
+function getChannelContentsPager(url, page, type, order, filters) {
 
 	const channel_name = getChannelNameFromUrl(url);
 
-	let shouldLoadLives = true;
-	let shouldLoadVideos = true;
+	const shouldLoadVideos = type === Type.Feed.Mixed || type === Type.Feed.Videos;
+	const shouldLoadLives = type === Type.Feed.Mixed || type === Type.Feed.Streams || type === Type.Feed.Live;
 
-	if (context.shouldLoadVideos === undefined) {
-		shouldLoadVideos = context.type === Type.Feed.Videos || context.type === Type.Feed.Mixed;
-	}
-
-	if (context.shouldLoadLives === undefined) {
-		shouldLoadLives = context.type === Type.Feed.Live || context.type === Type.Feed.Mixed;
+	if (IS_TESTING) {
+		bridge.log(`Getting channel contents for ${url}, page: ${page}, type: ${type}, order: ${order}, shouldLoadVideos: ${shouldLoadVideos}, shouldLoadLives: ${shouldLoadLives}, filters: ${JSON.stringify(filters)}`);
 	}
 
 	/** 
@@ -549,9 +543,9 @@ function getChannelContentsPager(context) {
 	*/
 	let sort: string;
 
-	if (context.order == Type.Order.Chronological) {
+	if (order == Type.Order.Chronological) {
 		sort = LikedMediaSort.Recent;
-	} else if (context.order == "Popular") {
+	} else if (order == "Popular") {
 		sort = LikedMediaSort.Visited;
 	} else {
 		sort = LikedMediaSort.Recent;
@@ -565,9 +559,9 @@ function getChannelContentsPager(context) {
 			variables: {
 				channel_name,
 				sort,
-				page: context.page ?? 1,
+				page: page ?? 1,
 				allowExplicit: !_settings.hideSensitiveContent,
-				first: context.page_size ?? VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
+				first: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
 				avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
 				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
 				shouldLoadLives,
@@ -578,27 +572,28 @@ function getChannelContentsPager(context) {
 
 	const channel = jsonResponse?.data?.channel as Channel;
 
-	const all: (VideoEdge | LiveEdge | null)[] = [
-		...(channel?.lives?.edges ?? []),
-		...(channel?.videos?.edges ?? [])
+	const all: (Live | Video)[] = [
+		...(channel?.lives?.edges?.map(e => e?.node as Live) ?? []),
+		...(channel?.videos?.edges?.map(e => e?.node as Video) ?? [])
 	];
 
 	let videos = all
-		.map((edge => SourceVideoToGrayjayVideo(config.id, edge.node)));
+		.map((node => SourceVideoToGrayjayVideo(config.id, node)));
 
 
 	const videosHasNext = channel?.videos?.pageInfo?.hasNextPage;
 	const livesHasNext = channel?.lives?.pageInfo?.hasNextPage;
 	const hasNext = videosHasNext || livesHasNext || false;
 
+	const params = {
+		url,
+		type,
+		order,
+		page,
+		filters
+	}
 
-	context.shouldLoadVideos = videosHasNext;
-	context.shouldLoadLives = livesHasNext;
-
-	context.page++;
-
-
-	return new ChannelVideoPager(context, videos, hasNext, getChannelContentsPager);
+	return new ChannelVideoPager(videos, hasNext, params, getChannelContentsPager);
 }
 
 function getSearchPagerAll(contextQuery): VideoPager {
@@ -695,7 +690,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		throw new UnavailableException('This content is not available');
 	}
 
-	const videoDetailsRequestHeaders = {
+	const videoDetailsRequestHeaders: IDictionary<string> = {
 		"Content-Type": "application/json",
 		"User-Agent": USER_AGENT,
 		"Accept": "*/*, */*",
@@ -834,8 +829,8 @@ function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager
 
 	const channel = (jsonResponse1.data.channel as Channel);
 
-	const content = channel?.collections?.edges?.map(edge => {
-		return SourceCollectionToGrayjayPlaylist(config.id, edge.node);
+	const content: PlatformPlaylist[] = (channel?.collections?.edges ?? []).map(edge => {
+		return SourceCollectionToGrayjayPlaylist(config.id, edge?.node);
 	});
 
 	if (content?.length === 0) {

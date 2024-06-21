@@ -588,7 +588,7 @@ declare interface PlatformVideoDef {
     description: string,
     thumbnails: Thumbnails,
     author: PlatformAuthorLink,
-    uploadDate: number,
+    uploadDate?: number,
     datetime: number,
     url: string,
     duration?: number,
@@ -1095,6 +1095,9 @@ interface Source {
     
     getChannelVideos(url: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getChannelCapabilities(): ResultCapabilities;
+    getSearchChannelContentsCapabilities(): ResultCapabilities;
+    getPeekChannelTypes(): string[];
+    peekChannelContents (url, type): PlatformVideo[]
     
     isVideoDetailsUrl(url: string): boolean;
     getVideoDetails(url: string): PlatformVideoDetails;
@@ -1123,6 +1126,12 @@ interface Source {
     getContentDetails(url: string): PlatformVideoDetails;
 
     getChannelPlaylists(url: string): PlaylistPager;
+
+    searchChannelContents(channelUrl: string, query: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
+
+    saveState(): void;
+
+    getChannelTemplateByClaimMap(): any;
 }
 
 

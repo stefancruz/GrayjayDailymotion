@@ -13,3 +13,7 @@ interface IDailymotionSubtitle {
     data: Map<string, string, { urls: string[], label: string }>,
     enable: boolean
 }
+
+interface IDictionary<T> {
+    [key: string]: T;
+}

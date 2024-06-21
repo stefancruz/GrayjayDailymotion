@@ -377,8 +377,7 @@ export const ERROR_TYPES = {
 
 export const SEARCH_CAPABILITIES = {
     types: [
-        Type.Feed.Videos,
-        Type.Feed.Live
+        Type.Feed.Mixed
     ],
     sorts: [
         "Most Recent",
