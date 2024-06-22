@@ -347,6 +347,12 @@
             "deprecationReason": null
           },
           {
+            "name": "PERSONALIZED",
+            "description": "A personalized algorithm.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "SPONSORED",
             "description": "A sponsored algorithm.",
             "isDeprecated": false,
@@ -7151,15 +7157,15 @@
             "deprecationReason": null
           },
           {
-            "name": "post",
-            "description": "The commented post.",
+            "name": "opener",
+            "description": "The commented story.",
             "args": [],
             "type": {
               "kind": "NON_NULL",
               "name": null,
               "ofType": {
                 "kind": "UNION",
-                "name": "Post",
+                "name": "Story",
                 "ofType": null
               }
             },
@@ -7643,6 +7649,23 @@
         "possibleTypes": null
       },
       {
+        "kind": "ENUM",
+        "name": "CommentViolation",
+        "description": "The violation reasons to report the `Comment`.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "SPAM",
+            "description": "Content that deceives or attempts to mislead users.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
         "kind": "UNION",
         "name": "Component",
         "description": "Types that can be a Component.",
@@ -8042,6 +8065,41 @@
         ],
         "inputFields": null,
         "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "ConversationContext",
+        "description": "The input fields of a conversations context argument.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "personalizationOptOut",
+            "description": "Indicate whether the user wants to opt out of personalized content. Defaults to true.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "defaultValue": "true",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "viewId",
+            "description": "The ID of the view.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
         "enumValues": null,
         "possibleTypes": null
       },
@@ -8523,6 +8581,108 @@
             "type": {
               "kind": "OBJECT",
               "name": "Collection",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "status",
+            "description": "The status of the mutation.",
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "Status",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "CreateCommentInput",
+        "description": "The input fields to create a comment.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "clientMutationId",
+            "description": "The ID generated for the client performing the mutation.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "postId",
+            "description": "The ID of the post that the comment is created for.",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "text",
+            "description": "The text on the comment.",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "String",
+                "ofType": null
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "CreateCommentPayload",
+        "description": "The return fields from creating a comment.",
+        "fields": [
+          {
+            "name": "clientMutationId",
+            "description": "The ID generated for the client performing the mutation.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "comment",
+            "description": "The new comment.",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "Comment",
               "ofType": null
             },
             "isDeprecated": false,
@@ -9418,6 +9578,80 @@
             "type": {
               "kind": "SCALAR",
               "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "DeleteCommentInput",
+        "description": "The input fields to delete a comment.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "clientMutationId",
+            "description": "The ID generated for the client performing the mutation.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "id",
+            "description": "The ID of the comment to delete.",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "DeleteCommentPayload",
+        "description": "The return fields from deleting a comment.",
+        "fields": [
+          {
+            "name": "clientMutationId",
+            "description": "The ID generated for the client performing the mutation.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "status",
+            "description": "The status of the mutation.",
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "Status",
               "ofType": null
             },
             "isDeprecated": false,
@@ -17481,6 +17715,35 @@
             "deprecationReason": null
           },
           {
+            "name": "createComment",
+            "description": "Create a comment.",
+            "args": [
+              {
+                "name": "input",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "CreateCommentInput",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "type": {
+              "kind": "OBJECT",
+              "name": "CreateCommentPayload",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createReaction",
             "description": "Create a reaction in a recording format to respond to a story.",
             "args": [
@@ -17591,6 +17854,35 @@
             "type": {
               "kind": "OBJECT",
               "name": "DeleteBehaviorRulePayload",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "deleteComment",
+            "description": "Delete a comment.",
+            "args": [
+              {
+                "name": "input",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "DeleteCommentInput",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "type": {
+              "kind": "OBJECT",
+              "name": "DeleteCommentPayload",
               "ofType": null
             },
             "isDeprecated": false,
@@ -18288,6 +18580,39 @@
               "kind": "OBJECT",
               "name": "ReorderCollectionMediaPayload",
               "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "reportComment",
+            "description": "Report a comment for violating the community guidelines.",
+            "args": [
+              {
+                "name": "input",
+                "description": null,
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "ReportCommentInput",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "ReportCommentPayload",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -23838,6 +24163,18 @@
             "description": "A list of conversations.",
             "args": [
               {
+                "name": "context",
+                "description": "Additional arguments to contextualize the request.",
+                "type": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "ConversationContext",
+                  "ofType": null
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
                 "name": "filter",
                 "description": "Filter conversations by the the available filters.",
                 "type": {
@@ -25172,8 +25509,8 @@
               "name": "Views",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `conversations(filter: { algorithm: { eq: PERSONALIZED }})`."
           }
         ],
         "inputFields": null,
@@ -27548,6 +27885,12 @@
             "deprecationReason": null
           },
           {
+            "name": "COPYRIGHT_INFRINGEMENT",
+            "description": "Content that is copyrighted.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "COPYRIGHT_OWNER",
             "description": "Content that misrepresents the owner.",
             "isDeprecated": false,
@@ -27580,6 +27923,12 @@
           {
             "name": "HATEFUL_CONTENT",
             "description": "Content that is hateful.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "PRIVACY",
+            "description": "Content that contains personal or confidential information.",
             "isDeprecated": false,
             "deprecationReason": null
           },
@@ -28151,6 +28500,96 @@
         "kind": "OBJECT",
         "name": "ReorderCollectionMediaPayload",
         "description": "The return fields from reordering a media in a collection.",
+        "fields": [
+          {
+            "name": "clientMutationId",
+            "description": "The ID generated for the client performing the mutation.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "status",
+            "description": "The status of the mutation.",
+            "args": [],
+            "type": {
+              "kind": "ENUM",
+              "name": "Status",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "ReportCommentInput",
+        "description": "The available input fields to report a `Comment`.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "clientMutationId",
+            "description": "The ID generated for the client performing the mutation.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "commentId",
+            "description": "The ID of the comment to report.",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "violation",
+            "description": "The violation reason to report the comment.",
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "ENUM",
+                "name": "CommentViolation",
+                "ofType": null
+              }
+            },
+            "defaultValue": "SPAM",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "ReportCommentPayload",
+        "description": "The return fields from reporting a comment.",
         "fields": [
           {
             "name": "clientMutationId",
@@ -30145,7 +30584,7 @@
           },
           {
             "name": "personalizationOptOut",
-            "description": "Indicate whether the user wants to opt out of personalized content. Defaults to true.",
+            "description": "Indicates whether to opt out of personalized content. Defaults to true.",
             "type": {
               "kind": "SCALAR",
               "name": "Boolean",
@@ -40094,6 +40533,18 @@
           {
             "name": "bookmarked",
             "description": "Indicates whether the video is bookmarked by the viewer. Returns False if the viewer is not connected.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "commented",
+            "description": "Indicates whether the post is commented by the connected user. Returns False if the user is not connected. ",
             "args": [],
             "type": {
               "kind": "SCALAR",

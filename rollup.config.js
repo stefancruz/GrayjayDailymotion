@@ -21,9 +21,8 @@ module.exports = {
     copy({
       targets: [
         { src: 'DailymotionConfig.json', dest },
-        { src: 'assets/dailymotion.png', dest },
-        { src: 'assets/index.html', dest },
-        { src: 'Readme.md', dest },
+        { src: 'assets/DailymotionIcon.png', dest },
+        { src: 'assets/index.html', dest }
       ]
     })
   ]

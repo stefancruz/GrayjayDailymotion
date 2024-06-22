@@ -16,12 +16,10 @@ export const X_DM_AppInfo_Id = "com.dailymotion.neon"
 export const X_DM_AppInfo_Type = "website"
 export const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z" //TODO check how to get this dynamically
 export const X_DM_Neon_SSR = "0"
-export const X_DM_Preferred_Country = "";//TODO check how to get this from Grayjay
 
 export const PLATFORM = "Dailymotion";
 export const PLATFORM_CLAIMTYPE = 27;
 
-export const ITEMS_PER_PAGE = 20;
 
 // search capabilities - upload date
 export const LESS_THAN_MINUTE = "LESS_THAN_MINUTE"
@@ -37,6 +35,45 @@ DURATION_THRESHOLDS[ONE_TO_FIVE_MINUTES] = { min: 60, max: 300 };
 DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
+
+
+/** The possible values which liked media connections can be sorted by. */
+export const LikedMediaSort = {
+    /** Sort liked medias by most recent. */
+    Recent : 'recent',
+    /** Sort liked medias by most viewed. */
+    Visited : 'visited'
+}
+
+
+// This platform uses a scale system for rating the videos.
+// Ratings are grouped into positive and negative to calculate likes and dislikes.
+export const POSITIVE_RATINGS_LABELS = [
+    "STAR_STRUCK", // amazing
+    "SMILING_FACE_WITH_SUNGLASSES", // cool
+    "WINKING_FACE" // interesting
+];
+
+export const NEGATIVE_RATINGS_LABELS = [
+    "SLEEPING_FACE", // boring
+    "FISHING_POLE" // waste of time
+];
+
+
+export const VIDEOS_PER_PAGE_OPTIONS = [
+    5,
+    10,
+    15,
+    20,
+    25
+]
+
+export const PLAYLISTS_PER_PAGE_OPTIONS = [
+    5,
+    10,
+    15,
+    20
+]
 
 export const COUNTRY_NAMES_TO_CODE = {
     "": "",
@@ -339,8 +376,7 @@ export const ERROR_TYPES = {
 
 export const SEARCH_CAPABILITIES = {
     types: [
-        Type.Feed.Videos,
-        Type.Feed.Live
+        Type.Feed.Mixed
     ],
     sorts: [
         "Most Recent",

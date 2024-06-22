@@ -1,17 +1,13 @@
 export class SearchPagerAll extends VideoPager {
-    /**
-     * @param {import("./types.d.ts").SearchContext} context the query params
-     * @param {(PlatformVideo | PlatformChannel)[]} results the initial results
-    */
-    cb: any;
-    constructor(results, hasMore, params, page, cb) {
+    cb: Function;
+
+    constructor(results: PlatformVideo[], hasMore: boolean, params: any, page: number, cb: Function) {
         super(results, hasMore, { params, page });
         this.cb = cb;
     }
 
     nextPage() {
-
-        this.context.page = this.context.page + 1
+        this.context.page += 1;
 
         const opts = {
             q: this.context.params.query,
@@ -40,30 +36,37 @@ export class SearchChannelPager extends ChannelPager {
 
 
 export class ChannelVideoPager extends VideoPager {
-    /**
-     * @param {import("./types.d.ts").URLContext} context the context
-     * @param {PlatformVideo[]} results the initial results
-     * @param {boolean} hasNextPage if there is a next page
-     */
-    cb: any;
-    constructor(context, results, hasNextPage, cb) {
-        super(results, hasNextPage, context);
+    cb: Function;
+    constructor(results: PlatformVideo[], hasNextPage: boolean, params, cb: Function) {
+        super(results, hasNextPage, { ...params });
         this.cb = cb;
     }
 
     nextPage() {
-        return this.cb(this.context)
+        this.context.page += 1;
+        return this.cb(this.context.url, this.context.page, this.context.type, this.context.order);
     }
 }
 
 
-export class SearchPlaylistPager extends VideoPager {
-    /**
-     * @param {import("./types.d.ts").SearchContext} context the query params
-     * @param {(PlatformVideo | PlatformChannel)[]} results the initial results
-    */
-    cb: any;
-    constructor(results, hasMore, params, page, cb) {
+export class ChannelPlaylistPager extends PlaylistPager {
+    cb: Function;
+    constructor(results: PlatformPlaylist[], hasMore: boolean, params: any, page: number, cb: Function) {
+        super(results, hasMore, { params, page });
+        this.cb = cb;
+    }
+
+    nextPage() {
+
+        this.context.page += 1;
+
+        return this.cb(this.context.params.url, this.context.page)
+    }
+}
+
+export class SearchPlaylistPager extends PlaylistPager {
+    cb: Function;
+    constructor(results: PlatformPlaylist[], hasMore: boolean, params: any, page: number, cb: Function) {
         super(results, hasMore, { params, page });
         this.cb = cb;
     }

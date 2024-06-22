@@ -484,7 +484,7 @@ declare class Config {
     repositoryUrl?: string;
     version?: number;
     iconUrl?: string;
-    id?: string | null;
+    id: string;
     scriptSignature?: string;
     scriptPublicKey?: string;
     packages?: string[];
@@ -497,7 +497,7 @@ declare class ResultCapabilities {
 
     types: string[];
     sorts: string[];
-    filters: FilterGroup[];
+    filters?: FilterGroup[];
 
     constructor(types: string[], sorts: string[], filters: FilterGroup[]) {
         this.types = types ?? [];
@@ -588,10 +588,10 @@ declare interface PlatformVideoDef {
     description: string,
     thumbnails: Thumbnails,
     author: PlatformAuthorLink,
-    uploadDate: number,
+    uploadDate?: number,
     datetime: number,
     url: string,
-    duration: number,
+    duration?: number,
     viewCount: number,
     isLive: boolean,
     shareUrl?: any
@@ -1032,7 +1032,7 @@ declare class PlaylistPager {
     hasMore: boolean;
     context: any
 
-    constructor(results: [], hasMore?: boolean, context?: any) {
+    constructor(results: PlatformPlaylist[], hasMore?: boolean, context?: any) {
         this.plugin_type = "PlaylistPager";
         this.results = results ?? [];
         this.hasMore = hasMore ?? false;
@@ -1085,17 +1085,20 @@ interface Source {
     searchSuggestions(query: string): string[];
     search(query: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getSearchCapabilities(): ResultCapabilities;
-
+    
     // Optional
     searchChannelVideos?(channelUrl: string, query: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getSearchChannelVideoCapabilities?(): ResultCapabilities;
-
+    
     isChannelUrl(url: string): boolean;
     getChannel(url: string): PlatformChannel | null;
-
+    
     getChannelVideos(url: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getChannelCapabilities(): ResultCapabilities;
-
+    getSearchChannelContentsCapabilities(): ResultCapabilities;
+    getPeekChannelTypes(): string[];
+    peekChannelContents (url, type): PlatformVideo[]
+    
     isVideoDetailsUrl(url: string): boolean;
     getVideoDetails(url: string): PlatformVideoDetails;
 
@@ -1116,11 +1119,19 @@ interface Source {
 
     isContentDetailsUrl(url: string): boolean;
 
-    getChannelContents(url: string): VideoPager;
+    getChannelContents(url: string, type?: string, order?: string, filters?: Map<String, List<String>>): VideoPager;
 
     searchChannels(query: string): ChannelPager;
 
     getContentDetails(url: string): PlatformVideoDetails;
+
+    getChannelPlaylists(url: string): PlaylistPager;
+
+    searchChannelContents(channelUrl: string, query: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
+
+    saveState(): void;
+
+    getChannelTemplateByClaimMap(): any;
 }
 
 
@@ -1347,7 +1358,7 @@ interface IHttp {
     * @param {Boolean} useAuth
     * @return {BridgeHttpResponse}
     **/
-    GET(url: string, headers: Map<string, string>, useAuth: boolean): BridgeHttpResponse;
+    GET(url: string, headers: Map<string, string>, useAuth?: boolean): BridgeHttpResponse;
 
     /**
     * @param {String} url
@@ -1411,3 +1422,10 @@ interface IHttp {
 
 
 let http: IHttp
+
+
+interface IPager<T> {
+    hasMorePages() : Boolean;
+    nextPage();
+    getResults() : List<T>;
+}

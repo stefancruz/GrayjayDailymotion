@@ -2,24 +2,26 @@ let AUTHORIZATION_TOKEN_ANONYMOUS_USER: string = "";
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE: number;
 let httpClientRequestToken: IHttp = http.newClient(false);
 
+import { Collection, Maybe, User, Video } from '../types/CodeGenDailymotion';
+import { SourceCollectionToGrayjayPlaylistDetails, SourceVideoToGrayjayVideo } from './Mappers';
 import {
     BASE_URL,
     USER_AGENT,
     BASE_URL_API,
-    X_DM_Preferred_Country,
     COUNTRY_NAMES,
     COUNTRY_NAMES_TO_CODE,
     CLIENT_ID,
     CLIENT_SECRET,
     BASE_URL_API_AUTH,
     DURATION_THRESHOLDS,
+    THUMBNAIL_HEIGHT,
 } from './constants'
+import { USER_WATCH_LATER_VIDEOS_QUERY, USER_LIKED_VIDEOS_QUERY, USER_WATCHED_VIDEOS_QUERY } from './gqlQueries';
 
 export function getPreferredCountry(preferredCountryIndex) {
     const countryName = COUNTRY_NAMES[preferredCountryIndex];
     const code = COUNTRY_NAMES_TO_CODE[countryName];
-    const preferredCountry = (code || X_DM_Preferred_Country || '').toLowerCase();
-    return preferredCountry;
+    return (code  || '').toLowerCase();
 }
 
 export const objectToUrlEncodedString = (obj) => {
@@ -52,6 +54,7 @@ export function isUsernameUrl(url) {
 }
 
 
+// TODO: save to state
 export function getAnonymousUserTokenSingleton() {
     // Check if the anonymous user token is available and not expired
     if (AUTHORIZATION_TOKEN_ANONYMOUS_USER) {
@@ -271,4 +274,133 @@ export const getQuery = (context) => {
     }
 
     return context;
+}
+
+
+export function generateUUIDv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+
+export function getPages<TI, TO>(
+    httpClient: IHttp,
+    query: string,
+    operationName: string,
+    variables: any,
+    usePlatformAuth: boolean,
+    setRoot: (jsonResponse: any) => TI,
+    hasNextCallback: (page: TI) => boolean,
+    getNextPage: (page: TI, currentPage) => number,
+    map: (page: any) => TO[]
+
+): TO[] {
+
+    let all: TO[] = [];
+
+    if (!hasNextCallback) {
+        hasNextCallback = () => false;
+    }
+
+    let hasNext = true;
+    let nextPage = 1;
+
+    do {
+
+        variables = { ...variables, page: nextPage };
+
+        const jsonResponse = executeGqlQuery(
+            httpClient,
+            {
+                operationName,
+                variables,
+                query,
+                usePlatformAuth
+            });
+
+        const root = setRoot(jsonResponse);
+
+        nextPage = getNextPage(root, nextPage);
+
+        const items = map(root);
+
+        hasNext = hasNextCallback(root);
+
+        all = all.concat(items);
+
+    } while (hasNext);
+
+    return all;
+}
+
+
+export function getLikePlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_LIKED_VIDEOS_QUERY,
+        operationName: 'USER_LIKED_VIDEOS_QUERY',
+        rootObject: 'likedMedias',
+        playlistName: 'Liked Videos',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    });
+
+}
+
+export function getFavoritesPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_WATCH_LATER_VIDEOS_QUERY,
+        operationName: 'USER_WATCH_LATER_VIDEOS_QUERY',
+        rootObject: 'watchLaterMedias',
+        playlistName: 'Favorites',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    })
+}
+
+export function getRecentlyWatchedPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_WATCHED_VIDEOS_QUERY,
+        operationName: 'USER_WATCHED_VIDEOS_QUERY',
+        rootObject: 'watchedVideos',
+        playlistName: 'Recently Watched',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    
+    });
+}
+
+export function getPlatformSystemPlaylist(opts: IPlatformSystemPlaylist): PlatformPlaylistDetails {
+
+    const videos: PlatformVideo[] = getPages<Maybe<User>, PlatformVideo>(
+        opts.httpClient,
+        opts.query,
+        opts.operationName,
+        {
+            page: 1,
+            thumbnail_resolution: THUMBNAIL_HEIGHT[opts.thumbnailResolutionIndex]
+        },
+        opts.usePlatformAuth,
+        (jsonResponse) => jsonResponse?.data?.me,//set root
+        (me) => (me?.[opts.rootObject]?.edges.length ?? 0) > 0 ?? false,//hasNextCallback
+        (me, currentPage) => ++currentPage, //getNextPage
+        (me) => me?.[opts.rootObject]?.edges.map(edge => {
+            return SourceVideoToGrayjayVideo(opts.pluginId, edge.node as Video);
+        }));
+
+    const collection = {
+        "id": generateUUIDv4(),
+        "name": opts.playlistName,
+        "creator": {}
+    }
+
+    return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection as Collection, videos);
 }
