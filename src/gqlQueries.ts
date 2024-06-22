@@ -993,7 +993,7 @@ export const GET_FAVORITES_GQL_QUERY = `
 			}
 			__typename
 		}
-		watchLaterMedias(first: 30, page: $page) {
+		watchLaterMedias(first: 100, page: $page) {
 			edges {
 				node {
 					... on Video {
@@ -1024,6 +1024,7 @@ export const GET_FAVORITES_GQL_QUERY = `
 						id
 						xid
 						title
+						isOnAir
 						thumbnail(height: PORTRAIT_1080) {
 							url
 						}
@@ -1056,4 +1057,47 @@ export const GET_FAVORITES_GQL_QUERY = `
 }
 
 	
+	`
+
+
+	export const GET_RECENTLY_WATCHED_GQL_QUERY = `
+	query USER_WATCH_LATER_VIDEOS_QUERY($page: Int!) {
+	me {
+		id
+		stats {
+			id
+			watchedVideos {
+				id
+				total
+				__typename
+			}
+			__typename
+		}
+		watchedVideos(first: 100, page: $page) {
+			edges {
+				node {
+					id
+					xid
+					title
+					duration
+					thumbnail(height: PORTRAIT_1080) {
+						url
+					}
+					aspectRatio
+					channel {
+						id
+						logoURLx25: logoURL(size: "x25")
+						displayName
+						accountType
+					}
+				}
+			}
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+		}
+	}
+}
+
 	`

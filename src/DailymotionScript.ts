@@ -3,6 +3,7 @@ let _settings: IDailymotionPluginSettings;
 
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST_ID";
 const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST_ID";
+const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST_ID";
 
 
 import {
@@ -48,7 +49,8 @@ import {
 	getAnonymousUserTokenSingleton,
 	getQuery,
 	getLikePlaylist,
-	getFavoritesPlaylist
+	getFavoritesPlaylist,
+	getRecentlyWatchedPlaylist
 } from './util';
 
 import {
@@ -227,7 +229,10 @@ source.getContentDetails = function (url) {
 
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
-	return url.startsWith(BASE_URL_PLAYLIST) || url === LIKE_PLAYLIST_ID || url === FAVORITES_PLAYLIST_ID;
+	return url.startsWith(BASE_URL_PLAYLIST) || 
+	url === LIKE_PLAYLIST_ID || 
+	url === FAVORITES_PLAYLIST_ID || 
+	url === RECENTLY_WATCHED_PLAYLIST_ID;
 };
 
 source.searchPlaylists = (query, type, order, filters) => {
@@ -247,6 +252,10 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 	if(url === FAVORITES_PLAYLIST_ID) {
 		return getFavoritesPlaylist(config.id, httpClient, usePlatformAuth);
+	}
+
+	if(url === RECENTLY_WATCHED_PLAYLIST_ID) {
+		return getRecentlyWatchedPlaylist(config.id, httpClient, usePlatformAuth);
 	}
 
 	const xid = url.split('/').pop();
@@ -423,7 +432,8 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 
 	[
 		LIKE_PLAYLIST_ID,
-		FAVORITES_PLAYLIST_ID
+		FAVORITES_PLAYLIST_ID,
+		RECENTLY_WATCHED_PLAYLIST_ID
 	].forEach(playlistId => {
 		
 		if (!authenticatedPlaylistCollection.includes(playlistId)) {
