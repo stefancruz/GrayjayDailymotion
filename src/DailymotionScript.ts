@@ -2,6 +2,7 @@ let config: Config;
 let _settings: IDailymotionPluginSettings;
 
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST_ID";
+const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST_ID";
 
 
 import {
@@ -46,7 +47,8 @@ import {
 	getPreferredCountry,
 	getAnonymousUserTokenSingleton,
 	getQuery,
-	getLikePlaylist
+	getLikePlaylist,
+	getFavoritesPlaylist
 } from './util';
 
 import {
@@ -225,7 +227,7 @@ source.getContentDetails = function (url) {
 
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
-	return url.startsWith(BASE_URL_PLAYLIST) || url === LIKE_PLAYLIST_ID;
+	return url.startsWith(BASE_URL_PLAYLIST) || url === LIKE_PLAYLIST_ID || url === FAVORITES_PLAYLIST_ID;
 };
 
 source.searchPlaylists = (query, type, order, filters) => {
@@ -236,9 +238,15 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 	const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
 
+	const httpClient = getHttpContext({ usePlatformAuth });
+
 	if (url === LIKE_PLAYLIST_ID) {
-		const httpClient = getHttpContext({ usePlatformAuth });
+		
 		return getLikePlaylist(config.id, httpClient, usePlatformAuth);
+	}
+
+	if(url === FAVORITES_PLAYLIST_ID) {
+		return getFavoritesPlaylist(config.id, httpClient, usePlatformAuth);
 	}
 
 	const xid = url.split('/').pop();
@@ -251,7 +259,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 
 	let jsonResponse = executeGqlQuery(
-		getHttpContext({ usePlatformAuth }),
+		httpClient,
 		{
 			operationName: 'PLAYLIST_VIDEO_QUERY',
 			variables,
@@ -414,7 +422,8 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 
 
 	[
-		LIKE_PLAYLIST_ID
+		LIKE_PLAYLIST_ID,
+		FAVORITES_PLAYLIST_ID
 	].forEach(playlistId => {
 		
 		if (!authenticatedPlaylistCollection.includes(playlistId)) {

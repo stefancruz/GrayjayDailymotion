@@ -16,7 +16,7 @@ import {
     BASE_URL_API_AUTH,
     DURATION_THRESHOLDS,
 } from './constants'
-import { GET_LIKED_VIDEOS_GQL_QUERY } from './gqlQueries';
+import { GET_FAVORITES_GQL_QUERY, GET_LIKED_VIDEOS_GQL_QUERY } from './gqlQueries';
 
 export function getPreferredCountry(preferredCountryIndex) {
     const countryName = COUNTRY_NAMES[preferredCountryIndex];
@@ -358,6 +358,32 @@ export function getLikePlaylist(pluginId: string, httpClient: IHttp, usePlatform
     const collection = {
         "id": generateUUIDv4(),
         "name": "Liked",
+        "creator": {}
+    }
+
+    return SourceCollectionToGrayjayPlaylistDetails(pluginId, collection as Collection, videos);
+}
+
+export function getFavoritesPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false): PlatformPlaylistDetails {
+
+    const videos: PlatformVideo[] = getPages<Maybe<User>, PlatformVideo>(
+        httpClient,
+        GET_FAVORITES_GQL_QUERY,
+        'USER_WATCH_LATER_VIDEOS_QUERY',
+        {
+            page: 1
+        },
+        usePlatformAuth,
+        (jsonResponse) => jsonResponse?.data?.me,//set root
+        (me) => (me?.watchLaterMedias?.edges.length ?? 0) > 0 ?? false,//hasNextCallback
+        (me, currentPage) => ++currentPage, //getNextPage
+        (me) => me?.watchLaterMedias?.edges.map(edge => {
+            return SourceVideoToGrayjayVideo(pluginId, edge.node as Video);
+        }));
+
+    const collection = {
+        "id": generateUUIDv4(),
+        "name": "Favorites",
         "creator": {}
     }
 

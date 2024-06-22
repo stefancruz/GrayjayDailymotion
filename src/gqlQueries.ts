@@ -978,3 +978,82 @@ export const GET_LIKED_VIDEOS_GQL_QUERY = `
 }
 
 		`
+
+
+export const GET_FAVORITES_GQL_QUERY = `
+	query USER_WATCH_LATER_VIDEOS_QUERY($page: Int!) {
+	me {
+		id
+		stats {
+			id
+			watchLater {
+				id
+				total
+				__typename
+			}
+			__typename
+		}
+		watchLaterMedias(first: 30, page: $page) {
+			edges {
+				node {
+					... on Video {
+						__typename
+						id
+						xid
+						title
+						duration
+						thumbnail(height: PORTRAIT_1080) {
+							url
+						}
+						aspectRatio
+						channel {
+							id
+							logoURLx25: logoURL(size: "x25")
+							displayName
+							accountType
+							__typename
+						}
+						viewerEngagement {
+							id
+							favorited
+							__typename
+						}
+					}
+					... on Live {
+						__typename
+						id
+						xid
+						title
+						thumbnail(height: PORTRAIT_1080) {
+							url
+						}
+						channel {
+							id
+							logoURLx25: logoURL(size: "x25")
+							displayName
+							accountType
+							__typename
+						}
+						viewerEngagement {
+							id
+							favorited
+							__typename
+						}
+					}
+					__typename
+				}
+				__typename
+			}
+			pageInfo {
+				hasNextPage
+				nextPage
+				__typename
+			}
+			__typename
+		}
+		__typename
+	}
+}
+
+	
+	`
