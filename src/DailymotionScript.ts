@@ -251,11 +251,11 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 		return getLikePlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
-	if(url === FAVORITES_PLAYLIST_ID) {
+	if (url === FAVORITES_PLAYLIST_ID) {
 		return getFavoritesPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
-	if(url === RECENTLY_WATCHED_PLAYLIST_ID) {
+	if (url === RECENTLY_WATCHED_PLAYLIST_ID) {
 		return getRecentlyWatchedPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
@@ -396,11 +396,28 @@ source.getUserPlaylists = (): string[] => {
 
 	const userName = (jsonResponse?.data?.me?.channel as Channel)?.name;
 
-	return getPlaylistsByUsername(userName, headers, true);
+	const playlists = getPlaylistsByUsername(userName, headers, true);
+
+	[
+		LIKE_PLAYLIST_ID,
+		FAVORITES_PLAYLIST_ID,
+		RECENTLY_WATCHED_PLAYLIST_ID
+	].forEach(playlistId => {
+
+		if (!authenticatedPlaylistCollection.includes(playlistId)) {
+			authenticatedPlaylistCollection.push(playlistId);
+		}
+
+		if (!playlists.includes(playlistId)) {
+			playlists.push(playlistId);
+		}
+	});
+
+	return playlists;
 
 }
 
-function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
+function getPlaylistsByUsername(userName, headers, usePlatformAuth = false): string[] {
 
 
 	const collections = executeGqlQuery(
@@ -421,30 +438,13 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 		}
 	);
 
-	const playlists = collections.data.channel.collections.edges.map(edge => {
+	const playlists: string[] = collections.data.channel.collections.edges.map(edge => {
 		const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
 		if (!authenticatedPlaylistCollection.includes(playlistUrl)) {
 			authenticatedPlaylistCollection.push(playlistUrl);
 		}
 		return playlistUrl;
 	});
-
-
-	[
-		LIKE_PLAYLIST_ID,
-		FAVORITES_PLAYLIST_ID,
-		RECENTLY_WATCHED_PLAYLIST_ID
-	].forEach(playlistId => {
-
-		if (!authenticatedPlaylistCollection.includes(playlistId)) {
-			authenticatedPlaylistCollection.push(playlistId);
-		}
-
-		if (!playlists.includes(playlistId)) {
-			playlists.push(playlistId);
-		}
-	});
-
 
 	return playlists;
 
