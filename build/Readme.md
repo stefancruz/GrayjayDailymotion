@@ -22,6 +22,13 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Policentric Comments
 - [x] - Subtitles
 
+## Todo 
+- [ ] - State management
+- [ ] - Platform comments (not generally available)
+
+## Known bugs
+- [ ] - Live filter in Subscriptions tab
+
 
 
 ## Install
