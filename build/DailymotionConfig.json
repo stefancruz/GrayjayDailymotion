@@ -7,7 +7,7 @@
   "sourceUrl": "https://stefancruz.github.io/GrayjayDailymotion/DailymotionConfig.json",
   "scriptUrl": "./DailymotionScript.js",
   "repositoryUrl": "https://github.com/stefancruz/GrayjayDailymotion",
-  "version": 13,
+  "version": 14,
   "iconUrl": "./dailymotion.png",
   "id": "9c87e8db-e75d-48f4-afe5-2d203d4b95c5",
   "scriptSignature": "",
@@ -27,21 +27,25 @@
     "static2.dmcdn.net"
   ],
   "authentication": {
-    "loginUrl": "https://www.dailymotion.com/signin?urlback=/video/x58d0gt",  
+    "loginUrl": "https://www.dailymotion.com/signin?urlback=/video/x34e1fp",
     "cookiesToFind": [
       "damd",
       "refresh_token",
       "access_token"
     ],
-    "headersToFind": [
-      "Authorization"
-    ],
+    "domainHeadersToFind": {
+      ".graphql.api.dailymotion.com": [
+        "Authorization"
+      ]
+    },
     "userAgent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36"
   },
-  "supportedClaimTypes": [27],
+  "supportedClaimTypes": [
+    27
+  ],
   "settings": [
     {
-      "variable": "thumbnailResolution",
+      "variable": "thumbnailResolutionOptionIndex",
       "name": "Thumbnail resolution",
       "description": "Select the resolution for the thumbnails",
       "type": "Dropdown",
@@ -58,7 +62,7 @@
       ]
     },
     {
-      "variable": "avatarSize",
+      "variable": "avatarSizeOptionIndex",
       "name": "Creator avatar resolution",
       "description": "Select your height for the creator avatar",
       "type": "Dropdown",
@@ -83,7 +87,7 @@
       "default": "true"
     },
     {
-      "variable": "preferredCountry",
+      "variable": "preferredCountryOptionIndex",
       "name": "Preferred Country",
       "description": "Select your preferred country to get the best results",
       "type": "Dropdown",
@@ -339,6 +343,33 @@
         "Yemen",
         "Zambia",
         "Zimbabwe"
+      ]
+    },
+    {
+      "variable": "videosPerPageOptionIndex",
+      "name": "Videos per page",
+      "description": "Select the number of videos to load per page",
+      "type": "Dropdown",
+      "default": "3",
+      "options": [
+        "5",
+        "10",
+        "15",
+        "20",
+        "25"
+      ]
+    },
+    {
+      "variable": "playlistsPerPageOptionIndex",
+      "name": "Playlists per page",
+      "description": "Select the number of playlists to load per page",
+      "type": "Dropdown",
+      "default": "0",
+      "options": [
+        "5",
+        "10",
+        "15",
+        "20"
       ]
     }
   ]

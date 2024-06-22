@@ -15,10 +15,8 @@ const X_DM_AppInfo_Id = "com.dailymotion.neon";
 const X_DM_AppInfo_Type = "website";
 const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z"; //TODO check how to get this dynamically
 const X_DM_Neon_SSR = "0";
-const X_DM_Preferred_Country = ""; //TODO check how to get this from Grayjay
 const PLATFORM = "Dailymotion";
 const PLATFORM_CLAIMTYPE = 27;
-const ITEMS_PER_PAGE = 20;
 // search capabilities - upload date
 const LESS_THAN_MINUTE = "LESS_THAN_MINUTE";
 const ONE_TO_FIVE_MINUTES = "ONE_TO_FIVE_MINUTES";
@@ -31,6 +29,37 @@ DURATION_THRESHOLDS[ONE_TO_FIVE_MINUTES] = { min: 60, max: 300 };
 DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
+/** The possible values which liked media connections can be sorted by. */
+const LikedMediaSort = {
+    /** Sort liked medias by most recent. */
+    Recent: 'recent',
+    /** Sort liked medias by most viewed. */
+    Visited: 'visited'
+};
+// This platform uses a scale system for rating the videos.
+// Ratings are grouped into positive and negative to calculate likes and dislikes.
+const POSITIVE_RATINGS_LABELS = [
+    "STAR_STRUCK", // amazing
+    "SMILING_FACE_WITH_SUNGLASSES", // cool
+    "WINKING_FACE" // interesting
+];
+const NEGATIVE_RATINGS_LABELS = [
+    "SLEEPING_FACE", // boring
+    "FISHING_POLE" // waste of time
+];
+const VIDEOS_PER_PAGE_OPTIONS = [
+    5,
+    10,
+    15,
+    20,
+    25
+];
+const PLAYLISTS_PER_PAGE_OPTIONS = [
+    5,
+    10,
+    15,
+    20
+];
 const COUNTRY_NAMES_TO_CODE = {
     "": "",
     "Afghanistan": "AF",
@@ -326,8 +355,7 @@ const ERROR_TYPES = {
 };
 const SEARCH_CAPABILITIES = {
     types: [
-        Type.Feed.Videos,
-        Type.Feed.Live
+        Type.Feed.Mixed
     ],
     sorts: [
         "Most Recent",
@@ -361,24 +389,24 @@ const SEARCH_CAPABILITIES = {
     ]
 };
 
-const SEARCH_SUGGESTIONS_QUERY = `
-    query AUTOCOMPLETE_QUERY($query: String!) {
-		search {
-		  id
-		  suggestedVideos: autosuggestions(
-			query: {eq: $query}
-			filter: {story: {eq: VIDEO}}
-		  ) {
-			edges {
-			  node {
-				name
-			  }
+const AUTOCOMPLETE_QUERY = `
+query AUTOCOMPLETE_QUERY($query: String!) {
+	search {
+		id
+		suggestedVideos: autosuggestions(
+		query: {eq: $query}
+		filter: {story: {eq: VIDEO}}
+		) {
+		edges {
+			node {
+			name
 			}
-		  }
 		}
-	  }
-    `;
-const CHANNEL_BY_URL_QUERY = `
+		}
+	}
+}
+`;
+const CHANNEL_QUERY_DESKTOP = `
 query CHANNEL_QUERY_DESKTOP(
 	$channel_name: String!
 	$avatar_size: AvatarHeight!
@@ -435,7 +463,7 @@ query CHANNEL_QUERY_DESKTOP(
 	}
 }
 `;
-const HOME_QUERY = `	
+const SEACH_DISCOVERY_QUERY = `	
 fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 	id
 	xid
@@ -481,7 +509,6 @@ query SEACH_DISCOVERY_QUERY($avatar_size: AvatarHeight!, $thumbnail_resolution: 
 							}
 							edges {
 								node {
-									__typename
 									... on Media {
 										...SEARCH_DISCOVERY_VIDEO_FRAGMENT
 									}
@@ -493,12 +520,8 @@ query SEACH_DISCOVERY_QUERY($avatar_size: AvatarHeight!, $thumbnail_resolution: 
 			}
 		}
 	}
-}
-
-
-
-`;
-const CHANNEL_VIDEOS_BY_CHANNEL_NAME = `
+}`;
+const CHANNEL_VIDEOS_QUERY = `
 query CHANNEL_VIDEOS_QUERY(
   $channel_name: String!
   $first: Int!
@@ -507,16 +530,63 @@ query CHANNEL_VIDEOS_QUERY(
   $allowExplicit: Boolean
   $avatar_size: AvatarHeight!
   $thumbnail_resolution: ThumbnailHeight!
+  $shouldLoadLives: Boolean!
+  $shouldLoadVideos: Boolean!
 ) {
   channel(name: $channel_name) {
     id
     xid
-    videos(
-      sort: $sort
+    lives(
       page: $page
       first: $first
       allowExplicit: $allowExplicit
-    ) {
+    ) @include(if: $shouldLoadLives) {
+      pageInfo {
+        hasNextPage
+        nextPage
+      }
+      totalCount
+      edges {
+        node {
+          id
+          xid
+          title
+          thumbnail(height: $thumbnail_resolution) {
+            url
+          }
+          description
+          metrics {
+            engagement {
+              audience {
+                totalCount
+              }
+            }
+          }
+          audienceCount
+          isOnAir
+          stats {
+            views {
+              total
+            }
+          }
+          creator {
+            id
+            xid
+            name
+            displayName
+            avatar(height: $avatar_size) {
+              url
+            }
+          }
+        }
+      }
+    }
+    videos(
+      page: $page
+      first: $first
+      allowExplicit: $allowExplicit
+      sort: $sort
+    ) @include(if: $shouldLoadVideos) {
       pageInfo {
         hasNextPage
         nextPage
@@ -536,10 +606,9 @@ query CHANNEL_VIDEOS_QUERY(
             id
             name
             displayName
-            avatar(height:$avatar_size) {
+            avatar(height: $avatar_size) {
               url
             }
-
           }
           metrics {
             engagement {
@@ -558,70 +627,33 @@ query CHANNEL_VIDEOS_QUERY(
       }
     }
   }
-}
-
-
-	`;
-const MAIN_SEARCH_QUERY = ` 
-	fragment VIDEO_BASE_FRAGMENT on Video {
-		id
-		xid
-		title
-		createdAt
-		metrics {
-			engagement {
-				likes {
-					edges {
-						node {
-							rating
-							total
-						}
+}`;
+const SEARCH_QUERY = ` 
+fragment VIDEO_BASE_FRAGMENT on Video {
+	id
+	xid
+	title
+	createdAt
+	metrics {
+		engagement {
+			likes {
+				edges {
+					node {
+						rating
+						total
 					}
 				}
 			}
 		}
-		stats {
-			id
-			views {
-				id
-				total
-			}
-		}
-		creator {
-			id
-			xid
-			name
-			displayName
-			description
-			avatar(height:$avatar_size) {
-				url
-			}
-		}
-		duration
-		thumbnail(height:$thumbnail_resolution) {
-			url
-		}
-		
 	}
-	
-	fragment VIDEO_FAVORITES_FRAGMENT on Media {
-		... on Video {
+	stats {
+		id
+		views {
 			id
-			viewerEngagement {
-				id
-				favorited
-			}
-		}
-		... on Live {
-			id
-			viewerEngagement {
-				id
-				favorited
-			}
+			total
 		}
 	}
-	
-	fragment CHANNEL_BASE_FRAG on Channel {
+	creator {
 		id
 		xid
 		name
@@ -631,153 +663,186 @@ const MAIN_SEARCH_QUERY = `
 			url
 		}
 	}
+	duration
+	thumbnail(height:$thumbnail_resolution) {
+		url
+	}
 	
-	fragment PLAYLIST_BASE_FRAG on Collection {
+}
+
+fragment VIDEO_FAVORITES_FRAGMENT on Media {
+	... on Video {
+		id
+		viewerEngagement {
+			id
+			favorited
+		}
+	}
+	... on Live {
+		id
+		viewerEngagement {
+			id
+			favorited
+		}
+	}
+}
+
+fragment CHANNEL_BASE_FRAG on Channel {
+	id
+	xid
+	name
+	displayName
+	description
+	avatar(height:$avatar_size) {
+		url
+	}
+}
+
+fragment PLAYLIST_BASE_FRAG on Collection {
+	id
+	xid
+	name
+	description
+	thumbnail(height:$thumbnail_resolution) {
+		url
+	}
+	creator {
 		id
 		xid
 		name
-		description
-		thumbnail(height:$thumbnail_resolution) {
+		displayName
+		avatar(height:$avatar_size) {
 			url
 		}
-		creator {
+	}
+	description
+	stats {
+		id
+		videos {
 			id
-			xid
-			name
-			displayName
-			avatar(height:$avatar_size) {
-				url
-			}
+			total
 		}
-		description
-		stats {
-			id
+	}
+	metrics {
+		engagement {
 			videos {
-				id
-				total
-			}
-		}
-		metrics {
-			engagement {
-				videos {
-					edges {
-						node {
-							total
-						}
+				edges {
+					node {
+						total
 					}
 				}
 			}
 		}
 	}
-	
-	query SEARCH_QUERY(
-		$query: String!
-		$shouldIncludeVideos: Boolean!
-		$shouldIncludeChannels: Boolean!
-		$shouldIncludePlaylists: Boolean!
-		$shouldIncludeLives: Boolean!
-		$page: Int
-		$limit: Int
-		$sortByVideos: SearchVideoSort
-		$durationMinVideos: Int
-		$durationMaxVideos: Int
-		$createdAfterVideos: DateTime
-		$avatar_size: AvatarHeight!
-		$thumbnail_resolution: ThumbnailHeight!
-	) {
-		search {
-			id
-			videos(
-				query: $query
-				first: $limit
-				page: $page
-				sort: $sortByVideos
-				durationMin: $durationMinVideos
-				durationMax: $durationMaxVideos
-				createdAfter: $createdAfterVideos
-			) @include(if: $shouldIncludeVideos) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						...VIDEO_BASE_FRAGMENT
-						...VIDEO_FAVORITES_FRAGMENT
-					}
+}
+
+query SEARCH_QUERY(
+	$query: String!
+	$shouldIncludeVideos: Boolean!
+	$shouldIncludeChannels: Boolean!
+	$shouldIncludePlaylists: Boolean!
+	$shouldIncludeLives: Boolean!
+	$page: Int
+	$limit: Int
+	$sortByVideos: SearchVideoSort
+	$durationMinVideos: Int
+	$durationMaxVideos: Int
+	$createdAfterVideos: DateTime
+	$avatar_size: AvatarHeight!
+	$thumbnail_resolution: ThumbnailHeight!
+) {
+	search {
+		id
+		videos(
+			query: $query
+			first: $limit
+			page: $page
+			sort: $sortByVideos
+			durationMin: $durationMinVideos
+			durationMax: $durationMaxVideos
+			createdAfter: $createdAfterVideos
+		) @include(if: $shouldIncludeVideos) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			totalCount
+			edges {
+				node {
+					id
+					...VIDEO_BASE_FRAGMENT
+					...VIDEO_FAVORITES_FRAGMENT
 				}
 			}
-			lives(query: $query, first: $limit, page: $page)
-				@include(if: $shouldIncludeLives) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
+		}
+		lives(query: $query, first: $limit, page: $page)
+			@include(if: $shouldIncludeLives) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			totalCount
+			edges {
+				node {
+					id
+					xid
+					title
+					thumbnail(height:$thumbnail_resolution) {
+						url
+					}
+					description
+					metrics {
+						engagement {
+							audience {
+								totalCount
+							}
+						}
+					}
+					audienceCount
+					isOnAir
+					creator {
 						id
 						xid
-						title
-						thumbnail(height:$thumbnail_resolution) {
+						name
+						displayName
+						avatar(height:$avatar_size){
 							url
 						}
-						description
-						metrics {
-							engagement {
-								audience {
-									totalCount
-								}
-							}
-						}
-						audienceCount
-						isOnAir
-						creator {
-							id
-							xid
-							name
-							displayName
-							avatar(height:$avatar_size){
-								url
-							}
-						}
-					}
-				}
-			}
-			channels(query: $query, first: $limit, page: $page)
-				@include(if: $shouldIncludeChannels) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						...CHANNEL_BASE_FRAG
-					}
-				}
-			}
-			playlists: collections(query: $query, first: $limit, page: $page)
-				@include(if: $shouldIncludePlaylists) {
-				pageInfo {
-					hasNextPage
-					nextPage
-				}
-				totalCount
-				edges {
-					node {
-						id
-						...PLAYLIST_BASE_FRAG
 					}
 				}
 			}
 		}
-	}		
-	`;
-const VIDEO_DETAILS_QUERY = `
+		channels(query: $query, first: $limit, page: $page)
+			@include(if: $shouldIncludeChannels) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			totalCount
+			edges {
+				node {
+					id
+					...CHANNEL_BASE_FRAG
+				}
+			}
+		}
+		playlists: collections(query: $query, first: $limit, page: $page)
+			@include(if: $shouldIncludePlaylists) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			totalCount
+			edges {
+				node {
+					id
+					...PLAYLIST_BASE_FRAG
+				}
+			}
+		}
+	}
+}`;
+const WATCHING_VIDEO = `
 fragment VIDEO_FRAGMENT on Video {
 	id
 	xid
@@ -852,6 +917,8 @@ fragment LIVE_FRAGMENT on Live {
 	isPublished
 	title
 	description
+	audienceCount
+	isOnAir
 	thumbnail(height:$thumbnail_resolution){
 		url
 		height
@@ -928,31 +995,6 @@ fragment LIVE_FRAGMENT on Live {
 			}
 		}
 	}
-	moderation {
-		id
-		reviewedAt
-	}
-	topics(whitelistedOnly: true, first: 3, page: 1) {
-		edges {
-			node {
-				id
-				xid
-				name
-				names {
-					edges {
-						node {
-							id
-							name
-							language {
-								id
-								codeAlpha2
-							}
-						}
-					}
-				}
-			}
-		}
-	}
 	geoblockedCountries {
 		id
 		allowed
@@ -975,8 +1017,7 @@ query WATCHING_VIDEO(
 			...LIVE_FRAGMENT
 		}
 	}
-}		
-	`;
+}`;
 const SEARCH_CHANNEL = `		
 query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: AvatarHeight!) {
 	search {
@@ -1015,10 +1056,7 @@ query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: Avata
 			}
 		}
 	}
-}
-
-	
-		`;
+}`;
 const PLAYLIST_DETAILS_QUERY = `
 query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	collection(xid: $xid) {
@@ -1098,8 +1136,7 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 			}
 		}
 	}
-}
-`;
+}`;
 const GET_USER_SUBSCRIPTIONS = `
 query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 	me {
@@ -1116,9 +1153,8 @@ query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
 			}
 		}
 	}
-}
-`;
-const GET_CHANNEL_PLAYLISTS = `
+}`;
+const GET_CHANNEL_PLAYLISTS_XID = `
 query CHANNEL_PLAYLISTS_QUERY(
 	$channel_name: String!
 	$sort: String
@@ -1126,7 +1162,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 	$first: Int!
 ) {
 	channel(name: $channel_name) {
-		channel_playlist_collections: collections(
+		collections(
 			sort: $sort
 			page: $page
 			first: $first
@@ -1138,13 +1174,11 @@ query CHANNEL_PLAYLISTS_QUERY(
 			edges {
 				node {
 					xid
-
 						}
 					}
 				}
 			}
-		}
-`;
+}`;
 const SUBSCRIPTIONS_QUERY = `
 query SUBSCRIPTIONS_QUERY {
 	me {
@@ -1155,6 +1189,364 @@ query SUBSCRIPTIONS_QUERY {
 	}
 }
 `;
+const CHANNEL_PLAYLISTS_QUERY = `
+query CHANNEL_PLAYLISTS_QUERY(
+	$channel_name: String!
+	$sort: String
+	$page: Int!
+	$first: Int!
+	$avatar_size: AvatarHeight!, 
+	$thumbnail_resolution: ThumbnailHeight!
+) {
+	channel(name: $channel_name) {
+		id
+		xid
+		collections(sort: $sort, page: $page, first: $first) {
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+			edges {
+				node {
+					id
+					xid
+					updatedAt
+					createdAt
+					name
+					description
+					metrics {
+						engagement {
+							videos {
+								edges {
+									node {
+										total
+									}
+								}
+								totalCount
+							}
+						}
+					}
+					thumbnail(height:$thumbnail_resolution) {
+						url
+					}
+					stats {
+						id
+						videos {
+							id
+							total
+						}
+					}
+					videos {
+						edges {
+							node {
+								createdAt
+								creator {
+									id
+									name
+									xid
+									avatar(height:$avatar_size) {
+										url
+									}
+									displayName
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+`;
+const USER_LIKED_VIDEOS_QUERY = `
+query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
+	me {
+		id
+		likedMedias(first: 100, page: $page) {
+			edges {
+				node {
+					... on Video {
+						id
+						xid
+						title
+						duration
+						thumbnail(height:$thumbnail_resolution) {
+							url
+						}
+						aspectRatio
+						viewerEngagement {
+							id
+							liked
+						}
+						channel {
+							id
+							logoURLx25: logoURL(size: "x25")
+							displayName
+							accountType	
+						}
+					}
+					... on Live {
+						
+						id
+						xid
+						title
+						isOnAir
+						thumbnail(height:$thumbnail_resolution) {
+							url
+						}
+						viewerEngagement {
+							id
+							liked
+						}
+						channel {
+							id
+							logoURLx25: logoURL(size: "x25")
+							displayName
+							accountType
+						}
+					}
+				}
+			}
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+		}
+	}
+}`;
+const USER_WATCH_LATER_VIDEOS_QUERY = `
+	query USER_WATCH_LATER_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
+	me {
+		id
+		watchLaterMedias(first: 100, page: $page) {
+			edges {
+				node {
+					... on Video {
+						id
+						xid
+						title
+						duration
+						thumbnail(height:$thumbnail_resolution) {
+							url
+						}
+						aspectRatio
+						channel {
+							id
+							logoURLx25: logoURL(size: "x25")
+							displayName
+							accountType
+						}
+						viewerEngagement {
+							id
+							favorited
+						}
+					}
+					... on Live {
+						id
+						xid
+						title
+						isOnAir
+						thumbnail(height:$thumbnail_resolution) {
+							url
+						}
+						channel {
+							id
+							logoURLx25: logoURL(size: "x25")
+							displayName
+							accountType
+						}
+						viewerEngagement {
+							id
+							favorited
+						}
+					}
+				}
+			}
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+		}
+	}
+}`;
+const USER_WATCHED_VIDEOS_QUERY = `
+	query USER_WATCHED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
+	me {
+		id
+		watchedVideos(first: 100, page: $page) {
+			edges {
+				node {
+					id
+					xid
+					title
+					duration
+					thumbnail(height:$thumbnail_resolution) {
+						url
+					}
+					aspectRatio
+					channel {
+						id
+						logoURLx25: logoURL(size: "x25")
+						displayName
+						accountType
+					}
+				}
+			}
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+		}
+	}
+}`;
+
+const SourceChannelToGrayjayChannel = (pluginId, url, sourceChannel) => {
+    const externalLinks = sourceChannel?.externalLinks ?? {};
+    const links = Object.keys(externalLinks).reduce((acc, key) => {
+        if (externalLinks[key]) {
+            acc[key.replace('URL', '')] = externalLinks[key];
+        }
+        return acc;
+    }, {});
+    return new PlatformChannel({
+        id: new PlatformID(PLATFORM, sourceChannel?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
+        name: sourceChannel?.displayName ?? "",
+        thumbnail: sourceChannel?.avatar?.url ?? "",
+        banner: sourceChannel.banner?.url ?? "",
+        subscribers: sourceChannel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
+        description: sourceChannel?.description ?? "",
+        url,
+        links
+    });
+};
+const SourceAuthorToGrayjayPlatformAuthorLink = (pluginId, creator) => {
+    return new PlatformAuthorLink(new PlatformID(PLATFORM, creator?.id ?? "", pluginId, PLATFORM_CLAIMTYPE), creator?.displayName ?? "", creator?.name ? `${BASE_URL}/${creator?.name}` : "", creator?.avatar?.url ?? "", creator?.followers?.totalCount ?? 0);
+};
+const SourceVideoToGrayjayVideo = (pluginId, sourceVideo) => {
+    const isLive = getIsLive(sourceVideo);
+    const viewCount = getViewCount(sourceVideo);
+    const video = {
+        id: new PlatformID(PLATFORM, sourceVideo?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
+        description: sourceVideo?.description ?? '',
+        name: sourceVideo?.title ?? "",
+        thumbnails: new Thumbnails([
+            new Thumbnail(sourceVideo?.thumbnail?.url ?? "", 0)
+        ]),
+        author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceVideo?.creator),
+        uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+        datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+        url: `${BASE_URL_VIDEO}/${sourceVideo?.xid}`,
+        duration: sourceVideo?.duration ?? 0,
+        viewCount,
+        isLive
+    };
+    return new PlatformVideo(video);
+};
+const SourceCollectionToGrayjayPlaylistDetails = (pluginId, sourceCollection, videos = []) => {
+    return new PlatformPlaylistDetails({
+        url: sourceCollection?.xid ? `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}` : "",
+        id: new PlatformID(PLATFORM, sourceCollection?.xid ?? "", pluginId, PLATFORM_CLAIMTYPE),
+        author: sourceCollection?.creator ? SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceCollection?.creator) : {},
+        name: sourceCollection.name,
+        thumbnail: sourceCollection?.thumbnail?.url,
+        videoCount: videos.length ?? 0,
+        contents: new VideoPager(videos)
+    });
+};
+const SourceCollectionToGrayjayPlaylist = (pluginId, sourceCollection) => {
+    return new PlatformPlaylist({
+        url: `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}`,
+        id: new PlatformID(PLATFORM, sourceCollection?.xid ?? "", pluginId, PLATFORM_CLAIMTYPE),
+        author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceCollection?.creator),
+        name: sourceCollection?.name,
+        thumbnail: sourceCollection?.thumbnail?.url,
+        videoCount: sourceCollection?.metrics?.engagement?.videos?.edges[0]?.node?.total,
+    });
+};
+const getIsLive = (sourceVideo) => {
+    return sourceVideo?.isOnAir === true || sourceVideo?.duration == undefined;
+};
+const getViewCount = (sourceVideo) => {
+    let viewCount = 0;
+    if (getIsLive(sourceVideo)) {
+        viewCount = sourceVideo?.audienceCount ?? sourceVideo?.viewCount ?? sourceVideo?.stats?.views?.total ?? 0;
+    }
+    else {
+        viewCount = sourceVideo?.viewCount ?? sourceVideo?.stats?.views?.total ?? 0;
+    }
+    return viewCount;
+};
+const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, sourceSubtitle) => {
+    let positiveRatingCount = 0;
+    let negativeRatingCount = 0;
+    const ratings = sourceVideo?.metrics?.engagement?.likes?.edges ?? [];
+    for (const edge of ratings) {
+        const ratingName = edge?.node?.rating;
+        const ratingTotal = edge?.node?.total;
+        if (POSITIVE_RATINGS_LABELS.includes(ratingName)) {
+            positiveRatingCount += ratingTotal;
+        }
+        else if (NEGATIVE_RATINGS_LABELS.includes(ratingName)) {
+            negativeRatingCount += ratingTotal;
+        }
+    }
+    const isLive = getIsLive(sourceVideo);
+    const viewCount = getViewCount(sourceVideo);
+    const duration = isLive ? 0 : sourceVideo?.duration ?? 0;
+    const platformVideoDetails = {
+        id: new PlatformID(PLATFORM, sourceVideo?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
+        name: sourceVideo?.title ?? "",
+        thumbnails: new Thumbnails([new Thumbnail(sourceVideo?.thumbnail?.url ?? "", 0)]),
+        author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceVideo?.creator),
+        uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+        datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+        duration,
+        // viewCount,
+        viewCount,
+        url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : "",
+        isLive,
+        description: sourceVideo?.description ?? "",
+        video: new VideoSourceDescriptor(sources),
+        rating: new RatingLikesDislikes(positiveRatingCount, negativeRatingCount),
+        dash: null,
+        live: null,
+        hls: null,
+        subtitles: []
+    };
+    if (sourceSubtitle?.enable && sourceSubtitle?.data) {
+        Object.keys(sourceSubtitle.data).forEach(key => {
+            const subtitleData = sourceSubtitle.data[key];
+            if (subtitleData) {
+                const subtitleUrl = subtitleData.urls[0];
+                platformVideoDetails.subtitles.push({
+                    name: subtitleData.label,
+                    url: subtitleUrl,
+                    format: "text/vtt",
+                    getSubtitles() {
+                        try {
+                            const subResp = http.GET(subtitleUrl, {});
+                            if (!subResp.isOk) {
+                                if (IS_TESTING) {
+                                    bridge.log(`Failed to fetch subtitles from ${subtitleUrl}`);
+                                }
+                                return "";
+                            }
+                            return convertSRTtoVTT(subResp.body);
+                        }
+                        catch (error) {
+                            if (IS_TESTING) {
+                                bridge.log(`Error fetching subtitles: ${error?.message}`);
+                            }
+                            return "";
+                        }
+                    }
+                });
+            }
+        });
+    }
+    return platformVideoDetails;
+};
 
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER = "";
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE;
@@ -1162,8 +1554,7 @@ let httpClientRequestToken = http.newClient(false);
 function getPreferredCountry(preferredCountryIndex) {
     const countryName = COUNTRY_NAMES[preferredCountryIndex];
     const code = COUNTRY_NAMES_TO_CODE[countryName];
-    const preferredCountry = (code || X_DM_Preferred_Country || '').toLowerCase();
-    return preferredCountry;
+    return (code || '').toLowerCase();
 }
 const objectToUrlEncodedString = (obj) => {
     const encodedParams = [];
@@ -1184,6 +1575,7 @@ function isUsernameUrl(url) {
     const regex = new RegExp('^' + BASE_URL.replace(/\./g, '\\.') + '/[^/]+$');
     return regex.test(url);
 }
+// TODO: save to state
 function getAnonymousUserTokenSingleton() {
     // Check if the anonymous user token is available and not expired
     if (AUTHORIZATION_TOKEN_ANONYMOUS_USER) {
@@ -1365,19 +1757,98 @@ const getQuery = (context) => {
     }
     return context;
 };
+function generateUUIDv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+function getPages(httpClient, query, operationName, variables, usePlatformAuth, setRoot, hasNextCallback, getNextPage, map) {
+    let all = [];
+    if (!hasNextCallback) {
+        hasNextCallback = () => false;
+    }
+    let hasNext = true;
+    let nextPage = 1;
+    do {
+        variables = { ...variables, page: nextPage };
+        const jsonResponse = executeGqlQuery(httpClient, {
+            operationName,
+            variables,
+            query,
+            usePlatformAuth
+        });
+        const root = setRoot(jsonResponse);
+        nextPage = getNextPage(root, nextPage);
+        const items = map(root);
+        hasNext = hasNextCallback(root);
+        all = all.concat(items);
+    } while (hasNext);
+    return all;
+}
+function getLikePlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_LIKED_VIDEOS_QUERY,
+        operationName: 'USER_LIKED_VIDEOS_QUERY',
+        rootObject: 'likedMedias',
+        playlistName: 'Liked Videos',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    });
+}
+function getFavoritesPlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_WATCH_LATER_VIDEOS_QUERY,
+        operationName: 'USER_WATCH_LATER_VIDEOS_QUERY',
+        rootObject: 'watchLaterMedias',
+        playlistName: 'Favorites',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    });
+}
+function getRecentlyWatchedPlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_WATCHED_VIDEOS_QUERY,
+        operationName: 'USER_WATCHED_VIDEOS_QUERY',
+        rootObject: 'watchedVideos',
+        playlistName: 'Recently Watched',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    });
+}
+function getPlatformSystemPlaylist(opts) {
+    const videos = getPages(opts.httpClient, opts.query, opts.operationName, {
+        page: 1,
+        thumbnail_resolution: THUMBNAIL_HEIGHT[opts.thumbnailResolutionIndex]
+    }, opts.usePlatformAuth, (jsonResponse) => jsonResponse?.data?.me, //set root
+    (me) => (me?.[opts.rootObject]?.edges.length ?? 0) > 0 ?? false, //hasNextCallback
+    (me, currentPage) => ++currentPage, //getNextPage
+    (me) => me?.[opts.rootObject]?.edges.map(edge => {
+        return SourceVideoToGrayjayVideo(opts.pluginId, edge.node);
+    }));
+    const collection = {
+        "id": generateUUIDv4(),
+        "name": opts.playlistName,
+        "creator": {}
+    };
+    return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection, videos);
+}
 
 class SearchPagerAll extends VideoPager {
-    /**
-     * @param {import("./types.d.ts").SearchContext} context the query params
-     * @param {(PlatformVideo | PlatformChannel)[]} results the initial results
-    */
     cb;
     constructor(results, hasMore, params, page, cb) {
         super(results, hasMore, { params, page });
         this.cb = cb;
     }
     nextPage() {
-        this.context.page = this.context.page + 1;
+        this.context.page += 1;
         const opts = {
             q: this.context.params.query,
             sort: this.context.params.sort,
@@ -1399,25 +1870,28 @@ class SearchChannelPager extends ChannelPager {
     }
 }
 class ChannelVideoPager extends VideoPager {
-    /**
-     * @param {import("./types.d.ts").URLContext} context the context
-     * @param {PlatformVideo[]} results the initial results
-     * @param {boolean} hasNextPage if there is a next page
-     */
     cb;
-    constructor(context, results, hasNextPage, cb) {
-        super(results, hasNextPage, context);
+    constructor(results, hasNextPage, params, cb) {
+        super(results, hasNextPage, { ...params });
         this.cb = cb;
     }
     nextPage() {
-        return this.cb(this.context);
+        this.context.page += 1;
+        return this.cb(this.context.url, this.context.page, this.context.type, this.context.order);
     }
 }
-class SearchPlaylistPager extends VideoPager {
-    /**
-     * @param {import("./types.d.ts").SearchContext} context the query params
-     * @param {(PlatformVideo | PlatformChannel)[]} results the initial results
-    */
+class ChannelPlaylistPager extends PlaylistPager {
+    cb;
+    constructor(results, hasMore, params, page, cb) {
+        super(results, hasMore, { params, page });
+        this.cb = cb;
+    }
+    nextPage() {
+        this.context.page += 1;
+        return this.cb(this.context.params.url, this.context.page);
+    }
+}
+class SearchPlaylistPager extends PlaylistPager {
     cb;
     constructor(results, hasMore, params, page, cb) {
         super(results, hasMore, { params, page });
@@ -1435,76 +1909,29 @@ class SearchPlaylistPager extends VideoPager {
     }
 }
 
-const SourceChannelToGrayjayChannel = (pluginId, url, sourceChannel) => {
-    const externalLinks = sourceChannel?.externalLinks ?? {};
-    const links = {};
-    Object
-        .keys(externalLinks)
-        .forEach(key => {
-        if (externalLinks[key]) {
-            links[key.replace('URL', '')] = externalLinks[key];
-        }
-    });
-    return new PlatformChannel({
-        id: new PlatformID(PLATFORM, sourceChannel?.id, pluginId, PLATFORM_CLAIMTYPE),
-        name: sourceChannel?.displayName ?? "",
-        thumbnail: sourceChannel?.avatar?.url ?? "",
-        banner: sourceChannel.banner?.url ?? "",
-        subscribers: sourceChannel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
-        description: sourceChannel?.description ?? "",
-        url,
-        links
-    });
-};
-const SourceVideoToGrayjayVideo = (pluginId, sourceVideo) => {
-    // const metadata = GetVideoExtraDetails(anonymousHttpClient, sv.xid);
-    // const viewCount = metadata.views ?? 0;
-    const isLive = sourceVideo?.isOnAir == true;
-    const viewCount = isLive ? (sourceVideo?.audienceCount ?? 0) : (sourceVideo?.viewCount ?? sourceVideo?.stats?.views?.total ?? 0);
-    // const url = sourceVideo?.url ?? `${BASE_URL_VIDEO}/${sourceVideo?.xid}`;
-    const video = {
-        id: new PlatformID(PLATFORM, sourceVideo.id, pluginId, PLATFORM_CLAIMTYPE),
-        description: sourceVideo?.description ?? '',
-        name: sourceVideo?.title ?? "",
-        thumbnails: new Thumbnails([
-            new Thumbnail(sourceVideo?.thumbnail?.url ?? "", 0)
-        ]),
-        author: new PlatformAuthorLink(new PlatformID(PLATFORM, sourceVideo?.creator?.id ?? "", pluginId, PLATFORM_CLAIMTYPE), sourceVideo?.creator?.displayName ?? "", `${BASE_URL}/${sourceVideo?.creator?.name}`, sourceVideo?.creator?.avatar?.url ?? "", 0),
-        uploadDate: parseInt(new Date(sourceVideo.createdAt).getTime() / 1000),
-        datetime: parseInt(new Date(sourceVideo.createdAt).getTime() / 1000),
-        url: `${BASE_URL_VIDEO}/${sourceVideo?.xid}`,
-        duration: sourceVideo?.duration ?? 0,
-        viewCount,
-        isLive
-    };
-    return new PlatformVideo(video);
-};
-const SourceCollectionToGrayjayPlaylistDetails = (pluginId, sourceCollection, videos = []) => {
-    return new PlatformPlaylistDetails({
-        url: `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}`,
-        id: new PlatformID(PLATFORM, sourceCollection?.xid, pluginId, PLATFORM_CLAIMTYPE),
-        author: new PlatformAuthorLink(new PlatformID(PLATFORM, sourceCollection?.creator?.id ?? "", pluginId, PLATFORM_CLAIMTYPE), sourceCollection?.creator?.displayName ?? "", `${BASE_URL}/${sourceCollection?.creator?.name}`, sourceCollection?.creator?.avatar?.url ?? "", 0),
-        name: sourceCollection.name,
-        thumbnail: sourceCollection?.thumbnail?.url,
-        videoCount: sourceCollection?.metrics?.engagement?.videos?.edges[0]?.node?.total,
-        contents: new VideoPager(videos)
-    });
-};
-const SourceCollectionToGrayjayPlaylist = (pluginId, sourceCollection) => {
-    return new PlatformPlaylist({
-        url: `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}`,
-        id: new PlatformID(PLATFORM, sourceCollection?.xid ?? "", pluginId, PLATFORM_CLAIMTYPE),
-        author: new PlatformAuthorLink(new PlatformID(PLATFORM, sourceCollection?.creator?.id ?? "", pluginId, PLATFORM_CLAIMTYPE), sourceCollection?.creator?.displayName ?? "", `${BASE_URL}/${sourceCollection?.creator?.name}`, sourceCollection?.creator?.avatar?.url ?? "", 0),
-        name: sourceCollection?.name,
-        thumbnail: sourceCollection?.thumbnail?.url,
-        videoCount: sourceCollection?.metrics?.engagement?.videos?.edges[0]?.node?.total,
-    });
-};
-
 let config;
 let _settings;
+const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST_ID";
+const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST_ID";
+const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST_ID";
+if (IS_TESTING) {
+    if (!_settings) {
+        _settings = {};
+    }
+    _settings.hideSensitiveContent = false;
+    _settings.avatarSizeOptionIndex = 8;
+    _settings.thumbnailResolutionOptionIndex = 7;
+    _settings.preferredCountryOptionIndex = 0;
+    _settings.videosPerPageOptionIndex = 4;
+    _settings.playlistsPerPageOptionIndex = 0;
+    if (!config) {
+        config = {
+            id: "9c87e8db-e75d-48f4-afe5-2d203d4b95c5"
+        };
+    }
+}
 let httpClientAnonymous = http.newClient(false);
-// Will be used to store playlists that require authentication
+// Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection = [];
 source.setSettings = function (settings) {
     _settings = settings;
@@ -1514,16 +1941,6 @@ source.setSettings = function (settings) {
 source.enable = function (conf, settings, saveStateStr) {
     config = conf ?? {};
     _settings = settings ?? {};
-    if (IS_TESTING) {
-        _settings.hideSensitiveContent = false;
-        _settings.avatarSize = 8;
-        _settings.thumbnailResolution = 7;
-        if (!config) {
-            config = {
-                id: "9c87e8db-e75d-48f4-afe5-2d203d4b95c5"
-            };
-        }
-    }
 };
 source.getHome = function () {
     getAnonymousUserTokenSingleton();
@@ -1536,7 +1953,7 @@ source.searchSuggestions = function (query) {
             variables: {
                 query
             },
-            query: SEARCH_SUGGESTIONS_QUERY
+            query: AUTOCOMPLETE_QUERY
         });
         return jsonResponse?.data?.search?.suggestedVideos?.edges?.map(edge => edge?.node?.name ?? "") ?? [];
     }
@@ -1562,14 +1979,31 @@ source.getChannel = function (url) {
         operationName: 'CHANNEL_QUERY_DESKTOP',
         variables: {
             channel_name,
-            avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize]
+            avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex]
         },
-        query: CHANNEL_BY_URL_QUERY
+        query: CHANNEL_QUERY_DESKTOP
     });
     return SourceChannelToGrayjayChannel(config.id, url, channelDetails.data.channel);
 };
-source.getChannelContents = function (url) {
-    return getChannelPager({ url, page_size: ITEMS_PER_PAGE, page: 1 });
+source.getChannelContents = function (url, type, order, filters) {
+    const page = 1;
+    return getChannelContentsPager(url, page, type, order, filters);
+};
+source.getChannelPlaylists = (url) => {
+    try {
+        return getChannelPlaylists(url, 1);
+    }
+    catch (error) {
+        log('Failed to get channel playlists:' + error?.message);
+        return new ChannelPlaylistPager([]);
+    }
+};
+source.getChannelCapabilities = () => {
+    return {
+        types: [Type.Feed.Mixed],
+        sorts: [Type.Order.Chronological, "Popular"],
+        filters: []
+    };
 };
 //Video
 source.isContentDetailsUrl = function (url) {
@@ -1580,20 +2014,34 @@ source.getContentDetails = function (url) {
 };
 //Playlist
 source.isPlaylistUrl = (url) => {
-    return url.startsWith(BASE_URL_PLAYLIST);
+    return url.startsWith(BASE_URL_PLAYLIST) ||
+        url === LIKE_PLAYLIST_ID ||
+        url === FAVORITES_PLAYLIST_ID ||
+        url === RECENTLY_WATCHED_PLAYLIST_ID;
 };
 source.searchPlaylists = (query, type, order, filters) => {
     return searchPlaylists({ q: query, type, order, filters });
 };
 source.getPlaylist = (url) => {
+    const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
+    const httpClient = getHttpContext({ usePlatformAuth });
+    const thumbnailResolutionIndex = _settings.thumbnailResolutionOptionIndex;
+    if (url === LIKE_PLAYLIST_ID) {
+        return getLikePlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+    }
+    if (url === FAVORITES_PLAYLIST_ID) {
+        return getFavoritesPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+    }
+    if (url === RECENTLY_WATCHED_PLAYLIST_ID) {
+        return getRecentlyWatchedPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+    }
     const xid = url.split('/').pop();
     const variables = {
         xid,
-        avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSize],
-        thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
+        avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSizeOptionIndex],
+        thumbnail_resolution: THUMBNAIL_HEIGHT[thumbnailResolutionIndex],
     };
-    const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
-    let jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth }), {
+    let jsonResponse = executeGqlQuery(httpClient, {
         operationName: 'PLAYLIST_VIDEO_QUERY',
         variables,
         query: PLAYLIST_DETAILS_QUERY,
@@ -1619,7 +2067,7 @@ source.getUserSubscriptions = () => {
         'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
         'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
         'X-DM-Neon-SSR': '0',
-        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountry),
+        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
         Origin: BASE_URL,
         DNT: '1',
         Connection: 'keep-alive',
@@ -1637,7 +2085,7 @@ source.getUserSubscriptions = () => {
             variables: {
                 first: first,
                 page: page,
-                avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+                avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
             },
             headers,
             query: GET_USER_SUBSCRIPTIONS,
@@ -1675,7 +2123,7 @@ source.getUserPlaylists = () => {
         'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
         'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
         'X-DM-Neon-SSR': '0',
-        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountry),
+        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
         Origin: BASE_URL,
         DNT: '1',
         Connection: 'keep-alive',
@@ -1693,22 +2141,37 @@ source.getUserPlaylists = () => {
         usePlatformAuth: true
     });
     const userName = jsonResponse?.data?.me?.channel?.name;
-    return getPlaylistsByUsername(userName, headers, true);
+    const playlists = getPlaylistsByUsername(userName, headers, true);
+    [
+        LIKE_PLAYLIST_ID,
+        FAVORITES_PLAYLIST_ID,
+        RECENTLY_WATCHED_PLAYLIST_ID
+    ].forEach(playlistId => {
+        if (!authenticatedPlaylistCollection.includes(playlistId)) {
+            authenticatedPlaylistCollection.push(playlistId);
+        }
+        if (!playlists.includes(playlistId)) {
+            playlists.push(playlistId);
+        }
+    });
+    return playlists;
 };
 function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
-    const jsonResponse1 = executeGqlQuery(getHttpContext({ usePlatformAuth }), {
+    const collections = executeGqlQuery(getHttpContext({ usePlatformAuth }), {
         operationName: 'CHANNEL_PLAYLISTS_QUERY',
         variables: {
             channel_name: userName,
             sort: "recent",
             page: 1,
-            first: 99
+            first: 99,
+            avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSizeOptionIndex],
+            thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolutionOptionIndex],
         },
         headers,
-        query: GET_CHANNEL_PLAYLISTS,
+        query: GET_CHANNEL_PLAYLISTS_XID,
         usePlatformAuth
     });
-    const playlists = jsonResponse1.data.channel.channel_playlist_collections.edges.map(edge => {
+    const playlists = collections.data.channel.collections.edges.map(edge => {
         const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
         if (!authenticatedPlaylistCollection.includes(playlistUrl)) {
             authenticatedPlaylistCollection.push(playlistUrl);
@@ -1730,14 +2193,14 @@ function searchPlaylists(contextQuery) {
         "shouldIncludeVideos": false,
         "shouldIncludeLives": false,
         "page": context.page,
-        "limit": ITEMS_PER_PAGE,
-        "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
-        "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+        "limit": VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex],
+        "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex],
+        "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
     };
     const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
         operationName: 'SEARCH_QUERY',
         variables: variables,
-        query: MAIN_SEARCH_QUERY,
+        query: SEARCH_QUERY,
         headers: undefined
     });
     const playlistConnection = jsonResponse?.data?.search?.playlists;
@@ -1757,7 +2220,7 @@ function searchPlaylists(contextQuery) {
 }
 //Internals
 function getVideoPager(params, page) {
-    const count = ITEMS_PER_PAGE;
+    const count = VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex];
     if (!params) {
         params = {};
     }
@@ -1770,7 +2233,7 @@ function getVideoPager(params, page) {
         "X-DM-AppInfo-Type": X_DM_AppInfo_Type,
         "X-DM-AppInfo-Version": X_DM_AppInfo_Version,
         "X-DM-Neon-SSR": X_DM_Neon_SSR,
-        "X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountry),
+        "X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountryOptionIndex),
         "Origin": BASE_URL,
         "DNT": "1",
         "Sec-Fetch-Site": "same-site",
@@ -1784,10 +2247,10 @@ function getVideoPager(params, page) {
         obj = executeGqlQuery(anonymousHttpClient, {
             operationName: 'SEACH_DISCOVERY_QUERY',
             variables: {
-                avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-                thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
+                avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+                thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex],
             },
-            query: HOME_QUERY,
+            query: SEACH_DISCOVERY_QUERY,
             headers: headersToAdd,
         });
     }
@@ -1802,31 +2265,61 @@ function getVideoPager(params, page) {
     const hasMore = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.pageInfo?.hasNextPage ?? false;
     return new SearchPagerAll(results, hasMore, params, page, getVideoPager);
 }
-function getChannelPager(context) {
-    const url = context.url;
+function getChannelContentsPager(url, page, type, order, filters) {
     const channel_name = getChannelNameFromUrl(url);
+    const shouldLoadVideos = type === Type.Feed.Mixed || type === Type.Feed.Videos;
+    const shouldLoadLives = type === Type.Feed.Mixed || type === Type.Feed.Streams || type === Type.Feed.Live;
+    if (IS_TESTING) {
+        bridge.log(`Getting channel contents for ${url}, page: ${page}, type: ${type}, order: ${order}, shouldLoadVideos: ${shouldLoadVideos}, shouldLoadLives: ${shouldLoadLives}, filters: ${JSON.stringify(filters)}`);
+    }
+    /**
+        Recent = Sort liked medias by most recent.
+        Visited - Sort liked medias by most viewed
+    */
+    let sort;
+    if (order == Type.Order.Chronological) {
+        sort = LikedMediaSort.Recent;
+    }
+    else if (order == "Popular") {
+        sort = LikedMediaSort.Visited;
+    }
+    else {
+        sort = LikedMediaSort.Recent;
+    }
     const anonymousHttpClient = getHttpContext({ usePlatformAuth: false });
-    const json = executeGqlQuery(anonymousHttpClient, {
+    const jsonResponse = executeGqlQuery(anonymousHttpClient, {
         operationName: 'CHANNEL_VIDEOS_QUERY',
         variables: {
-            "channel_name": channel_name,
-            "sort": "recent",
-            "page": context.page ?? 1,
-            "allowExplicit": !_settings.hideSensitiveContent,
-            "first": context.page_size ?? ITEMS_PER_PAGE,
-            "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-            "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
+            channel_name,
+            sort,
+            page: page ?? 1,
+            allowExplicit: !_settings.hideSensitiveContent,
+            first: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex],
+            avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+            thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex],
+            shouldLoadLives,
+            shouldLoadVideos
         },
-        query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
+        query: CHANNEL_VIDEOS_QUERY
     });
-    const edges = json?.data?.channel?.videos?.edges ?? [];
-    let videos = edges.map((edge) => {
-        return SourceVideoToGrayjayVideo(config.id, edge.node);
-    });
-    if (edges.length > 0) {
-        context.page++;
-    }
-    return new ChannelVideoPager(context, videos, json?.data?.channel?.videos?.pageInfo?.hasNextPage, getChannelPager);
+    const channel = jsonResponse?.data?.channel;
+    const all = [
+        ...(channel?.lives?.edges?.map(e => e?.node) ?? []),
+        ...(channel?.videos?.edges?.map(e => e?.node) ?? [])
+    ];
+    let videos = all
+        .map((node => SourceVideoToGrayjayVideo(config.id, node)));
+    const videosHasNext = channel?.videos?.pageInfo?.hasNextPage;
+    const livesHasNext = channel?.lives?.pageInfo?.hasNextPage;
+    const hasNext = videosHasNext || livesHasNext || false;
+    const params = {
+        url,
+        type,
+        order,
+        page,
+        filters
+    };
+    return new ChannelVideoPager(videos, hasNext, params, getChannelContentsPager);
 }
 function getSearchPagerAll(contextQuery) {
     const context = getQuery(contextQuery);
@@ -1841,28 +2334,23 @@ function getSearchPagerAll(contextQuery) {
         "shouldIncludeVideos": true,
         "shouldIncludeLives": true,
         "page": context.page ?? 1,
-        "limit": ITEMS_PER_PAGE,
-        "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-        "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution]
+        "limit": VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex],
+        "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+        "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
     };
     const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
         operationName: 'SEARCH_QUERY',
         variables: variables,
-        query: MAIN_SEARCH_QUERY,
+        query: SEARCH_QUERY,
         headers: undefined
     });
-    const results = [];
     const videoConnection = jsonResponse?.data?.search?.videos;
     const liveConnection = jsonResponse?.data?.search?.lives;
     const all = [
         ...(videoConnection?.edges ?? []),
         ...(liveConnection?.edges ?? [])
     ];
-    for (const edge of all) {
-        const video = SourceVideoToGrayjayVideo(config.id, edge?.node);
-        results.push(video);
-    }
-    //results, hasMore, path, params, page
+    const results = all.map(edge => SourceVideoToGrayjayVideo(config.id, edge?.node));
     const params = {
         query: context.q,
         sort: context.sort,
@@ -1913,7 +2401,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
         "X-DM-AppInfo-Type": X_DM_AppInfo_Type,
         "X-DM-AppInfo-Version": X_DM_AppInfo_Version,
         "X-DM-Neon-SSR": X_DM_Neon_SSR,
-        "X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountry),
+        "X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountryOptionIndex),
         "Origin": BASE_URL,
         "DNT": "1",
         "Connection": "keep-alive",
@@ -1929,13 +2417,13 @@ function getSavedVideo(url, usePlatformAuth = false) {
     }
     const variables = {
         "xid": id,
-        "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-        "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution]
+        "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+        "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
     };
     const videoDetailsRequestBody = JSON.stringify({
         operationName: "WATCHING_VIDEO",
         variables,
-        query: VIDEO_DETAILS_QUERY
+        query: WATCHING_VIDEO
     });
     const video_details_response = getHttpContext({ usePlatformAuth }).POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth);
     if (video_details_response.code != 200) {
@@ -1947,109 +2435,82 @@ function getSavedVideo(url, usePlatformAuth = false) {
             name: 'source',
             duration: player_metadata?.duration,
             url: player_metadata?.qualities?.auto[0]?.url,
-            // priority: true,
         })
     ];
     const video = video_details?.data?.video;
-    // This platform uses a scale system for rating the videos.
-    // Ratings are grouped into positive and negative to calculate likes and dislikes.
-    const positiveRatings = [
-        "STAR_STRUCK", // amazing
-        "SMILING_FACE_WITH_SUNGLASSES", // cool
-        "WINKING_FACE" // interesting
-    ];
-    const negativeRatings = [
-        "SLEEPING_FACE", // boring
-        "FISHING_POLE" // waste of time
-    ];
-    let positiveRatingCount = 0;
-    let negativeRatingCount = 0;
-    const ratings = video?.metrics?.engagement?.likes?.edges ?? [];
-    for (const edge of ratings) {
-        const ratingName = edge?.node?.rating;
-        const ratingTotal = edge?.node?.total;
-        if (positiveRatings.includes(ratingName)) {
-            positiveRatingCount += ratingTotal;
-        }
-        else if (negativeRatings.includes(ratingName)) {
-            negativeRatingCount += ratingTotal;
-        }
-    }
-    const platformVideoDetails = {
-        id: new PlatformID(PLATFORM, id, config.id, PLATFORM_CLAIMTYPE),
-        name: video?.title ?? "",
-        thumbnails: new Thumbnails([new Thumbnail(video?.thumbnail?.url ?? "", 0)]),
-        author: new PlatformAuthorLink(new PlatformID(PLATFORM, video?.creator?.id ?? "", config.id, PLATFORM_CLAIMTYPE), video?.creator?.displayName ?? "", `${BASE_URL}/${video?.creator?.name}`, `${video?.creator?.avatar?.url}`, 0 //subscribers
-        ),
-        // datetime: new Date(video?.createdAt).getTime(),
-        uploadDate: parseInt(new Date(video?.createdAt).getTime() / 1000),
-        datetime: parseInt(new Date(video?.createdAt).getTime() / 1000),
-        duration: video?.duration ?? 0,
-        viewCount: video?.stats?.views?.total ?? 0,
-        url: `${BASE_URL_VIDEO}/${id}`,
-        isLive: video?.duration == undefined,
-        description: video?.description ?? "",
-        video: new VideoSourceDescriptor(sources),
-        rating: new RatingLikesDislikes(positiveRatingCount, negativeRatingCount),
-        dash: null,
-        live: null,
-        hls: null,
-        subtitles: []
-    };
     const subtitles = player_metadata?.subtitles;
-    if (subtitles?.enable && subtitles?.data) {
-        Object.keys(subtitles.data).forEach(key => {
-            const subtitleData = subtitles.data[key];
-            if (subtitleData) {
-                const subtitleUrl = subtitleData.urls[0];
-                platformVideoDetails.subtitles.push({
-                    name: subtitleData.label,
-                    url: subtitleUrl,
-                    format: "text/vtt",
-                    getSubtitles() {
-                        try {
-                            const subResp = http.GET(subtitleUrl, {});
-                            if (!subResp.isOk) {
-                                if (IS_TESTING) {
-                                    bridge.log(`Failed to fetch subtitles from ${subtitleUrl}`);
-                                }
-                                return "";
-                            }
-                            return convertSRTtoVTT(subResp.body);
-                        }
-                        catch (error) {
-                            if (IS_TESTING) {
-                                bridge.log(`Error fetching subtitles: ${error?.message}`);
-                            }
-                            return "";
-                        }
-                    }
-                });
-            }
-        });
-    }
+    const platformVideoDetails = SourceVideoToPlatformVideoDetailsDef(config.id, video, sources, subtitles);
     return new PlatformVideoDetails(platformVideoDetails);
 }
 function getSearchChannelPager(context) {
-    const variables = {
-        query: context.q,
-        page: context.page ?? 1,
-        limit: ITEMS_PER_PAGE,
-        avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize]
-    };
-    const json = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
+    const searchResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
         operationName: "SEARCH_QUERY",
-        variables,
+        variables: {
+            query: context.q,
+            page: context.page ?? 1,
+            limit: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex],
+            avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex]
+        },
         query: SEARCH_CHANNEL
     });
-    const results = json?.data?.search?.channels?.edges.map(edge => {
+    const results = searchResponse?.data?.search?.channels?.edges.map(edge => {
         const channel = edge.node;
         return SourceChannelToGrayjayChannel(config.id, `${BASE_URL}/${channel.name}`, channel);
     });
     const params = {
         query: context.q,
     };
-    return new SearchChannelPager(results, json?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page, getSearchChannelPager);
+    return new SearchChannelPager(results, searchResponse?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page, getSearchChannelPager);
+}
+function getChannelPlaylists(url, page = 1) {
+    const headers = {
+        'Content-Type': 'application/json',
+        'User-Agent': USER_AGENT,
+        'Accept-Language': 'en-GB',
+        Referer: `${BASE_URL}/library/subscriptions`,
+        'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
+        'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
+        'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
+        'X-DM-Neon-SSR': '0',
+        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
+        Origin: BASE_URL,
+        DNT: '1',
+        Connection: 'keep-alive',
+        'Sec-Fetch-Dest': 'empty',
+        'Sec-Fetch-Mode': 'cors',
+        'Sec-Fetch-Site': 'same-site',
+        Priority: 'u=4',
+        Pragma: 'no-cache',
+        'Cache-Control': 'no-cache',
+    };
+    const usePlatformAuth = false;
+    const channel_name = getChannelNameFromUrl(url);
+    const jsonResponse1 = executeGqlQuery(http, {
+        operationName: 'CHANNEL_PLAYLISTS_QUERY',
+        variables: {
+            channel_name,
+            sort: "recent",
+            page,
+            first: PLAYLISTS_PER_PAGE_OPTIONS[_settings.playlistsPerPageOptionIndex],
+            avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSizeOptionIndex],
+            thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolutionOptionIndex],
+        },
+        headers,
+        query: CHANNEL_PLAYLISTS_QUERY,
+        usePlatformAuth
+    });
+    const channel = jsonResponse1.data.channel;
+    const content = (channel?.collections?.edges ?? []).map(edge => {
+        return SourceCollectionToGrayjayPlaylist(config.id, edge?.node);
+    });
+    if (content?.length === 0) {
+        return new ChannelPlaylistPager([]);
+    }
+    const params = {
+        url
+    };
+    const hasMore = channel?.collections?.pageInfo?.hasNextPage ?? false;
+    return new ChannelPlaylistPager(content, hasMore, params, page, getChannelPlaylists);
 }
 function getHttpContext(opts = { usePlatformAuth: false }) {
     return opts.usePlatformAuth ? http : httpClientAnonymous;
