@@ -28,7 +28,7 @@ export const SourceAuthorToGrayjayPlatformAuthorLink = (pluginId: string, creato
     return new PlatformAuthorLink(
         new PlatformID(PLATFORM, creator?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
         creator?.displayName ?? "",
-        `${BASE_URL}/${creator?.name}`,
+        creator?.name ? `${BASE_URL}/${creator?.name}` : "",
         creator?.avatar?.url ?? "",
         creator?.followers?.totalCount ?? 0
     );
@@ -59,14 +59,14 @@ export const SourceVideoToGrayjayVideo = (pluginId: string, sourceVideo?: Video 
     return new PlatformVideo(video);
 }
 
-export const SourceCollectionToGrayjayPlaylistDetails = (pluginId: string, sourceCollection: Collection, videos: PlatformVideo[] = []): PlatformPlaylistDetails => {
+export const SourceCollectionToGrayjayPlaylistDetails = (pluginId: string, sourceCollection: Collection, videos: PlatformVideo[] = []): PlatformPlaylistDetails => {  
     return new PlatformPlaylistDetails({
-        url: `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}`,
+        url: sourceCollection?.xid ? `${BASE_URL_PLAYLIST}/${sourceCollection?.xid}` : "",
         id: new PlatformID(PLATFORM, sourceCollection?.xid ?? "", pluginId, PLATFORM_CLAIMTYPE),
-        author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceCollection.creator),
+        author: sourceCollection?.creator ? SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceCollection?.creator) : {},
         name: sourceCollection.name,
         thumbnail: sourceCollection?.thumbnail?.url,
-        videoCount: sourceCollection?.metrics?.engagement?.videos?.edges[0]?.node?.total,
+        videoCount: videos.length ?? 0,
         contents: new VideoPager(videos)
     });
 }

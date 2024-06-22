@@ -1,6 +1,8 @@
 let config: Config;
 let _settings: IDailymotionPluginSettings;
 
+const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST_ID";
+
 
 import {
 	CREATOR_AVATAR_HEIGHT,
@@ -43,7 +45,8 @@ import {
 	executeGqlQuery,
 	getPreferredCountry,
 	getAnonymousUserTokenSingleton,
-	getQuery
+	getQuery,
+	getLikePlaylist
 } from './util';
 
 import {
@@ -222,7 +225,7 @@ source.getContentDetails = function (url) {
 
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
-	return url.startsWith(BASE_URL_PLAYLIST);
+	return url.startsWith(BASE_URL_PLAYLIST) || url === LIKE_PLAYLIST_ID;
 };
 
 source.searchPlaylists = (query, type, order, filters) => {
@@ -230,6 +233,13 @@ source.searchPlaylists = (query, type, order, filters) => {
 };
 
 source.getPlaylist = (url: string): PlatformPlaylistDetails => {
+
+	const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
+
+	if (url === LIKE_PLAYLIST_ID) {
+		const httpClient = getHttpContext({ usePlatformAuth });
+		return getLikePlaylist(config.id, httpClient, usePlatformAuth);
+	}
 
 	const xid = url.split('/').pop();
 
@@ -239,7 +249,6 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 		thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
 	}
 
-	const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
 
 	let jsonResponse = executeGqlQuery(
 		getHttpContext({ usePlatformAuth }),
@@ -377,7 +386,7 @@ source.getUserPlaylists = (): string[] => {
 function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 
 
-	const jsonResponse1 = executeGqlQuery(
+	const collections = executeGqlQuery(
 		getHttpContext({ usePlatformAuth }),
 		{
 			operationName: 'CHANNEL_PLAYLISTS_QUERY',
@@ -395,12 +404,26 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 		}
 	);
 
-	const playlists = jsonResponse1.data.channel.collections.edges.map(edge => {
+	const playlists = collections.data.channel.collections.edges.map(edge => {
 		const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
 		if (!authenticatedPlaylistCollection.includes(playlistUrl)) {
 			authenticatedPlaylistCollection.push(playlistUrl);
 		}
 		return playlistUrl;
+	});
+
+
+	[
+		LIKE_PLAYLIST_ID
+	].forEach(playlistId => {
+		
+		if (!authenticatedPlaylistCollection.includes(playlistId)) {
+			authenticatedPlaylistCollection.push(playlistId);
+		}
+
+		if (!playlists.includes(playlistId)) {
+			playlists.push(playlistId);
+		}
 	});
 
 

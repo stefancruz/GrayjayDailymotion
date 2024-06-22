@@ -918,3 +918,63 @@ query CHANNEL_PLAYLISTS_QUERY(
 }
 
 `
+
+
+export const GET_LIKED_VIDEOS_GQL_QUERY = `
+		query USER_LIKED_VIDEOS_QUERY($page: Int!) {
+	me {
+		id
+		likedMedias(first: 100, page: $page) {
+			edges {
+				node {
+					... on Video {
+						id
+						xid
+						title
+						duration
+						thumbnail(height: PORTRAIT_1080) {
+							url
+						}
+						aspectRatio
+						viewerEngagement {
+							id
+							liked
+						}
+						channel {
+							id
+							logoURLx25: logoURL(size: "x25")
+							displayName
+							accountType	
+						}
+					}
+					... on Live {
+						
+						id
+						xid
+						title
+						isOnAir
+						thumbnail(height: PORTRAIT_1080) {
+							url
+						}
+						viewerEngagement {
+							id
+							liked
+						}
+						channel {
+							id
+							logoURLx25: logoURL(size: "x25")
+							displayName
+							accountType
+						}
+					}
+				}
+			}
+			pageInfo {
+				hasNextPage
+				nextPage
+			}
+		}
+	}
+}
+
+		`
