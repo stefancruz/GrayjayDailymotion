@@ -1,13 +1,12 @@
 
 interface IDailymotionPluginSettings {
     hideSensitiveContent: boolean;
-    preferredCountry: number;
-    avatarSize: number;
-    thumbnailResolution: number;
-    videosPerPageIndex: number;
-    playlistsPerPageIndex: number;
+    preferredCountryOptionIndex: number;
+    avatarSizeOptionIndex: number;
+    thumbnailResolutionOptionIndex: number;
+    videosPerPageOptionIndex: number;
+    playlistsPerPageOptionIndex: number;
 }
-
 
 interface IDailymotionSubtitle {
     data: Map<string, string, { urls: string[], label: string }>,
@@ -16,4 +15,15 @@ interface IDailymotionSubtitle {
 
 interface IDictionary<T> {
     [key: string]: T;
+}
+
+interface IPlatformSystemPlaylist {
+    pluginId: string,
+    httpClient: IHttp,
+    query: string,
+    operationName: string,
+    rootObject: string,
+    playlistName: string,
+    usePlatformAuth: boolean,
+    thumbnailResolutionIndex: number
 }

@@ -16,7 +16,6 @@ export const X_DM_AppInfo_Id = "com.dailymotion.neon"
 export const X_DM_AppInfo_Type = "website"
 export const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z" //TODO check how to get this dynamically
 export const X_DM_Neon_SSR = "0"
-export const X_DM_Preferred_Country = "";//TODO check how to get this from Grayjay
 
 export const PLATFORM = "Dailymotion";
 export const PLATFORM_CLAIMTYPE = 27;

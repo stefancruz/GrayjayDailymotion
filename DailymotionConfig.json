@@ -41,7 +41,7 @@
   "supportedClaimTypes": [27],
   "settings": [
     {
-      "variable": "thumbnailResolution",
+      "variable": "thumbnailResolutionOptionIndex",
       "name": "Thumbnail resolution",
       "description": "Select the resolution for the thumbnails",
       "type": "Dropdown",
@@ -58,7 +58,7 @@
       ]
     },
     {
-      "variable": "avatarSize",
+      "variable": "avatarSizeOptionIndex",
       "name": "Creator avatar resolution",
       "description": "Select your height for the creator avatar",
       "type": "Dropdown",
@@ -83,7 +83,7 @@
       "default": "true"
     },
     {
-      "variable": "preferredCountry",
+      "variable": "preferredCountryOptionIndex",
       "name": "Preferred Country",
       "description": "Select your preferred country to get the best results",
       "type": "Dropdown",
@@ -342,7 +342,7 @@
       ]
     },
     {
-      "variable": "videosPerPageIndex",
+      "variable": "videosPerPageOptionIndex",
       "name": "Videos per page",
       "description": "Select the number of videos to load per page",
       "type": "Dropdown",
@@ -356,7 +356,7 @@
       ]
     },
     {
-      "variable": "playlistsPerPageIndex",
+      "variable": "playlistsPerPageOptionIndex",
       "name": "Playlists per page",
       "description": "Select the number of playlists to load per page",
       "type": "Dropdown",

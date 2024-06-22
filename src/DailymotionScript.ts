@@ -27,16 +27,16 @@ import {
 } from './constants';
 
 import {
-	SEARCH_SUGGESTIONS_QUERY,
-	CHANNEL_BY_URL_QUERY,
+	AUTOCOMPLETE_QUERY,
+	CHANNEL_QUERY_DESKTOP,
 	PLAYLIST_DETAILS_QUERY,
 	GET_USER_SUBSCRIPTIONS,
-	MAIN_SEARCH_QUERY,
-	HOME_QUERY,
-	CHANNEL_VIDEOS_BY_CHANNEL_NAME,
-	VIDEO_DETAILS_QUERY,
+	SEARCH_QUERY,
+	SEACH_DISCOVERY_QUERY,
+	CHANNEL_VIDEOS_QUERY,
+	WATCHING_VIDEO,
 	SEARCH_CHANNEL,
-	GET_CHANNEL_PLAYLISTS,
+	CHANNEL_PLAYLISTS_QUERY,
 	SUBSCRIPTIONS_QUERY,
 	GET_CHANNEL_PLAYLISTS_XID
 } from './gqlQueries';
@@ -92,11 +92,11 @@ if (IS_TESTING) {
 	}
 
 	_settings.hideSensitiveContent = false;
-	_settings.avatarSize = 8;
-	_settings.thumbnailResolution = 7;
-	_settings.preferredCountry = 0;
-	_settings.videosPerPageIndex = 4;
-	_settings.playlistsPerPageIndex = 0;
+	_settings.avatarSizeOptionIndex = 8;
+	_settings.thumbnailResolutionOptionIndex = 7;
+	_settings.preferredCountryOptionIndex = 0;
+	_settings.videosPerPageOptionIndex = 4;
+	_settings.playlistsPerPageOptionIndex = 0;
 
 	if (!config) {
 		config = {
@@ -143,7 +143,7 @@ source.searchSuggestions = function (query): string[] {
 				variables: {
 					query
 				},
-				query: SEARCH_SUGGESTIONS_QUERY
+				query: AUTOCOMPLETE_QUERY
 			});
 
 		return (jsonResponse?.data?.search?.suggestedVideos as SuggestionConnection)?.edges?.map(edge => edge?.node?.name ?? "") ?? [];
@@ -180,9 +180,9 @@ source.getChannel = function (url) {
 			operationName: 'CHANNEL_QUERY_DESKTOP',
 			variables: {
 				channel_name,
-				avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize]
+				avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex]
 			},
-			query: CHANNEL_BY_URL_QUERY
+			query: CHANNEL_QUERY_DESKTOP
 		});
 
 	return SourceChannelToGrayjayChannel(config.id, url, channelDetails.data.channel as Channel);
@@ -229,10 +229,10 @@ source.getContentDetails = function (url) {
 
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
-	return url.startsWith(BASE_URL_PLAYLIST) || 
-	url === LIKE_PLAYLIST_ID || 
-	url === FAVORITES_PLAYLIST_ID || 
-	url === RECENTLY_WATCHED_PLAYLIST_ID;
+	return url.startsWith(BASE_URL_PLAYLIST) ||
+		url === LIKE_PLAYLIST_ID ||
+		url === FAVORITES_PLAYLIST_ID ||
+		url === RECENTLY_WATCHED_PLAYLIST_ID;
 };
 
 source.searchPlaylists = (query, type, order, filters) => {
@@ -245,27 +245,27 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 	const httpClient = getHttpContext({ usePlatformAuth });
 
+	const thumbnailResolutionIndex = _settings.thumbnailResolutionOptionIndex;
+
 	if (url === LIKE_PLAYLIST_ID) {
-		
-		return getLikePlaylist(config.id, httpClient, usePlatformAuth);
+		return getLikePlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
 	if(url === FAVORITES_PLAYLIST_ID) {
-		return getFavoritesPlaylist(config.id, httpClient, usePlatformAuth);
+		return getFavoritesPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
 	if(url === RECENTLY_WATCHED_PLAYLIST_ID) {
-		return getRecentlyWatchedPlaylist(config.id, httpClient, usePlatformAuth);
+		return getRecentlyWatchedPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
 	const xid = url.split('/').pop();
 
 	const variables = {
 		xid,
-		avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSize],
-		thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
+		avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSizeOptionIndex],
+		thumbnail_resolution: THUMBNAIL_HEIGHT[thumbnailResolutionIndex],
 	}
-
 
 	let jsonResponse = executeGqlQuery(
 		httpClient,
@@ -301,7 +301,7 @@ source.getUserSubscriptions = (): string[] => {
 		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
 		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
 		'X-DM-Neon-SSR': '0',
-		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountry),
+		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
 		Origin: BASE_URL,
 		DNT: '1',
 		Connection: 'keep-alive',
@@ -323,7 +323,7 @@ source.getUserSubscriptions = (): string[] => {
 				variables: {
 					first: first,
 					page: page,
-					avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+					avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
 				},
 				headers,
 				query: GET_USER_SUBSCRIPTIONS,
@@ -373,7 +373,7 @@ source.getUserPlaylists = (): string[] => {
 		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
 		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
 		'X-DM-Neon-SSR': '0',
-		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountry),
+		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
 		Origin: BASE_URL,
 		DNT: '1',
 		Connection: 'keep-alive',
@@ -412,8 +412,8 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 				sort: "recent",
 				page: 1,
 				first: 99,
-				avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSize],
-				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
+				avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSizeOptionIndex],
+				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolutionOptionIndex],
 			},
 			headers,
 			query: GET_CHANNEL_PLAYLISTS_XID,
@@ -435,7 +435,7 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 		FAVORITES_PLAYLIST_ID,
 		RECENTLY_WATCHED_PLAYLIST_ID
 	].forEach(playlistId => {
-		
+
 		if (!authenticatedPlaylistCollection.includes(playlistId)) {
 			authenticatedPlaylistCollection.push(playlistId);
 		}
@@ -449,7 +449,6 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
 	return playlists;
 
 }
-
 
 function searchPlaylists(contextQuery) {
 
@@ -466,9 +465,9 @@ function searchPlaylists(contextQuery) {
 		"shouldIncludeVideos": false,
 		"shouldIncludeLives": false,
 		"page": context.page,
-		"limit": VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
-		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
-		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
+		"limit": VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex],
+		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex],
+		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
 	}
 
 
@@ -477,7 +476,7 @@ function searchPlaylists(contextQuery) {
 		{
 			operationName: 'SEARCH_QUERY',
 			variables: variables,
-			query: MAIN_SEARCH_QUERY,
+			query: SEARCH_QUERY,
 			headers: undefined
 		});
 
@@ -508,7 +507,7 @@ function searchPlaylists(contextQuery) {
 
 function getVideoPager(params, page) {
 
-	const count = VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex];
+	const count = VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex];
 
 	if (!params) {
 		params = {};
@@ -525,7 +524,7 @@ function getVideoPager(params, page) {
 		"X-DM-AppInfo-Type": X_DM_AppInfo_Type,
 		"X-DM-AppInfo-Version": X_DM_AppInfo_Version,
 		"X-DM-Neon-SSR": X_DM_Neon_SSR,
-		"X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountry),
+		"X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountryOptionIndex),
 		"Origin": BASE_URL,
 		"DNT": "1",
 		"Sec-Fetch-Site": "same-site",
@@ -545,10 +544,10 @@ function getVideoPager(params, page) {
 			{
 				operationName: 'SEACH_DISCOVERY_QUERY',
 				variables: {
-					avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-					thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
+					avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+					thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex],
 				},
-				query: HOME_QUERY,
+				query: SEACH_DISCOVERY_QUERY,
 				headers: headersToAdd,
 			});
 
@@ -603,13 +602,13 @@ function getChannelContentsPager(url, page, type, order, filters) {
 				sort,
 				page: page ?? 1,
 				allowExplicit: !_settings.hideSensitiveContent,
-				first: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
-				avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolution],
+				first: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex],
+				avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex],
 				shouldLoadLives,
 				shouldLoadVideos
 			},
-			query: CHANNEL_VIDEOS_BY_CHANNEL_NAME
+			query: CHANNEL_VIDEOS_QUERY
 		});
 
 	const channel = jsonResponse?.data?.channel as Channel;
@@ -653,9 +652,9 @@ function getSearchPagerAll(contextQuery): VideoPager {
 		"shouldIncludeVideos": true,
 		"shouldIncludeLives": true,
 		"page": context.page ?? 1,
-		"limit": VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
-		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution]
+		"limit": VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex],
+		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
 	}
 
 
@@ -664,7 +663,7 @@ function getSearchPagerAll(contextQuery): VideoPager {
 		{
 			operationName: 'SEARCH_QUERY',
 			variables: variables,
-			query: MAIN_SEARCH_QUERY,
+			query: SEARCH_QUERY,
 			headers: undefined
 		});
 
@@ -741,7 +740,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		"X-DM-AppInfo-Type": X_DM_AppInfo_Type,
 		"X-DM-AppInfo-Version": X_DM_AppInfo_Version,
 		"X-DM-Neon-SSR": X_DM_Neon_SSR,
-		"X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountry),
+		"X-DM-Preferred-Country": getPreferredCountry(_settings?.preferredCountryOptionIndex),
 		"Origin": BASE_URL,
 		"DNT": "1",
 		"Connection": "keep-alive",
@@ -759,15 +758,15 @@ function getSavedVideo(url, usePlatformAuth = false) {
 
 	const variables = {
 		"xid": id,
-		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSize],
-		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolution]
+		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
 	};
 
 	const videoDetailsRequestBody = JSON.stringify(
 		{
 			operationName: "WATCHING_VIDEO",
 			variables,
-			query: VIDEO_DETAILS_QUERY
+			query: WATCHING_VIDEO
 		});
 
 	const video_details_response = getHttpContext({ usePlatformAuth }).POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth)
@@ -805,8 +804,8 @@ function getSearchChannelPager(context) {
 		variables: {
 			query: context.q,
 			page: context.page ?? 1,
-			limit: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageIndex],
-			avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSize]
+			limit: VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex],
+			avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex]
 		},
 		query: SEARCH_CHANNEL
 	});
@@ -826,7 +825,6 @@ function getSearchChannelPager(context) {
 
 function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager {
 
-
 	const headers = {
 		'Content-Type': 'application/json',
 		'User-Agent': USER_AGENT,
@@ -836,7 +834,7 @@ function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager
 		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
 		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
 		'X-DM-Neon-SSR': '0',
-		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountry),
+		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
 		Origin: BASE_URL,
 		DNT: '1',
 		Connection: 'keep-alive',
@@ -859,12 +857,12 @@ function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager
 				channel_name,
 				sort: "recent",
 				page,
-				first: PLAYLISTS_PER_PAGE_OPTIONS[_settings.playlistsPerPageIndex],
-				avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSize],
-				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolution],
+				first: PLAYLISTS_PER_PAGE_OPTIONS[_settings.playlistsPerPageOptionIndex],
+				avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSizeOptionIndex],
+				thumbnail_resolution: THUMBNAIL_HEIGHT[_settings.thumbnailResolutionOptionIndex],
 			},
 			headers,
-			query: GET_CHANNEL_PLAYLISTS,
+			query: CHANNEL_PLAYLISTS_QUERY,
 			usePlatformAuth
 		}
 	)

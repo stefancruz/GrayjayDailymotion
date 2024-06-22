@@ -8,21 +8,20 @@ import {
     BASE_URL,
     USER_AGENT,
     BASE_URL_API,
-    X_DM_Preferred_Country,
     COUNTRY_NAMES,
     COUNTRY_NAMES_TO_CODE,
     CLIENT_ID,
     CLIENT_SECRET,
     BASE_URL_API_AUTH,
     DURATION_THRESHOLDS,
+    THUMBNAIL_HEIGHT,
 } from './constants'
-import { GET_FAVORITES_GQL_QUERY, GET_LIKED_VIDEOS_GQL_QUERY, GET_RECENTLY_WATCHED_GQL_QUERY } from './gqlQueries';
+import { USER_WATCH_LATER_VIDEOS_QUERY, USER_LIKED_VIDEOS_QUERY, USER_WATCHED_VIDEOS_QUERY } from './gqlQueries';
 
 export function getPreferredCountry(preferredCountryIndex) {
     const countryName = COUNTRY_NAMES[preferredCountryIndex];
     const code = COUNTRY_NAMES_TO_CODE[countryName];
-    const preferredCountry = (code || X_DM_Preferred_Country || '').toLowerCase();
-    return preferredCountry;
+    return (code  || '').toLowerCase();
 }
 
 export const objectToUrlEncodedString = (obj) => {
@@ -280,8 +279,8 @@ export const getQuery = (context) => {
 
 export function generateUUIDv4() {
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        var r = Math.random() * 16 | 0;
-        var v = c === 'x' ? r : (r & 0x3 | 0x8);
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
         return v.toString(16);
     });
 }
@@ -338,80 +337,70 @@ export function getPages<TI, TO>(
 }
 
 
-export function getLikePlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false): PlatformPlaylistDetails {
-
-    const videos: PlatformVideo[] = getPages<Maybe<User>, PlatformVideo>(
+export function getLikePlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+    return getPlatformSystemPlaylist({
+        pluginId,
         httpClient,
-        GET_LIKED_VIDEOS_GQL_QUERY,
-        'USER_LIKED_VIDEOS_QUERY',
-        {
-            page: 1
-        },
+        query: USER_LIKED_VIDEOS_QUERY,
+        operationName: 'USER_LIKED_VIDEOS_QUERY',
+        rootObject: 'likedMedias',
+        playlistName: 'Liked Videos',
         usePlatformAuth,
-        (jsonResponse) => jsonResponse?.data?.me,//set root
-        (me) => (me?.likedMedias?.edges.length ?? 0) > 0 ?? false,//hasNextCallback
-        (me, currentPage) => ++currentPage, //getNextPage
-        (me) => me?.likedMedias?.edges.map(edge => {
-            return SourceVideoToGrayjayVideo(pluginId, edge.node as Video);
-        }));
+        thumbnailResolutionIndex
+    });
 
-    const collection = {
-        "id": generateUUIDv4(),
-        "name": "Liked",
-        "creator": {}
-    }
-
-    return SourceCollectionToGrayjayPlaylistDetails(pluginId, collection as Collection, videos);
 }
 
-export function getFavoritesPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false): PlatformPlaylistDetails {
-
-    const videos: PlatformVideo[] = getPages<Maybe<User>, PlatformVideo>(
+export function getFavoritesPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+    return getPlatformSystemPlaylist({
+        pluginId,
         httpClient,
-        GET_FAVORITES_GQL_QUERY,
-        'USER_WATCH_LATER_VIDEOS_QUERY',
-        {
-            page: 1
-        },
+        query: USER_WATCH_LATER_VIDEOS_QUERY,
+        operationName: 'USER_WATCH_LATER_VIDEOS_QUERY',
+        rootObject: 'watchLaterMedias',
+        playlistName: 'Favorites',
         usePlatformAuth,
-        (jsonResponse) => jsonResponse?.data?.me,//set root
-        (me) => (me?.watchLaterMedias?.edges.length ?? 0) > 0 ?? false,//hasNextCallback
-        (me, currentPage) => ++currentPage, //getNextPage
-        (me) => me?.watchLaterMedias?.edges.map(edge => {
-            return SourceVideoToGrayjayVideo(pluginId, edge.node as Video);
-        }));
-
-    const collection = {
-        "id": generateUUIDv4(),
-        "name": "Favorites",
-        "creator": {}
-    }
-
-    return SourceCollectionToGrayjayPlaylistDetails(pluginId, collection as Collection, videos);
+        thumbnailResolutionIndex
+    })
 }
 
-export function getRecentlyWatchedPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false): PlatformPlaylistDetails {
+export function getRecentlyWatchedPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_WATCHED_VIDEOS_QUERY,
+        operationName: 'USER_WATCHED_VIDEOS_QUERY',
+        rootObject: 'watchedVideos',
+        playlistName: 'Recently Watched',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    
+    });
+}
+
+export function getPlatformSystemPlaylist(opts: IPlatformSystemPlaylist): PlatformPlaylistDetails {
 
     const videos: PlatformVideo[] = getPages<Maybe<User>, PlatformVideo>(
-        httpClient,
-        GET_RECENTLY_WATCHED_GQL_QUERY,
-        'USER_WATCH_LATER_VIDEOS_QUERY',
+        opts.httpClient,
+        opts.query,
+        opts.operationName,
         {
-            page: 1
+            page: 1,
+            thumbnail_resolution: THUMBNAIL_HEIGHT[opts.thumbnailResolutionIndex]
         },
-        usePlatformAuth,
+        opts.usePlatformAuth,
         (jsonResponse) => jsonResponse?.data?.me,//set root
-        (me) => (me?.watchedVideos?.edges.length ?? 0) > 0 ?? false,//hasNextCallback
+        (me) => (me?.[opts.rootObject]?.edges.length ?? 0) > 0 ?? false,//hasNextCallback
         (me, currentPage) => ++currentPage, //getNextPage
-        (me) => me?.watchedVideos?.edges.map(edge => {
-            return SourceVideoToGrayjayVideo(pluginId, edge.node as Video);
+        (me) => me?.[opts.rootObject]?.edges.map(edge => {
+            return SourceVideoToGrayjayVideo(opts.pluginId, edge.node as Video);
         }));
 
     const collection = {
         "id": generateUUIDv4(),
-        "name": "Recently Watched",
+        "name": opts.playlistName,
         "creator": {}
     }
 
-    return SourceCollectionToGrayjayPlaylistDetails(pluginId, collection as Collection, videos);
+    return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection as Collection, videos);
 }
