@@ -1547,6 +1547,33 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, so
     }
     return platformVideoDetails;
 };
+/**
+ * Converts SRT subtitle format to VTT format.
+ *
+ * @param {string} srt - The SRT subtitle string.
+ * @returns {string} - The converted VTT subtitle string.
+ */
+const convertSRTtoVTT = (srt) => {
+    // Initialize the VTT output with the required header
+    const vtt = ['WEBVTT\n\n'];
+    // Split the SRT input into blocks based on double newlines
+    const srtBlocks = srt.split('\n\n');
+    // Process each block individually
+    srtBlocks.forEach((block) => {
+        // Split each block into lines
+        const lines = block.split('\n');
+        if (lines.length >= 3) {
+            // Extract and convert the timestamp line
+            const timestamp = lines[1].replace(/,/g, '.');
+            // Extract the subtitle text lines
+            const subtitleText = lines.slice(2).join('\n');
+            // Add the converted block to the VTT output
+            vtt.push(`${timestamp}\n${subtitleText}\n\n`);
+        }
+    });
+    // Join the VTT array into a single string and return it
+    return vtt.join('');
+};
 
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER = "";
 let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE;
@@ -1664,33 +1691,6 @@ function executeGqlQuery(httpClient, requestOptions) {
     }
     return body;
 }
-/**
- * Converts SRT subtitle format to VTT format.
- *
- * @param {string} srt - The SRT subtitle string.
- * @returns {string} - The converted VTT subtitle string.
- */
-const convertSRTtoVTT = (srt) => {
-    // Initialize the VTT output with the required header
-    const vtt = ['WEBVTT\n\n'];
-    // Split the SRT input into blocks based on double newlines
-    const srtBlocks = srt.split('\n\n');
-    // Process each block individually
-    srtBlocks.forEach((block) => {
-        // Split each block into lines
-        const lines = block.split('\n');
-        if (lines.length >= 3) {
-            // Extract and convert the timestamp line
-            const timestamp = lines[1].replace(/,/g, '.');
-            // Extract the subtitle text lines
-            const subtitleText = lines.slice(2).join('\n');
-            // Add the converted block to the VTT output
-            vtt.push(`${timestamp}\n${subtitleText}\n\n`);
-        }
-    });
-    // Join the VTT array into a single string and return it
-    return vtt.join('');
-};
 const parseUploadDateFilter = (filter) => {
     let createdAfterVideos;
     const now = new Date();
