@@ -1,6 +1,10 @@
 let config: Config;
 let _settings: IDailymotionPluginSettings;
 
+const state = {
+	messageServiceToken: ""
+};
+
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST_ID";
 const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST_ID";
 const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST_ID";
@@ -23,8 +27,8 @@ import {
 	ERROR_TYPES,
 	LikedMediaSort,
 	VIDEOS_PER_PAGE_OPTIONS,
-	PLAYLISTS_PER_PAGE_OPTIONS
-} from './constants';
+	PLAYLISTS_PER_PAGE_OPTIONS,
+	PLATFORM} from './constants';
 
 import {
 	AUTOCOMPLETE_QUERY,
@@ -84,7 +88,6 @@ import {
 } from './Mappers';
 
 
-
 let httpClientAnonymous: IHttp = http.newClient(false);
 
 
@@ -101,7 +104,7 @@ source.enable = function (conf, settings, saveStateStr) {
 
 	config = conf ?? {};
 	_settings = settings ?? {};
-
+	
 	if (IS_TESTING) {
 
 		_settings.hideSensitiveContent = false;
@@ -112,6 +115,52 @@ source.enable = function (conf, settings, saveStateStr) {
 		_settings.playlistsPerPageOptionIndex = 0;
 
 		config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5";
+	}
+	
+	let didSaveState = false;
+	
+	try {
+		if (saveStateStr) {
+			const saveState = JSON.parse(saveStateStr);
+			if (saveState) {
+				state.messageServiceToken = saveState.messageServiceToken;
+				didSaveState = true;
+				log("Using save state");
+			}
+		}
+	}
+	catch (ex) {
+		log("Failed to parse saveState:" + ex);
+		didSaveState = false;
+	}
+
+	if (!didSaveState) {
+
+		// get token for message service api-2-0.spot.im
+		const headers = {
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
+			Accept: '*/*',
+			'Accept-Language': 'en-US,en;q=0.5',
+			'x-spot-id': 'sp_vWPN1lBu',
+			'x-post-id': 'no$post',
+			'Content-Type': 'application/json',
+			Origin: 'https://www.dailymotion.com',
+			Connection: 'keep-alive',
+			Referer: 'https://www.dailymotion.com/',
+			'Sec-Fetch-Dest': 'empty',
+			'Sec-Fetch-Mode': 'cors',
+			'Sec-Fetch-Site': 'cross-site',
+			Priority: 'u=6',
+			'Content-Length': '0'
+		}
+
+		const authenticateIm = http.POST("https://api-2-0.spot.im/v1.0.0/authenticate", "", headers, false);
+
+		if (!authenticateIm.isOk) {
+			throw new UnavailableException('Failed to authenticate to comments service');
+		}
+
+		state.messageServiceToken = authenticateIm.headers["x-access-token"][0];
 	}
 
 }
@@ -218,6 +267,88 @@ source.isContentDetailsUrl = function (url) {
 source.getContentDetails = function (url) {
 	return getSavedVideo(url, false);
 };
+
+source.saveState = () => {
+	return JSON.stringify({
+		messageServiceToken: state.messageServiceToken
+	});
+};
+
+source.getSubComments = (comment) => {
+	const params = { "count": 5, "offset": 0, "parent_id": comment.context.id, "sort_by": "best", "child_count": comment.replyCount };
+	return getCommentPager(comment.contextUrl, params, 0);
+}
+
+
+source.getComments = (url) => {
+	const params = { "sort_by": "best", "offset": 0, "count": 10, "message_id": null, "depth": 2, "child_count": 2 };
+	return getCommentPager(url, params, 0);
+}
+
+function getCommentPager(url, params, page) {
+
+	try {
+		const xid = url.split('/').pop();
+
+		const commentsHeaders = {
+			'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:127.0) Gecko/20100101 Firefox/127.0',
+			Accept: 'application/json',
+			'Accept-Language': 'en-US,en;q=0.5',
+			'x-access-token': state.messageServiceToken,
+			'Content-Type': 'application/json',
+			'x-spot-id': 'sp_vWPN1lBu',
+			'x-post-id': xid,
+			Origin: 'https://www.dailymotion.com',
+			Connection: 'keep-alive',
+			Referer: 'https://www.dailymotion.com/',
+			'Sec-Fetch-Dest': 'empty',
+			'Sec-Fetch-Mode': 'cors',
+			'Sec-Fetch-Site': 'cross-site',
+			Priority: 'u=6',
+			TE: 'trailers'
+		}
+
+		const commentRequest = http.POST("https://api-2-0.spot.im/v1.0.0/conversation/read", JSON.stringify(params), commentsHeaders, false);
+
+		if (!commentRequest.isOk) {
+			throw new UnavailableException('Failed to authenticate to comments service');
+		}
+
+		const comments = JSON.parse(commentRequest.body);
+
+		const users = comments.conversation.users;
+
+		const results = comments.conversation.comments.map(v => {
+
+			return new Comment({
+				contextUrl: url,
+				author: new PlatformAuthorLink(new PlatformID(PLATFORM, users[v.user_id].id ?? "", config.id), users[v.user_id].display_name ?? "", ``, ""),
+				message: v.content[0].text,
+				rating: new RatingLikes(v.stars),
+				date: v.written_at,
+				replyCount: v.total_replies_count,
+				context: { id: v.id }
+			});
+
+		});
+
+		return new PlatformCommentPager(results, comments.conversation.has_next, url, params, ++page);
+	} catch (error) {
+		bridge.log('Failed to get comments:' + error?.message);
+		return new PlatformCommentPager([], false, url, params, 0);
+	}
+
+}
+
+class PlatformCommentPager extends CommentPager {
+	constructor(results, hasMore, path, params, page) {
+		super(results, hasMore, { path, params, page });
+	}
+
+	nextPage() {
+		return getCommentPager(this.context.path, this.context.params, (this.context.page ?? 0) + 1);
+	}
+}
 
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
