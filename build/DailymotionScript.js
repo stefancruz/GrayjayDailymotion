@@ -891,6 +891,18 @@ fragment VIDEO_FRAGMENT on Video {
 			height
 			width
 		}
+		metrics {
+			engagement {
+				followers {
+					totalCount
+					edges {
+						node {
+							total
+						}
+					}
+				}
+			}
+		}
 		stats {
 			id
 			views {
@@ -1421,7 +1433,7 @@ const SourceChannelToGrayjayChannel = (pluginId, url, sourceChannel) => {
     });
 };
 const SourceAuthorToGrayjayPlatformAuthorLink = (pluginId, creator) => {
-    return new PlatformAuthorLink(new PlatformID(PLATFORM, creator?.id ?? "", pluginId, PLATFORM_CLAIMTYPE), creator?.displayName ?? "", creator?.name ? `${BASE_URL}/${creator?.name}` : "", creator?.avatar?.url ?? "", creator?.followers?.totalCount ?? 0);
+    return new PlatformAuthorLink(new PlatformID(PLATFORM, creator?.id ?? "", pluginId, PLATFORM_CLAIMTYPE), creator?.displayName ?? "", creator?.name ? `${BASE_URL}/${creator?.name}` : "", creator?.avatar?.url ?? "", creator?.followers?.totalCount ?? creator?.stats?.followers?.total ?? creator?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0);
 };
 const SourceVideoToGrayjayVideo = (pluginId, sourceVideo) => {
     const isLive = getIsLive(sourceVideo);
@@ -1914,22 +1926,6 @@ let _settings;
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST_ID";
 const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST_ID";
 const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST_ID";
-if (IS_TESTING) {
-    if (!_settings) {
-        _settings = {};
-    }
-    _settings.hideSensitiveContent = false;
-    _settings.avatarSizeOptionIndex = 8;
-    _settings.thumbnailResolutionOptionIndex = 7;
-    _settings.preferredCountryOptionIndex = 0;
-    _settings.videosPerPageOptionIndex = 4;
-    _settings.playlistsPerPageOptionIndex = 0;
-    if (!config) {
-        config = {
-            id: "9c87e8db-e75d-48f4-afe5-2d203d4b95c5"
-        };
-    }
-}
 let httpClientAnonymous = http.newClient(false);
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection = [];
@@ -1941,6 +1937,15 @@ source.setSettings = function (settings) {
 source.enable = function (conf, settings, saveStateStr) {
     config = conf ?? {};
     _settings = settings ?? {};
+    if (IS_TESTING) {
+        _settings.hideSensitiveContent = false;
+        _settings.avatarSizeOptionIndex = 8;
+        _settings.thumbnailResolutionOptionIndex = 7;
+        _settings.preferredCountryOptionIndex = 0;
+        _settings.videosPerPageOptionIndex = 4;
+        _settings.playlistsPerPageOptionIndex = 0;
+        config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5";
+    }
 };
 source.getHome = function () {
     getAnonymousUserTokenSingleton();
