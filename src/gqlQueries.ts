@@ -506,6 +506,18 @@ fragment VIDEO_FRAGMENT on Video {
 			height
 			width
 		}
+		metrics {
+			engagement {
+				followers {
+					totalCount
+					edges {
+						node {
+							total
+						}
+					}
+				}
+			}
+		}
 		stats {
 			id
 			views {
