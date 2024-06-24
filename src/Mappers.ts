@@ -29,7 +29,7 @@ export const SourceAuthorToGrayjayPlatformAuthorLink = (pluginId: string, creato
         creator?.displayName ?? "",
         creator?.name ? `${BASE_URL}/${creator?.name}` : "",
         creator?.avatar?.url ?? "",
-        creator?.followers?.totalCount ?? 0
+        creator?.followers?.totalCount ?? creator?.stats?.followers?.total ?? creator?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0
     );
 }
 
