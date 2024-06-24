@@ -883,3 +883,8 @@ function getHttpContext(opts: { usePlatformAuth: boolean } = { usePlatformAuth: 
 }
 
 log("LOADED");
+
+// Check if module.exports is defined (Node.js) and export accordingly
+if (typeof module !== 'undefined' && typeof module.exports !== 'undefined') {
+    module.exports = source; // CommonJS export
+}
