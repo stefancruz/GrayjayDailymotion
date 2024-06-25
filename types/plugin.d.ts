@@ -1148,13 +1148,13 @@ function parseSettings(settings) {
     return newSettings;
 }
 
-function log(str: string) {
-    if (str) {
-        console.log(str);
-        if (typeof str == "string")
-            bridge.log(str);
+function log(obj: string | object) {
+    if (obj) {
+        console.log(obj);
+        if (typeof obj == "string")
+            bridge.log(obj);
         else
-            bridge.log(JSON.stringify(str, null, 4));
+            bridge.log(JSON.stringify(obj, null, 4));
     }
 }
 

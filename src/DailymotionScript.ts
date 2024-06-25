@@ -1,9 +1,14 @@
 let config: Config;
 let _settings: IDailymotionPluginSettings;
 
-const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST_ID";
-const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST_ID";
-const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST_ID";
+const state = {
+	anonymousUserAuthorizationToken: "",
+	anonymousUserAuthorizationTokenExpirationDate: 0
+};
+
+const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST";
+const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST";
+const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST";
 
 
 import {
@@ -23,7 +28,10 @@ import {
 	ERROR_TYPES,
 	LikedMediaSort,
 	VIDEOS_PER_PAGE_OPTIONS,
-	PLAYLISTS_PER_PAGE_OPTIONS
+	PLAYLISTS_PER_PAGE_OPTIONS,
+	CLIENT_ID,
+	CLIENT_SECRET,
+	BASE_URL_API_AUTH
 } from './constants';
 
 import {
@@ -38,19 +46,19 @@ import {
 	SEARCH_CHANNEL,
 	CHANNEL_PLAYLISTS_QUERY,
 	SUBSCRIPTIONS_QUERY,
-	GET_CHANNEL_PLAYLISTS_XID
+	GET_CHANNEL_PLAYLISTS_XID,
+	USER_LIKED_VIDEOS_QUERY,
+	USER_WATCHED_VIDEOS_QUERY,
+	USER_WATCH_LATER_VIDEOS_QUERY
 } from './gqlQueries';
 
 import {
 	getChannelNameFromUrl,
 	isUsernameUrl,
-	executeGqlQuery,
 	getPreferredCountry,
-	getAnonymousUserTokenSingleton,
 	getQuery,
-	getLikePlaylist,
-	getFavoritesPlaylist,
-	getRecentlyWatchedPlaylist
+	objectToUrlEncodedString,
+	generateUUIDv4
 } from './util';
 
 import {
@@ -60,7 +68,9 @@ import {
 	Live,
 	LiveConnection,
 	LiveEdge,
+	Maybe,
 	SuggestionConnection,
+	User,
 	Video,
 	VideoConnection,
 	VideoEdge
@@ -86,6 +96,7 @@ import {
 
 
 let httpClientAnonymous: IHttp = http.newClient(false);
+let httpClientRequestToken: IHttp = http.newClient(false);
 
 
 // Will be used to store private playlists that require authentication
@@ -114,13 +125,76 @@ source.enable = function (conf, settings, saveStateStr) {
 		config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5";
 	}
 
+	let didSaveState = false;
+
+	try {
+		if (saveStateStr) {
+			const saveState = JSON.parse(saveStateStr);
+			if (saveState) {
+				state.anonymousUserAuthorizationToken = saveState.anonymousUserAuthorizationToken;
+				state.anonymousUserAuthorizationTokenExpirationDate = saveState.anonymousUserAuthorizationTokenExpirationDate;
+
+				if (!isTokenValid()) {
+					log("Token expired. Fetching a new one.");
+				} else {
+					didSaveState = true;
+					log("Using save state");
+				}
+			}
+		}
+	} catch (ex) {
+		log("Failed to parse saveState:" + ex);
+		didSaveState = false;
+	}
+
+	if (!didSaveState) {
+
+		log("Getting a new token");
+
+		const body = objectToUrlEncodedString({
+			client_id: CLIENT_ID,
+			client_secret: CLIENT_SECRET,
+			grant_type: 'client_credentials'
+		});
+
+		const res = httpClientRequestToken.POST(BASE_URL_API_AUTH, body, {
+			'User-Agent': USER_AGENT,
+			'Content-Type': 'application/x-www-form-urlencoded',
+			'Origin': BASE_URL,
+			'DNT': '1',
+			'Sec-GPC': '1',
+			'Connection': 'keep-alive',
+			'Sec-Fetch-Dest': 'empty',
+			'Sec-Fetch-Mode': 'cors',
+			'Sec-Fetch-Site': 'same-site',
+			'Priority': 'u=4',
+			'Pragma': 'no-cache',
+			'Cache-Control': 'no-cache'
+		}, false);
+
+		if (res.code !== 200) {
+			console.error('Failed to get token', res);
+			throw new ScriptException("", "Failed to get token: " + res.code + " - " + res.body);
+		}
+
+		const json = JSON.parse(res.body);
+
+		if (!json.token_type || !json.access_token) {
+			console.error('Invalid token response', res);
+			throw new ScriptException("", 'Invalid token response: ' + res.body);
+		}
+
+		state.anonymousUserAuthorizationToken = `${json.token_type} ${json.access_token}`;
+		state.anonymousUserAuthorizationTokenExpirationDate = Date.now() + (json.expires_in * 1000);
+
+		log(`json.expires_in: ${json.expires_in}`);
+		log(`state.anonymousUserAuthorizationTokenExpirationDate: ${state.anonymousUserAuthorizationTokenExpirationDate}`);
+	}
+
 }
 
 
 source.getHome = function () {
-
-	getAnonymousUserTokenSingleton();
-
 	return getVideoPager({}, 0);
 };
 
@@ -219,6 +293,13 @@ source.getContentDetails = function (url) {
 	return getSavedVideo(url, false);
 };
 
+source.saveState = () => {
+	return JSON.stringify({
+		anonymousUserAuthorizationToken: state.anonymousUserAuthorizationToken,
+		anonymousUserAuthorizationTokenExpirationDate: state.anonymousUserAuthorizationTokenExpirationDate
+	});
+};
+
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
 	return url.startsWith(BASE_URL_PLAYLIST) ||
@@ -279,7 +360,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 source.getUserSubscriptions = (): string[] => {
 
 	if (!bridge.isLoggedIn()) {
-		bridge.log("Failed to retrieve subscriptions page because not logged in.");
+		log("Failed to retrieve subscriptions page because not logged in.");
 		throw new ScriptException("Not logged in");
 	}
 
@@ -351,7 +432,7 @@ source.getUserSubscriptions = (): string[] => {
 source.getUserPlaylists = (): string[] => {
 
 	if (!bridge.isLoggedIn()) {
-		bridge.log("Failed to retrieve subscriptions page because not logged in.");
+		log("Failed to retrieve subscriptions page because not logged in.");
 		throw new ScriptException("Not logged in");
 	}
 
@@ -567,7 +648,7 @@ function getChannelContentsPager(url, page, type, order, filters) {
 	const shouldLoadLives = type === Type.Feed.Mixed || type === Type.Feed.Streams || type === Type.Feed.Live;
 
 	if (IS_TESTING) {
-		bridge.log(`Getting channel contents for ${url}, page: ${page}, type: ${type}, order: ${order}, shouldLoadVideos: ${shouldLoadVideos}, shouldLoadLives: ${shouldLoadLives}, filters: ${JSON.stringify(filters)}`);
+		log(`Getting channel contents for ${url}, page: ${page}, type: ${type}, order: ${order}, shouldLoadVideos: ${shouldLoadVideos}, shouldLoadLives: ${shouldLoadLives}, filters: ${JSON.stringify(filters)}`);
 	}
 
 	/** 
@@ -745,7 +826,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 	};
 
 	if (!usePlatformAuth) {
-		videoDetailsRequestHeaders.Authorization = getAnonymousUserTokenSingleton();
+		videoDetailsRequestHeaders.Authorization = state.anonymousUserAuthorizationToken;
 	}
 
 	const variables = {
@@ -877,6 +958,184 @@ function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager
 
 	return new ChannelPlaylistPager(content, hasMore, params, page, getChannelPlaylists);
 }
+
+function isTokenValid() {
+    const currentTime = Date.now();
+    return state.anonymousUserAuthorizationTokenExpirationDate > currentTime;
+}
+
+function executeGqlQuery(httpClient, requestOptions) {
+
+	const headersToAdd = requestOptions.headers || {
+		"User-Agent": USER_AGENT,
+		"Accept": "*/*",
+		// "Accept-Language": Accept_Language,
+		"Referer": BASE_URL,
+		"Origin": BASE_URL,
+		"DNT": "1",
+		"Connection": "keep-alive",
+		"Sec-Fetch-Dest": "empty",
+		"Sec-Fetch-Mode": "cors",
+		"Sec-Fetch-Site": "same-site",
+		"Pragma": "no-cache",
+		"Cache-Control": "no-cache"
+	}
+
+	const gql = JSON.stringify({
+		operationName: requestOptions.operationName,
+		variables: requestOptions.variables,
+		query: requestOptions.query,
+	});
+
+	const usePlatformAuth = requestOptions.usePlatformAuth == undefined ? false : requestOptions.usePlatformAuth;
+	const throwOnError = requestOptions.throwOnError == undefined ? true : requestOptions.throwOnError;
+
+	if (!usePlatformAuth) {
+		headersToAdd.Authorization = state.anonymousUserAuthorizationToken;
+	}
+
+	const res = httpClient.POST(BASE_URL_API, gql, headersToAdd, usePlatformAuth);
+
+	if (!res.isOk) {
+		console.error('Failed to get token', res);
+		if (throwOnError) {
+			throw new ScriptException("Failed to get token", res);
+		}
+	}
+
+	const body = JSON.parse(res.body);
+
+	// some errors may be returned in the body with a status code 200
+	if (body.errors) {
+		const message = body.errors.map(e => e.message).join(', ');
+
+		if (throwOnError) {
+			throw new UnavailableException(message);
+		}
+	}
+
+	return body;
+}
+
+
+function getPages<TI, TO>(
+	httpClient: IHttp,
+	query: string,
+	operationName: string,
+	variables: any,
+	usePlatformAuth: boolean,
+	setRoot: (jsonResponse: any) => TI,
+	hasNextCallback: (page: TI) => boolean,
+	getNextPage: (page: TI, currentPage) => number,
+	map: (page: any) => TO[]
+
+): TO[] {
+
+	let all: TO[] = [];
+
+	if (!hasNextCallback) {
+		hasNextCallback = () => false;
+	}
+
+	let hasNext = true;
+	let nextPage = 1;
+
+	do {
+
+		variables = { ...variables, page: nextPage };
+
+		const jsonResponse = executeGqlQuery(
+			httpClient,
+			{
+				operationName,
+				variables,
+				query,
+				usePlatformAuth
+			});
+
+		const root = setRoot(jsonResponse);
+
+		nextPage = getNextPage(root, nextPage);
+
+		const items = map(root);
+
+		hasNext = hasNextCallback(root);
+
+		all = all.concat(items);
+
+	} while (hasNext);
+
+	return all;
+}
+
+function getLikePlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+	return getPlatformSystemPlaylist({
+		pluginId,
+		httpClient,
+		query: USER_LIKED_VIDEOS_QUERY,
+		operationName: 'USER_LIKED_VIDEOS_QUERY',
+		rootObject: 'likedMedias',
+		playlistName: 'Liked Videos',
+		usePlatformAuth,
+		thumbnailResolutionIndex
+	});
+
+}
+
+function getFavoritesPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+	return getPlatformSystemPlaylist({
+		pluginId,
+		httpClient,
+		query: USER_WATCH_LATER_VIDEOS_QUERY,
+		operationName: 'USER_WATCH_LATER_VIDEOS_QUERY',
+		rootObject: 'watchLaterMedias',
+		playlistName: 'Favorites',
+		usePlatformAuth,
+		thumbnailResolutionIndex
+	})
+}
+
+function getRecentlyWatchedPlaylist(pluginId: string, httpClient: IHttp, usePlatformAuth: boolean = false, thumbnailResolutionIndex: number = 0): PlatformPlaylistDetails {
+	return getPlatformSystemPlaylist({
+		pluginId,
+		httpClient,
+		query: USER_WATCHED_VIDEOS_QUERY,
+		operationName: 'USER_WATCHED_VIDEOS_QUERY',
+		rootObject: 'watchedVideos',
+		playlistName: 'Recently Watched',
+		usePlatformAuth,
+		thumbnailResolutionIndex
+
+	});
+}
+
+function getPlatformSystemPlaylist(opts: IPlatformSystemPlaylist): PlatformPlaylistDetails {
+
+	const videos: PlatformVideo[] = getPages<Maybe<User>, PlatformVideo>(
+		opts.httpClient,
+		opts.query,
+		opts.operationName,
+		{
+			page: 1,
+			thumbnail_resolution: THUMBNAIL_HEIGHT[opts.thumbnailResolutionIndex]
+		},
+		opts.usePlatformAuth,
+		(jsonResponse) => jsonResponse?.data?.me,//set root
+		(me) => (me?.[opts.rootObject]?.edges.length ?? 0) > 0 ?? false,//hasNextCallback
+		(me, currentPage) => ++currentPage, //getNextPage
+		(me) => me?.[opts.rootObject]?.edges.map(edge => {
+			return SourceVideoToGrayjayVideo(opts.pluginId, edge.node as Video);
+		}));
+
+	const collection = {
+		"id": generateUUIDv4(),
+		"name": opts.playlistName,
+		"creator": {}
+	}
+
+	return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection as Collection, videos);
+}
+
 
 function getHttpContext(opts: { usePlatformAuth: boolean } = { usePlatformAuth: false }): IHttp {
 	return opts.usePlatformAuth ? http : httpClientAnonymous;
