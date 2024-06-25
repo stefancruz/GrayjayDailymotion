@@ -36,8 +36,6 @@ npm install
 
 ## Update graphql types (optional)
 
-npm run get-token
-
 npm run codegen
 
 ## Build

@@ -1772,7 +1772,9 @@ export type CreateCommentInput = {
   /** The ID generated for the client performing the mutation. */
   clientMutationId?: InputMaybe<Scalars['String']['input']>;
   /** The ID of the post that the comment is created for. */
-  postId: Scalars['ID']['input'];
+  postId?: InputMaybe<Scalars['ID']['input']>;
+  /** The ID of the story that the comment is created for. */
+  storyId?: InputMaybe<Scalars['ID']['input']>;
   /** The text on the comment. */
   text: Scalars['String']['input'];
 };
@@ -2737,11 +2739,11 @@ export type IdOperator = {
   /** Short for equal, must match the given data exactly. */
   eq?: InputMaybe<Scalars['ID']['input']>;
   /** Short for in array, must NOT be an element of the array. */
-  in?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
+  in?: InputMaybe<Array<Scalars['ID']['input']>>;
   /** Short for not equal, must be different from the given data. */
   ne?: InputMaybe<Scalars['ID']['input']>;
   /** Short for not in array, must be an element of the array. */
-  nin?: InputMaybe<Array<InputMaybe<Scalars['ID']['input']>>>;
+  nin?: InputMaybe<Array<Scalars['ID']['input']>>;
 };
 
 /** Information of an Image. */
@@ -5077,7 +5079,7 @@ export type PostOperator = {
   /** Short for equal, must match the given data exactly. */
   eq?: InputMaybe<PostTypename>;
   /** Short for in array, must be an element of the array. */
-  in?: InputMaybe<Array<InputMaybe<PostTypename>>>;
+  in?: InputMaybe<Array<PostTypename>>;
 };
 
 /** The possible values for a PostStatus. */
