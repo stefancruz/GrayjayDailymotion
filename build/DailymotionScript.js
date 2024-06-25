@@ -1413,6 +1413,172 @@ const USER_WATCHED_VIDEOS_QUERY = `
 	}
 }`;
 
+function getPreferredCountry(preferredCountryIndex) {
+    const countryName = COUNTRY_NAMES[preferredCountryIndex];
+    const code = COUNTRY_NAMES_TO_CODE[countryName];
+    return (code || '').toLowerCase();
+}
+const objectToUrlEncodedString = (obj) => {
+    const encodedParams = [];
+    for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            const encodedKey = encodeURIComponent(key);
+            const encodedValue = encodeURIComponent(obj[key]);
+            encodedParams.push(`${encodedKey}=${encodedValue}`);
+        }
+    }
+    return encodedParams.join('&');
+};
+function getChannelNameFromUrl(url) {
+    const channel_name = url.split('/').pop();
+    return channel_name;
+}
+function isUsernameUrl(url) {
+    const regex = new RegExp('^' + BASE_URL.replace(/\./g, '\\.') + '/[^/]+$');
+    return regex.test(url);
+}
+const parseUploadDateFilter = (filter) => {
+    let createdAfterVideos;
+    const now = new Date();
+    switch (filter) {
+        case "today":
+            // Last 24 hours from now
+            const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            createdAfterVideos = yesterday.toISOString();
+            break;
+        case "thisweek":
+            // Adjusts to the start of the current week (assuming week starts on Sunday)
+            const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+            createdAfterVideos = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()).toISOString();
+            break;
+        case "thismonth":
+            // Adjusts to the start of the month
+            createdAfterVideos = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+            break;
+        case "thisyear":
+            // Adjusts to the start of the year
+            createdAfterVideos = new Date(now.getFullYear(), 0, 1).toISOString();
+            break;
+        default:
+            createdAfterVideos = null;
+    }
+    return createdAfterVideos;
+};
+const parseSort = (order) => {
+    let sort;
+    switch (order) {
+        //TODO: refact this to use constants
+        case "Most Recent":
+            sort = "RECENT";
+            break;
+        case "Most Viewed":
+            sort = "VIEW_COUNT";
+            break;
+        case "Most Relevant":
+            sort = "RELEVANCE";
+            break;
+        default:
+            sort = order; // Default to the original order if no match
+    }
+    return sort;
+};
+const getQuery = (context) => {
+    context.sort = parseSort(context.order);
+    if (!context.filters) {
+        context.filters = {};
+    }
+    if (!context.page) {
+        context.page = 1;
+    }
+    if (context?.filters.duration) {
+        context.filters.durationMinVideos = DURATION_THRESHOLDS[context.filters.duration].min;
+        context.filters.durationMaxVideos = DURATION_THRESHOLDS[context.filters.duration].max;
+    }
+    else {
+        context.filters.durationMinVideos = null;
+        context.filters.durationMaxVideos = null;
+    }
+    if (context.filters.uploaddate) {
+        context.filters.createdAfterVideos = parseUploadDateFilter(context.filters.uploaddate[0]);
+    }
+    return context;
+};
+function generateUUIDv4() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+class SearchPagerAll extends VideoPager {
+    cb;
+    constructor(results, hasMore, params, page, cb) {
+        super(results, hasMore, { params, page });
+        this.cb = cb;
+    }
+    nextPage() {
+        this.context.page += 1;
+        const opts = {
+            q: this.context.params.query,
+            sort: this.context.params.sort,
+            page: this.context.page,
+            filters: this.context.params.filters
+        };
+        return this.cb(opts);
+    }
+}
+class SearchChannelPager extends ChannelPager {
+    cb;
+    constructor(results, hasNextPage, params, page, cb) {
+        super(results, hasNextPage, { params, page });
+        this.cb = cb;
+    }
+    nextPage() {
+        const opts = { q: this.context.params.query, page: this.context.page += 1 };
+        return this.cb(opts);
+    }
+}
+class ChannelVideoPager extends VideoPager {
+    cb;
+    constructor(results, hasNextPage, params, cb) {
+        super(results, hasNextPage, { ...params });
+        this.cb = cb;
+    }
+    nextPage() {
+        this.context.page += 1;
+        return this.cb(this.context.url, this.context.page, this.context.type, this.context.order);
+    }
+}
+class ChannelPlaylistPager extends PlaylistPager {
+    cb;
+    constructor(results, hasMore, params, page, cb) {
+        super(results, hasMore, { params, page });
+        this.cb = cb;
+    }
+    nextPage() {
+        this.context.page += 1;
+        return this.cb(this.context.params.url, this.context.page);
+    }
+}
+class SearchPlaylistPager extends PlaylistPager {
+    cb;
+    constructor(results, hasMore, params, page, cb) {
+        super(results, hasMore, { params, page });
+        this.cb = cb;
+    }
+    nextPage() {
+        this.context.page = this.context.page + 1;
+        const opts = {
+            q: this.context.params.query,
+            sort: this.context.params.sort,
+            page: this.context.page,
+            filters: this.context.params.filters
+        };
+        return this.cb(opts);
+    }
+}
+
 const SourceChannelToGrayjayChannel = (pluginId, url, sourceChannel) => {
     const externalLinks = sourceChannel?.externalLinks ?? {};
     const links = Object.keys(externalLinks).reduce((acc, key) => {
@@ -1587,346 +1753,17 @@ const convertSRTtoVTT = (srt) => {
     return vtt.join('');
 };
 
-let AUTHORIZATION_TOKEN_ANONYMOUS_USER = "";
-let AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE;
-let httpClientRequestToken = http.newClient(false);
-function getPreferredCountry(preferredCountryIndex) {
-    const countryName = COUNTRY_NAMES[preferredCountryIndex];
-    const code = COUNTRY_NAMES_TO_CODE[countryName];
-    return (code || '').toLowerCase();
-}
-const objectToUrlEncodedString = (obj) => {
-    const encodedParams = [];
-    for (const key in obj) {
-        if (obj.hasOwnProperty(key)) {
-            const encodedKey = encodeURIComponent(key);
-            const encodedValue = encodeURIComponent(obj[key]);
-            encodedParams.push(`${encodedKey}=${encodedValue}`);
-        }
-    }
-    return encodedParams.join('&');
-};
-function getChannelNameFromUrl(url) {
-    const channel_name = url.split('/').pop();
-    return channel_name;
-}
-function isUsernameUrl(url) {
-    const regex = new RegExp('^' + BASE_URL.replace(/\./g, '\\.') + '/[^/]+$');
-    return regex.test(url);
-}
-// TODO: save to state
-function getAnonymousUserTokenSingleton() {
-    // Check if the anonymous user token is available and not expired
-    if (AUTHORIZATION_TOKEN_ANONYMOUS_USER) {
-        const isTokenValid = AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE && new Date().getTime() < AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE;
-        if (isTokenValid) {
-            return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
-        }
-    }
-    // Prepare the request body for obtaining a new token
-    const body = objectToUrlEncodedString({
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        grant_type: 'client_credentials'
-    });
-    // Make the HTTP POST request to the authorization API
-    const res = httpClientRequestToken.POST(`${BASE_URL_API_AUTH}`, body, {
-        'User-Agent': USER_AGENT,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Origin': BASE_URL,
-        'DNT': '1',
-        'Sec-GPC': '1',
-        'Connection': 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        'Priority': 'u=4',
-        'Pragma': 'no-cache',
-        'Cache-Control': 'no-cache'
-    }, false);
-    // Check if the response code indicates success
-    if (res.code !== 200) {
-        console.error('Failed to get token', res);
-        throw new ScriptException("", "Failed to get token: " + res.code + " - " + res.body);
-    }
-    // Parse the response JSON to extract the token information
-    const json = JSON.parse(res.body);
-    // Ensure the response contains the necessary token information
-    if (!json.token_type || !json.access_token) {
-        console.error('Invalid token response', res);
-        throw new ScriptException("", 'Invalid token response: ' + res.body);
-    }
-    // Store the token and its expiration date
-    AUTHORIZATION_TOKEN_ANONYMOUS_USER = `${json.token_type} ${json.access_token}`;
-    AUTHORIZATION_TOKEN_ANONYMOUS_USER_EXPIRATION_DATE = new Date().getTime() + (json.expires_in * 1000);
-    return AUTHORIZATION_TOKEN_ANONYMOUS_USER;
-}
-function executeGqlQuery(httpClient, requestOptions) {
-    const headersToAdd = requestOptions.headers || {
-        "User-Agent": USER_AGENT,
-        "Accept": "*/*",
-        // "Accept-Language": Accept_Language,
-        "Referer": BASE_URL,
-        "Origin": BASE_URL,
-        "DNT": "1",
-        "Connection": "keep-alive",
-        "Sec-Fetch-Dest": "empty",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Site": "same-site",
-        "Pragma": "no-cache",
-        "Cache-Control": "no-cache"
-    };
-    const gql = JSON.stringify({
-        operationName: requestOptions.operationName,
-        variables: requestOptions.variables,
-        query: requestOptions.query,
-    });
-    const usePlatformAuth = requestOptions.usePlatformAuth == undefined ? false : requestOptions.usePlatformAuth;
-    const throwOnError = requestOptions.throwOnError == undefined ? true : requestOptions.throwOnError;
-    if (!usePlatformAuth) {
-        headersToAdd.Authorization = getAnonymousUserTokenSingleton();
-    }
-    const res = httpClient.POST(BASE_URL_API, gql, headersToAdd, usePlatformAuth);
-    if (!res.isOk) {
-        console.error('Failed to get token', res);
-        if (throwOnError) {
-            throw new ScriptException("Failed to get token", res);
-        }
-    }
-    const body = JSON.parse(res.body);
-    // some errors may be returned in the body with a status code 200
-    if (body.errors) {
-        const message = body.errors.map(e => e.message).join(', ');
-        if (throwOnError) {
-            throw new UnavailableException(message);
-        }
-    }
-    return body;
-}
-const parseUploadDateFilter = (filter) => {
-    let createdAfterVideos;
-    const now = new Date();
-    switch (filter) {
-        case "today":
-            // Last 24 hours from now
-            const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-            createdAfterVideos = yesterday.toISOString();
-            break;
-        case "thisweek":
-            // Adjusts to the start of the current week (assuming week starts on Sunday)
-            const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
-            createdAfterVideos = new Date(startOfWeek.getFullYear(), startOfWeek.getMonth(), startOfWeek.getDate()).toISOString();
-            break;
-        case "thismonth":
-            // Adjusts to the start of the month
-            createdAfterVideos = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
-            break;
-        case "thisyear":
-            // Adjusts to the start of the year
-            createdAfterVideos = new Date(now.getFullYear(), 0, 1).toISOString();
-            break;
-        default:
-            createdAfterVideos = null;
-    }
-    return createdAfterVideos;
-};
-const parseSort = (order) => {
-    let sort;
-    switch (order) {
-        //TODO: refact this to use constants
-        case "Most Recent":
-            sort = "RECENT";
-            break;
-        case "Most Viewed":
-            sort = "VIEW_COUNT";
-            break;
-        case "Most Relevant":
-            sort = "RELEVANCE";
-            break;
-        default:
-            sort = order; // Default to the original order if no match
-    }
-    return sort;
-};
-const getQuery = (context) => {
-    context.sort = parseSort(context.order);
-    if (!context.filters) {
-        context.filters = {};
-    }
-    if (!context.page) {
-        context.page = 1;
-    }
-    if (context?.filters.duration) {
-        context.filters.durationMinVideos = DURATION_THRESHOLDS[context.filters.duration].min;
-        context.filters.durationMaxVideos = DURATION_THRESHOLDS[context.filters.duration].max;
-    }
-    else {
-        context.filters.durationMinVideos = null;
-        context.filters.durationMaxVideos = null;
-    }
-    if (context.filters.uploaddate) {
-        context.filters.createdAfterVideos = parseUploadDateFilter(context.filters.uploaddate[0]);
-    }
-    return context;
-};
-function generateUUIDv4() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
-        const r = Math.random() * 16 | 0;
-        const v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
-function getPages(httpClient, query, operationName, variables, usePlatformAuth, setRoot, hasNextCallback, getNextPage, map) {
-    let all = [];
-    if (!hasNextCallback) {
-        hasNextCallback = () => false;
-    }
-    let hasNext = true;
-    let nextPage = 1;
-    do {
-        variables = { ...variables, page: nextPage };
-        const jsonResponse = executeGqlQuery(httpClient, {
-            operationName,
-            variables,
-            query,
-            usePlatformAuth
-        });
-        const root = setRoot(jsonResponse);
-        nextPage = getNextPage(root, nextPage);
-        const items = map(root);
-        hasNext = hasNextCallback(root);
-        all = all.concat(items);
-    } while (hasNext);
-    return all;
-}
-function getLikePlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
-    return getPlatformSystemPlaylist({
-        pluginId,
-        httpClient,
-        query: USER_LIKED_VIDEOS_QUERY,
-        operationName: 'USER_LIKED_VIDEOS_QUERY',
-        rootObject: 'likedMedias',
-        playlistName: 'Liked Videos',
-        usePlatformAuth,
-        thumbnailResolutionIndex
-    });
-}
-function getFavoritesPlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
-    return getPlatformSystemPlaylist({
-        pluginId,
-        httpClient,
-        query: USER_WATCH_LATER_VIDEOS_QUERY,
-        operationName: 'USER_WATCH_LATER_VIDEOS_QUERY',
-        rootObject: 'watchLaterMedias',
-        playlistName: 'Favorites',
-        usePlatformAuth,
-        thumbnailResolutionIndex
-    });
-}
-function getRecentlyWatchedPlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
-    return getPlatformSystemPlaylist({
-        pluginId,
-        httpClient,
-        query: USER_WATCHED_VIDEOS_QUERY,
-        operationName: 'USER_WATCHED_VIDEOS_QUERY',
-        rootObject: 'watchedVideos',
-        playlistName: 'Recently Watched',
-        usePlatformAuth,
-        thumbnailResolutionIndex
-    });
-}
-function getPlatformSystemPlaylist(opts) {
-    const videos = getPages(opts.httpClient, opts.query, opts.operationName, {
-        page: 1,
-        thumbnail_resolution: THUMBNAIL_HEIGHT[opts.thumbnailResolutionIndex]
-    }, opts.usePlatformAuth, (jsonResponse) => jsonResponse?.data?.me, //set root
-    (me) => (me?.[opts.rootObject]?.edges.length ?? 0) > 0 ?? false, //hasNextCallback
-    (me, currentPage) => ++currentPage, //getNextPage
-    (me) => me?.[opts.rootObject]?.edges.map(edge => {
-        return SourceVideoToGrayjayVideo(opts.pluginId, edge.node);
-    }));
-    const collection = {
-        "id": generateUUIDv4(),
-        "name": opts.playlistName,
-        "creator": {}
-    };
-    return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection, videos);
-}
-
-class SearchPagerAll extends VideoPager {
-    cb;
-    constructor(results, hasMore, params, page, cb) {
-        super(results, hasMore, { params, page });
-        this.cb = cb;
-    }
-    nextPage() {
-        this.context.page += 1;
-        const opts = {
-            q: this.context.params.query,
-            sort: this.context.params.sort,
-            page: this.context.page,
-            filters: this.context.params.filters
-        };
-        return this.cb(opts);
-    }
-}
-class SearchChannelPager extends ChannelPager {
-    cb;
-    constructor(results, hasNextPage, params, page, cb) {
-        super(results, hasNextPage, { params, page });
-        this.cb = cb;
-    }
-    nextPage() {
-        const opts = { q: this.context.params.query, page: this.context.page += 1 };
-        return this.cb(opts);
-    }
-}
-class ChannelVideoPager extends VideoPager {
-    cb;
-    constructor(results, hasNextPage, params, cb) {
-        super(results, hasNextPage, { ...params });
-        this.cb = cb;
-    }
-    nextPage() {
-        this.context.page += 1;
-        return this.cb(this.context.url, this.context.page, this.context.type, this.context.order);
-    }
-}
-class ChannelPlaylistPager extends PlaylistPager {
-    cb;
-    constructor(results, hasMore, params, page, cb) {
-        super(results, hasMore, { params, page });
-        this.cb = cb;
-    }
-    nextPage() {
-        this.context.page += 1;
-        return this.cb(this.context.params.url, this.context.page);
-    }
-}
-class SearchPlaylistPager extends PlaylistPager {
-    cb;
-    constructor(results, hasMore, params, page, cb) {
-        super(results, hasMore, { params, page });
-        this.cb = cb;
-    }
-    nextPage() {
-        this.context.page = this.context.page + 1;
-        const opts = {
-            q: this.context.params.query,
-            sort: this.context.params.sort,
-            page: this.context.page,
-            filters: this.context.params.filters
-        };
-        return this.cb(opts);
-    }
-}
-
 let config;
 let _settings;
-const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST_ID";
-const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST_ID";
-const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST_ID";
+const state = {
+    anonymousUserAuthorizationToken: "",
+    anonymousUserAuthorizationTokenExpirationDate: 0
+};
+const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST";
+const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST";
+const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST";
 let httpClientAnonymous = http.newClient(false);
+let httpClientRequestToken = http.newClient(false);
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection = [];
 source.setSettings = function (settings) {
@@ -1946,9 +1783,64 @@ source.enable = function (conf, settings, saveStateStr) {
         _settings.playlistsPerPageOptionIndex = 0;
         config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5";
     }
+    let didSaveState = false;
+    try {
+        if (saveStateStr) {
+            const saveState = JSON.parse(saveStateStr);
+            if (saveState) {
+                state.anonymousUserAuthorizationToken = saveState.anonymousUserAuthorizationToken;
+                state.anonymousUserAuthorizationTokenExpirationDate = saveState.anonymousUserAuthorizationTokenExpirationDate;
+                if (!isTokenValid()) {
+                    log("Token expired. Fetching a new one.");
+                }
+                else {
+                    didSaveState = true;
+                    log("Using save state");
+                }
+            }
+        }
+    }
+    catch (ex) {
+        log("Failed to parse saveState:" + ex);
+        didSaveState = false;
+    }
+    if (!didSaveState) {
+        log("Getting a new token");
+        const body = objectToUrlEncodedString({
+            client_id: CLIENT_ID,
+            client_secret: CLIENT_SECRET,
+            grant_type: 'client_credentials'
+        });
+        const res = httpClientRequestToken.POST(BASE_URL_API_AUTH, body, {
+            'User-Agent': USER_AGENT,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'Origin': BASE_URL,
+            'DNT': '1',
+            'Sec-GPC': '1',
+            'Connection': 'keep-alive',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            'Priority': 'u=4',
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache'
+        }, false);
+        if (res.code !== 200) {
+            console.error('Failed to get token', res);
+            throw new ScriptException("", "Failed to get token: " + res.code + " - " + res.body);
+        }
+        const json = JSON.parse(res.body);
+        if (!json.token_type || !json.access_token) {
+            console.error('Invalid token response', res);
+            throw new ScriptException("", 'Invalid token response: ' + res.body);
+        }
+        state.anonymousUserAuthorizationToken = `${json.token_type} ${json.access_token}`;
+        state.anonymousUserAuthorizationTokenExpirationDate = Date.now() + (json.expires_in * 1000);
+        log(`json.expires_in: ${json.expires_in}`);
+        log(`state.anonymousUserAuthorizationTokenExpirationDate: ${state.anonymousUserAuthorizationTokenExpirationDate}`);
+    }
 };
 source.getHome = function () {
-    getAnonymousUserTokenSingleton();
     return getVideoPager({}, 0);
 };
 source.searchSuggestions = function (query) {
@@ -2017,6 +1909,12 @@ source.isContentDetailsUrl = function (url) {
 source.getContentDetails = function (url) {
     return getSavedVideo(url, false);
 };
+source.saveState = () => {
+    return JSON.stringify({
+        anonymousUserAuthorizationToken: state.anonymousUserAuthorizationToken,
+        anonymousUserAuthorizationTokenExpirationDate: state.anonymousUserAuthorizationTokenExpirationDate
+    });
+};
 //Playlist
 source.isPlaylistUrl = (url) => {
     return url.startsWith(BASE_URL_PLAYLIST) ||
@@ -2059,7 +1957,7 @@ source.getPlaylist = (url) => {
 };
 source.getUserSubscriptions = () => {
     if (!bridge.isLoggedIn()) {
-        bridge.log("Failed to retrieve subscriptions page because not logged in.");
+        log("Failed to retrieve subscriptions page because not logged in.");
         throw new ScriptException("Not logged in");
     }
     const headers = {
@@ -2115,7 +2013,7 @@ source.getUserSubscriptions = () => {
 };
 source.getUserPlaylists = () => {
     if (!bridge.isLoggedIn()) {
-        bridge.log("Failed to retrieve subscriptions page because not logged in.");
+        log("Failed to retrieve subscriptions page because not logged in.");
         throw new ScriptException("Not logged in");
     }
     const headers = {
@@ -2275,7 +2173,7 @@ function getChannelContentsPager(url, page, type, order, filters) {
     const shouldLoadVideos = type === Type.Feed.Mixed || type === Type.Feed.Videos;
     const shouldLoadLives = type === Type.Feed.Mixed || type === Type.Feed.Streams || type === Type.Feed.Live;
     if (IS_TESTING) {
-        bridge.log(`Getting channel contents for ${url}, page: ${page}, type: ${type}, order: ${order}, shouldLoadVideos: ${shouldLoadVideos}, shouldLoadLives: ${shouldLoadLives}, filters: ${JSON.stringify(filters)}`);
+        log(`Getting channel contents for ${url}, page: ${page}, type: ${type}, order: ${order}, shouldLoadVideos: ${shouldLoadVideos}, shouldLoadLives: ${shouldLoadLives}, filters: ${JSON.stringify(filters)}`);
     }
     /**
         Recent = Sort liked medias by most recent.
@@ -2418,7 +2316,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
         "Cache-Control": "no-cache"
     };
     if (!usePlatformAuth) {
-        videoDetailsRequestHeaders.Authorization = getAnonymousUserTokenSingleton();
+        videoDetailsRequestHeaders.Authorization = state.anonymousUserAuthorizationToken;
     }
     const variables = {
         "xid": id,
@@ -2516,6 +2414,128 @@ function getChannelPlaylists(url, page = 1) {
     };
     const hasMore = channel?.collections?.pageInfo?.hasNextPage ?? false;
     return new ChannelPlaylistPager(content, hasMore, params, page, getChannelPlaylists);
+}
+function isTokenValid() {
+    const currentTime = Date.now();
+    return state.anonymousUserAuthorizationTokenExpirationDate > currentTime;
+}
+function executeGqlQuery(httpClient, requestOptions) {
+    const headersToAdd = requestOptions.headers || {
+        "User-Agent": USER_AGENT,
+        "Accept": "*/*",
+        // "Accept-Language": Accept_Language,
+        "Referer": BASE_URL,
+        "Origin": BASE_URL,
+        "DNT": "1",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Dest": "empty",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Site": "same-site",
+        "Pragma": "no-cache",
+        "Cache-Control": "no-cache"
+    };
+    const gql = JSON.stringify({
+        operationName: requestOptions.operationName,
+        variables: requestOptions.variables,
+        query: requestOptions.query,
+    });
+    const usePlatformAuth = requestOptions.usePlatformAuth == undefined ? false : requestOptions.usePlatformAuth;
+    const throwOnError = requestOptions.throwOnError == undefined ? true : requestOptions.throwOnError;
+    if (!usePlatformAuth) {
+        headersToAdd.Authorization = state.anonymousUserAuthorizationToken;
+    }
+    const res = httpClient.POST(BASE_URL_API, gql, headersToAdd, usePlatformAuth);
+    if (!res.isOk) {
+        console.error('Failed to get token', res);
+        if (throwOnError) {
+            throw new ScriptException("Failed to get token", res);
+        }
+    }
+    const body = JSON.parse(res.body);
+    // some errors may be returned in the body with a status code 200
+    if (body.errors) {
+        const message = body.errors.map(e => e.message).join(', ');
+        if (throwOnError) {
+            throw new UnavailableException(message);
+        }
+    }
+    return body;
+}
+function getPages(httpClient, query, operationName, variables, usePlatformAuth, setRoot, hasNextCallback, getNextPage, map) {
+    let all = [];
+    if (!hasNextCallback) {
+        hasNextCallback = () => false;
+    }
+    let hasNext = true;
+    let nextPage = 1;
+    do {
+        variables = { ...variables, page: nextPage };
+        const jsonResponse = executeGqlQuery(httpClient, {
+            operationName,
+            variables,
+            query,
+            usePlatformAuth
+        });
+        const root = setRoot(jsonResponse);
+        nextPage = getNextPage(root, nextPage);
+        const items = map(root);
+        hasNext = hasNextCallback(root);
+        all = all.concat(items);
+    } while (hasNext);
+    return all;
+}
+function getLikePlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_LIKED_VIDEOS_QUERY,
+        operationName: 'USER_LIKED_VIDEOS_QUERY',
+        rootObject: 'likedMedias',
+        playlistName: 'Liked Videos',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    });
+}
+function getFavoritesPlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_WATCH_LATER_VIDEOS_QUERY,
+        operationName: 'USER_WATCH_LATER_VIDEOS_QUERY',
+        rootObject: 'watchLaterMedias',
+        playlistName: 'Favorites',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    });
+}
+function getRecentlyWatchedPlaylist(pluginId, httpClient, usePlatformAuth = false, thumbnailResolutionIndex = 0) {
+    return getPlatformSystemPlaylist({
+        pluginId,
+        httpClient,
+        query: USER_WATCHED_VIDEOS_QUERY,
+        operationName: 'USER_WATCHED_VIDEOS_QUERY',
+        rootObject: 'watchedVideos',
+        playlistName: 'Recently Watched',
+        usePlatformAuth,
+        thumbnailResolutionIndex
+    });
+}
+function getPlatformSystemPlaylist(opts) {
+    const videos = getPages(opts.httpClient, opts.query, opts.operationName, {
+        page: 1,
+        thumbnail_resolution: THUMBNAIL_HEIGHT[opts.thumbnailResolutionIndex]
+    }, opts.usePlatformAuth, (jsonResponse) => jsonResponse?.data?.me, //set root
+    (me) => (me?.[opts.rootObject]?.edges.length ?? 0) > 0 ?? false, //hasNextCallback
+    (me, currentPage) => ++currentPage, //getNextPage
+    (me) => me?.[opts.rootObject]?.edges.map(edge => {
+        return SourceVideoToGrayjayVideo(opts.pluginId, edge.node);
+    }));
+    const collection = {
+        "id": generateUUIDv4(),
+        "name": opts.playlistName,
+        "creator": {}
+    };
+    return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection, videos);
 }
 function getHttpContext(opts = { usePlatformAuth: false }) {
     return opts.usePlatformAuth ? http : httpClientAnonymous;

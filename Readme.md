@@ -21,14 +21,14 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Sign in (import subscriptions and playlists (and Likes, Favorites, Recently Watched))
 - [x] - Policentric Comments
 - [x] - Subtitles
+- [x] - State management
 
 ## Todo 
-- [ ] - State management
-- [ ] - Platform comments (not generally available)
+- [ ] - Unit tests - (wip)
+- [ ] - Platform comments (not generally available) - (wip)
 
 ## Known bugs
 - [ ] - Live filter in Subscriptions tab
-
 
 
 ## Install
