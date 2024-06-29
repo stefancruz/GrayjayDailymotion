@@ -297,6 +297,26 @@ source.saveState = () => {
 	return JSON.stringify(state);
 };
 
+
+source.getPeekChannelTypes = () => {
+	return [Type.Feed.Videos, Type.Feed.Mixed];
+}
+
+source.peekChannelContents = function (url, type) {
+	if(IS_TESTING){
+		bridge.log(`Peeking channel contents for ${url}, type: ${type}`);
+	}
+
+	const page = 1;
+	const response = getChannelContentsPager(
+		url,
+		page,
+		type
+	);
+
+	return response.results;
+}
+
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
 	return url.startsWith(BASE_URL_PLAYLIST) ||
@@ -637,7 +657,7 @@ function getVideoPager(params, page) {
 	return new SearchPagerAll(results, hasMore, params, page, getVideoPager);
 }
 
-function getChannelContentsPager(url, page, type, order, filters) {
+function getChannelContentsPager(url, page, type, order?, filters?) {
 
 	const channel_name = getChannelNameFromUrl(url);
 
@@ -957,8 +977,8 @@ function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager
 }
 
 function isTokenValid() {
-    const currentTime = Date.now();
-    return state.anonymousUserAuthorizationTokenExpirationDate > currentTime;
+	const currentTime = Date.now();
+	return state.anonymousUserAuthorizationTokenExpirationDate > currentTime;
 }
 
 function executeGqlQuery(httpClient, requestOptions) {

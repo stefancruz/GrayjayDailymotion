@@ -37,9 +37,11 @@ export class SearchChannelPager extends ChannelPager {
 
 export class ChannelVideoPager extends VideoPager {
     cb: Function;
+    results: PlatformVideo[];
     constructor(results: PlatformVideo[], hasNextPage: boolean, params, cb: Function) {
         super(results, hasNextPage, { ...params });
         this.cb = cb;
+        this.results = results;
     }
 
     nextPage() {
