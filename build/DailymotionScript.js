@@ -1910,10 +1910,8 @@ source.getContentDetails = function (url) {
     return getSavedVideo(url, false);
 };
 source.saveState = () => {
-    return JSON.stringify({
-        anonymousUserAuthorizationToken: state.anonymousUserAuthorizationToken,
-        anonymousUserAuthorizationTokenExpirationDate: state.anonymousUserAuthorizationTokenExpirationDate
-    });
+    return JSON.stringify(state);
+};
 };
 //Playlist
 source.isPlaylistUrl = (url) => {

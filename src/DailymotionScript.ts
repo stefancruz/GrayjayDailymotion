@@ -294,10 +294,7 @@ source.getContentDetails = function (url) {
 };
 
 source.saveState = () => {
-	return JSON.stringify({
-		anonymousUserAuthorizationToken: state.anonymousUserAuthorizationToken,
-		anonymousUserAuthorizationTokenExpirationDate: state.anonymousUserAuthorizationTokenExpirationDate
-	});
+	return JSON.stringify(state);
 };
 
 //Playlist
