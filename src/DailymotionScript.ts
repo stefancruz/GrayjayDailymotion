@@ -487,6 +487,16 @@ source.getUserPlaylists = (): string[] => {
 
 }
 
+source.getChannelTemplateByClaimMap = () => {
+	return {
+		//Dailymotion claim type
+		27: {
+			0: BASE_URL + "/{{CLAIMVALUE}}",
+		}
+	};
+};
+
+
 function getPlaylistsByUsername(userName, headers, usePlatformAuth = false): string[] {
 
 
