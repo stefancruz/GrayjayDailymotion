@@ -122,6 +122,64 @@
         "possibleTypes": null
       },
       {
+        "kind": "ENUM",
+        "name": "Activity",
+        "description": "The possible values for an Activity.",
+        "fields": null,
+        "inputFields": null,
+        "interfaces": null,
+        "enumValues": [
+          {
+            "name": "FAVORITED",
+            "description": "An activity that is `favorited`.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "LIKED",
+            "description": "An activity that is `liked`.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "SAVED",
+            "description": "An activity that is `saved`.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "WATCHED",
+            "description": "An activity that is `watched`.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "possibleTypes": null
+      },
+      {
+        "kind": "INPUT_OBJECT",
+        "name": "ActivityOperator",
+        "description": "The available input fields of an Activity operator.",
+        "fields": null,
+        "inputFields": [
+          {
+            "name": "eq",
+            "description": "Short for equal, must match the given data exactly.",
+            "type": {
+              "kind": "ENUM",
+              "name": "Activity",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "interfaces": null,
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
         "kind": "INPUT_OBJECT",
         "name": "AddCollectionVideoInput",
         "description": "The input fields to add a video to a collection.",
@@ -340,6 +398,12 @@
         "inputFields": null,
         "interfaces": null,
         "enumValues": [
+          {
+            "name": "EXPLORE",
+            "description": "An algorithm to explore content based on location.",
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
           {
             "name": "FEATURED",
             "description": "An algorithm that considers what content to feature.",
@@ -1296,6 +1360,22 @@
             "deprecationReason": null
           },
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the report was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The creation date of the report.",
             "args": [],
@@ -1304,8 +1384,8 @@
               "name": "Date",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "creator",
@@ -4785,7 +4865,7 @@
         "inputFields": [
           {
             "name": "avatarURL",
-            "description": "The URL of the avatar of the channel. @deprecated(reason: \"Use input field `avatarUrl`.\")",
+            "description": "@deprecated(reason: \"Use `avatarUrl` input field.\") - The URL of the avatar of the channel.",
             "type": {
               "kind": "SCALAR",
               "name": "String",
@@ -6245,6 +6325,22 @@
             "deprecationReason": "Use `creator` field."
           },
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the collection was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The creation date (DateTime ISO8601) of the collection.",
             "args": [],
@@ -6253,8 +6349,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "creator",
@@ -6529,6 +6625,22 @@
             "deprecationReason": "Use `thumbnailURL` field."
           },
           {
+            "name": "updateDate",
+            "description": "The date and time (ISO 8601 format) when the collection was updated.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "updatedAt",
             "description": "The updated date (DateTime ISO8601) of the collection.",
             "args": [],
@@ -6537,8 +6649,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `updateDate` field."
           },
           {
             "name": "videos",
@@ -7161,13 +7273,9 @@
             "description": "The commented story.",
             "args": [],
             "type": {
-              "kind": "NON_NULL",
-              "name": null,
-              "ofType": {
-                "kind": "UNION",
-                "name": "Story",
-                "ofType": null
-              }
+              "kind": "UNION",
+              "name": "Story",
+              "ofType": null
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -7970,6 +8078,18 @@
             "deprecationReason": null
           },
           {
+            "name": "interactions",
+            "description": "A list of interactions.",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "InteractionConnection",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "story",
             "description": "The Story.",
             "args": [],
@@ -8145,11 +8265,35 @@
             "deprecationReason": null
           },
           {
+            "name": "id",
+            "description": "Filter conversations by id.",
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "IDOperator",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "story",
             "description": "Filter conversations by story.",
             "type": {
               "kind": "INPUT_OBJECT",
               "name": "StoryOperator",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "storyId",
+            "description": "Filter conversations by story ID.",
+            "type": {
+              "kind": "INPUT_OBJECT",
+              "name": "IDOperator",
               "ofType": null
             },
             "defaultValue": null,
@@ -8388,7 +8532,19 @@
           },
           {
             "name": "endAt",
-            "description": "The end date and time (DateTime ISO8601) of the rule if enabled.",
+            "description": "@deprecated(reason: \"Use `endDate` input field.\") - The end date and time (DateTime ISO8601) of the rule if enabled.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "endDate",
+            "description": "The date and time (ISO 8601 format) when the rule ends (if enabled).",
             "type": {
               "kind": "SCALAR",
               "name": "DateTime",
@@ -8428,7 +8584,19 @@
           },
           {
             "name": "startAt",
-            "description": "Start date and time (DateTime ISO8601) of the rule if enabled.",
+            "description": "@deprecated(reason: \"Use `endDate` input field.\") - Start date and time (DateTime ISO8601) of the rule if enabled.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "startDate",
+            "description": "The date and time (ISO 8601 format) when the rule starts (if enabled).",
             "type": {
               "kind": "SCALAR",
               "name": "DateTime",
@@ -8905,7 +9073,7 @@
           },
           {
             "name": "name",
-            "description": "The name of the user. @deprecated(reason: Use `firstName` and `lastName` respectively).",
+            "description": "@deprecated(reason: \"Use `firstName` and `lastName` respectively.\") - The name of the user.",
             "type": {
               "kind": "SCALAR",
               "name": "String",
@@ -9967,8 +10135,8 @@
         "description": "Represents an experiment (A/B testing) matched/enabled for a client.",
         "fields": [
           {
-            "name": "endingAt",
-            "description": "The end date and time (DateTime ISO8601) of the experiment if enabled.",
+            "name": "endDate",
+            "description": "The date and time (ISO 8601 format) when the experiment ends (if enabled).",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -9977,6 +10145,18 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "endingAt",
+            "description": "The end date and time (DateTime ISO8601) of the experiment if enabled.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "isDeprecated": true,
+            "deprecationReason": "Use `endDate` field."
           },
           {
             "name": "id",
@@ -10017,6 +10197,18 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "reviewedAt",
+            "description": "The reviewed date (DateTime ISO8601) of the media.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "isDeprecated": true,
+            "deprecationReason": "Use `reviewDate` field."
           },
           {
             "name": "tags",
@@ -10347,7 +10539,7 @@
       {
         "kind": "OBJECT",
         "name": "Favorite",
-        "description": "Represents a Favorite (an interaction).",
+        "description": "Represents a Favorite (an activity).",
         "fields": [
           {
             "name": "id",
@@ -11528,6 +11720,22 @@
             "deprecationReason": null
           },
           {
+            "name": "followDate",
+            "description": "The date and time (ISO 8601 format) when the channel was followed.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "followedAt",
             "description": "The date and time (DateTime ISO8601) the channel was followed at.",
             "args": [],
@@ -11536,8 +11744,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `followDate` field"
           },
           {
             "name": "id",
@@ -11711,6 +11919,22 @@
         "name": "FollowedTopic",
         "description": "Information about a topic that is being followed by a user.",
         "fields": [
+          {
+            "name": "followDate",
+            "description": "The date and time (ISO 8601 format) when the topic was followed.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
           {
             "name": "followedAt",
             "description": "The date and time (Date ISO8601) the topic was followed at.",
@@ -13164,7 +13388,7 @@
               "name": null,
               "ofType": {
                 "kind": "INPUT_OBJECT",
-                "name": "InteractionOperator",
+                "name": "ActivityOperator",
                 "ofType": null
               }
             },
@@ -13417,60 +13641,121 @@
         "possibleTypes": null
       },
       {
-        "kind": "ENUM",
+        "kind": "UNION",
         "name": "Interaction",
-        "description": "The possible values for an Interaction.",
+        "description": "Types that can be an Interaction.",
         "fields": null,
         "inputFields": null,
         "interfaces": null,
-        "enumValues": [
+        "enumValues": null,
+        "possibleTypes": [
           {
-            "name": "FAVORITED",
-            "description": "An interaction that is `favorited`.",
+            "kind": "OBJECT",
+            "name": "Comment",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "Reaction",
+            "ofType": null
+          }
+        ]
+      },
+      {
+        "kind": "OBJECT",
+        "name": "InteractionConnection",
+        "description": "A connection to a list of items.",
+        "fields": [
+          {
+            "name": "edges",
+            "description": "A list of edges.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "InteractionEdge",
+                  "ofType": null
+                }
+              }
+            },
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
-            "name": "LIKED",
-            "description": "An interaction that is `liked`.",
+            "name": "metadata",
+            "description": "The metadata of the connection.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "Metadata",
+                "ofType": null
+              }
+            },
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
-            "name": "SAVED",
-            "description": "An interaction that is `saved`.",
+            "name": "pageInfo",
+            "description": "Information to aid in pagination.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "PageInfo",
+                "ofType": null
+              }
+            },
             "isDeprecated": false,
             "deprecationReason": null
           },
           {
-            "name": "WATCHED",
-            "description": "An interaction that is `watched`.",
+            "name": "totalCount",
+            "description": "The total number of items. A null value indicates that the information is unavailable for the connection.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            },
             "isDeprecated": false,
             "deprecationReason": null
           }
         ],
+        "inputFields": null,
+        "interfaces": [],
+        "enumValues": null,
         "possibleTypes": null
       },
       {
-        "kind": "INPUT_OBJECT",
-        "name": "InteractionOperator",
-        "description": "The available input fields of an Interaction operator.",
-        "fields": null,
-        "inputFields": [
+        "kind": "OBJECT",
+        "name": "InteractionEdge",
+        "description": "An edge in a connection.",
+        "fields": [
           {
-            "name": "eq",
-            "description": "Short for equal, must match the given data exactly.",
+            "name": "node",
+            "description": "The item at the end of the edge.",
+            "args": [],
             "type": {
-              "kind": "ENUM",
+              "kind": "UNION",
               "name": "Interaction",
               "ofType": null
             },
-            "defaultValue": null,
             "isDeprecated": false,
             "deprecationReason": null
           }
         ],
-        "interfaces": null,
+        "inputFields": null,
+        "interfaces": [],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -14366,6 +14651,22 @@
             "deprecationReason": null
           },
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the live was last aired (if never aired, then when it was created).",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The last aired date (DateTime ISO8601), if never aired, then the creation date (DateTime ISO8601) of the live.",
             "args": [],
@@ -14374,8 +14675,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "creator",
@@ -14465,6 +14766,18 @@
           {
             "name": "endAt",
             "description": "The date (DateTime ISO8601) the live ends.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "isDeprecated": true,
+            "deprecationReason": "Use `endDate` field."
+          },
+          {
+            "name": "endDate",
+            "description": "The date and time (ISO 8601 format) when the live ends.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -14904,6 +15217,18 @@
               "name": "DateTime",
               "ofType": null
             },
+            "isDeprecated": true,
+            "deprecationReason": "Use `startDate` field."
+          },
+          {
+            "name": "startDate",
+            "description": "The date and time (ISO 8601 format) when the live starts.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
             "isDeprecated": false,
             "deprecationReason": null
           },
@@ -15125,6 +15450,22 @@
             "deprecationReason": null
           },
           {
+            "name": "updateDate",
+            "description": "The date and time (ISO 8601 format) when the live was updated.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "updatedAt",
             "description": "The updated date (DateTime ISO8601) of the live.",
             "args": [],
@@ -15133,8 +15474,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `updateDate` field."
           },
           {
             "name": "url",
@@ -16576,8 +16917,8 @@
             "deprecationReason": null
           },
           {
-            "name": "reviewedAt",
-            "description": "The reviewed date (DateTime ISO8601) of the media.",
+            "name": "reviewDate",
+            "description": "The date and time (ISO 8601 format) when the media was reviewed.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -16586,6 +16927,18 @@
             },
             "isDeprecated": false,
             "deprecationReason": null
+          },
+          {
+            "name": "reviewedAt",
+            "description": "The reviewed date (DateTime ISO8601) of the media.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "isDeprecated": true,
+            "deprecationReason": "Use `reviewDate` field."
           }
         ],
         "inputFields": null,
@@ -21649,6 +22002,22 @@
         "description": "A partner report file.",
         "fields": [
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the report was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The creation date of the report.",
             "args": [],
@@ -21657,8 +22026,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "downloadLinks",
@@ -25544,6 +25913,22 @@
         "description": "Represents a Reaction in a recording format.",
         "fields": [
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the reaction was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The creation date (DateTime ISO8601) of the reaction.",
             "args": [],
@@ -25552,8 +25937,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "creator",
@@ -27744,6 +28129,22 @@
         "description": "Represents a node with a Recording.",
         "fields": [
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the recording was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The creation date (DateTime ISO8601) of the recording.",
             "args": [],
@@ -27752,8 +28153,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "reactions",
@@ -28966,7 +29367,7 @@
           },
           {
             "name": "type",
-            "description": "The type of report. Valid types are (child_abuse, copyrightowner, crime_apology, disinformation, harmful_for_children, hateful_content, porn, spam, terrorism, violent). @deprecated(reason: \"Use input field `violation`.\").",
+            "description": "@deprecated(reason: \"Use `violation` input field.\") - The type of report. Valid types are (child_abuse, copyrightowner, crime_apology, disinformation, harmful_for_children, hateful_content, porn, spam, terrorism, violent).",
             "type": {
               "kind": "SCALAR",
               "name": "String",
@@ -29513,7 +29914,7 @@
         "fields": [
           {
             "name": "complexCondition",
-            "description": "Indicates if the condition is a complex condition, a.k.a custom made.",
+            "description": "Indicates if the rule has a complex (customized) condition.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -29525,12 +29926,28 @@
           },
           {
             "name": "condition",
-            "description": "The detailed logic of the feature.",
+            "description": "The detailed logic of the rule.",
             "args": [],
             "type": {
               "kind": "SCALAR",
               "name": "String",
               "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the rule was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -29544,12 +29961,12 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "creatorXid",
-            "description": "The unique id of the user that created the feature.",
+            "description": "The unique id of the user that created the rule.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -29561,7 +29978,7 @@
           },
           {
             "name": "description",
-            "description": "A human-readable description of the feature.",
+            "description": "A human-readable description of the rule.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -29573,7 +29990,7 @@
           },
           {
             "name": "enabled",
-            "description": "Whether the feature is enabled or not.",
+            "description": "Indicated whether the feature is enabled.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -29586,6 +30003,18 @@
           {
             "name": "endAt",
             "description": "End date and time (DateTime ISO8601) of the feature if enabled.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "isDeprecated": true,
+            "deprecationReason": "Use `endDate` field"
+          },
+          {
+            "name": "endDate",
+            "description": "The date and time (ISO 8601 format) when the rule ends.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -29625,7 +30054,7 @@
           },
           {
             "name": "name",
-            "description": "The name for the feature.",
+            "description": "The name of the rule.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -29638,6 +30067,18 @@
           {
             "name": "startAt",
             "description": "Start date and time (DateTime ISO8601) of the feature if enabled.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "isDeprecated": true,
+            "deprecationReason": "Use `starDate` field"
+          },
+          {
+            "name": "startDate",
+            "description": "The date and time (ISO 8601 format) when the rule starts.",
             "args": [],
             "type": {
               "kind": "SCALAR",
@@ -29685,6 +30126,22 @@
             "deprecationReason": null
           },
           {
+            "name": "updateDate",
+            "description": "The date and time (ISO 8601 format) when the rule was updated.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "updatedAt",
             "description": "The last update date-time of the feature.",
             "args": [],
@@ -29693,8 +30150,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `updateDate` field."
           },
           {
             "name": "uuid",
@@ -32217,6 +32674,22 @@
             "deprecationReason": null
           },
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the topic was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The creation date (DateTime ISO8601) of the topic.",
             "args": [],
@@ -32225,8 +32698,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "id",
@@ -32342,6 +32815,22 @@
             "deprecationReason": "Use `coverURL` field."
           },
           {
+            "name": "updateDate",
+            "description": "The date and time (ISO 8601 format) when the topic was updated.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "updatedAt",
             "description": "The update date (DateTime ISO8601) of the topic.",
             "args": [],
@@ -32350,8 +32839,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `updateDate` field."
           },
           {
             "name": "url",
@@ -33388,7 +33877,19 @@
           },
           {
             "name": "endAt",
-            "description": "End date and time (DateTime ISO8601) of the rule if enabled.",
+            "description": "@deprecated(reason: \"Use `endDate` input field.\") - End date and time (DateTime ISO8601) of the rule if enabled.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "endDate",
+            "description": "The date and time (ISO 8601 format) when the rule ends.",
             "type": {
               "kind": "SCALAR",
               "name": "DateTime",
@@ -33441,6 +33942,18 @@
           {
             "name": "startAt",
             "description": "Start date and time (DateTime ISO8601) of the rule if enabled.",
+            "type": {
+              "kind": "SCALAR",
+              "name": "DateTime",
+              "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "startDate",
+            "description": "@deprecated(reason: \"Use `startDate` input field.\") - The date and time (ISO 8601 format) when the rule starts.",
             "type": {
               "kind": "SCALAR",
               "name": "DateTime",
@@ -34197,7 +34710,7 @@
           },
           {
             "name": "email",
-            "description": "The email address of the user. This field is deprecated: Use mutation `emailChangeRequest`.",
+            "description": "@deprecated(reason: \"Use mutation `emailChangeRequest`.\") - The email address of the user.",
             "type": {
               "kind": "SCALAR",
               "name": "String",
@@ -34281,7 +34794,7 @@
           },
           {
             "name": "name",
-            "description": "The name of the user. @deprecated(reason: Use `firstName` and `lastName` respectively).",
+            "description": "@deprecated(reason: \"Use `firstName` and `lastName` respectively.\") - The name of the user.",
             "type": {
               "kind": "SCALAR",
               "name": "String",
@@ -34969,6 +35482,22 @@
             "deprecationReason": "Use `channel.banner`."
           },
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the user was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The creation date (DateTime ISO8601) of the user.",
             "args": [],
@@ -34977,8 +35506,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "email",
@@ -38046,6 +38575,22 @@
             "deprecationReason": null
           },
           {
+            "name": "createDate",
+            "description": "The date and time (ISO 8601 format) when the video was created.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "createdAt",
             "description": "The creation date (DateTime ISO8601) of the video.",
             "args": [],
@@ -38054,8 +38599,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `createDate` field."
           },
           {
             "name": "creator",
@@ -39126,6 +39671,22 @@
             "deprecationReason": null
           },
           {
+            "name": "updateDate",
+            "description": "The date and time (ISO 8601 format) when the video was updated.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "DateTime",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "updatedAt",
             "description": "The last update date (DateTime ISO8601) of the video.",
             "args": [],
@@ -39134,8 +39695,8 @@
               "name": "DateTime",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `updateDate` field."
           },
           {
             "name": "uploadInfo",
@@ -40861,7 +41422,7 @@
       {
         "kind": "OBJECT",
         "name": "Watch",
-        "description": "Represents a Watch (an interaction).",
+        "description": "Represents a Watch (an activity).",
         "fields": [
           {
             "name": "id",
