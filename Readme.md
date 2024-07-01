@@ -19,7 +19,7 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Settings / Hide sensitive content
 - [x] - Settings / Prefered Country
 - [x] - Sign in (import subscriptions and playlists (and Likes, Favorites, Recently Watched))
-- [x] - Policentric Comments
+- [x] - Polycentric Comments
 - [x] - Subtitles
 - [x] - State management
 
