@@ -21,7 +21,11 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Sign in (import subscriptions and playlists (and Likes, Favorites, Recently Watched))
 - [x] - Polycentric Comments
 - [x] - Subtitles
-- [x] - State management
+
+## Work in progress (wip)
+
+- [ ] - Harbor account verification
+
 
 ## Todo 
 - [ ] - Unit tests - (wip)
