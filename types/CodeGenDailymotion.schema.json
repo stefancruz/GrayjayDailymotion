@@ -4618,6 +4618,18 @@
             "deprecationReason": "Use `logolURL` field."
           },
           {
+            "name": "updateRequired",
+            "description": "Required updates on the channel, as it does not respect the community guidelines.",
+            "args": [],
+            "type": {
+              "kind": "OBJECT",
+              "name": "ChannelUpdateRequired",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "videos",
             "description": "The videos of the channel.",
             "args": [
@@ -6033,6 +6045,33 @@
             "ofType": null
           }
         ],
+        "enumValues": null,
+        "possibleTypes": null
+      },
+      {
+        "kind": "OBJECT",
+        "name": "ChannelUpdateRequired",
+        "description": "Information about required updates on the channel.",
+        "fields": [
+          {
+            "name": "name",
+            "description": "Indicates whether the name of the channel is required to be updated.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          }
+        ],
+        "inputFields": null,
+        "interfaces": [],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -28194,6 +28233,18 @@
             "deprecationReason": null
           },
           {
+            "name": "shareUrls",
+            "description": "The share urls of the recording.",
+            "args": [],
+            "type": {
+              "kind": "INTERFACE",
+              "name": "ShareUrls",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "thumbnail",
             "description": "The URL of the recording thumbnail image.",
             "args": [
@@ -28243,8 +28294,8 @@
               "name": "String",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `shareUrls.permalink` field."
           }
         ],
         "inputFields": null,

@@ -840,6 +840,8 @@ export type Channel = Node & {
    * @deprecated Use `logolURL` field.
    */
   thumbnails?: Maybe<Thumbnails>;
+  /** Required updates on the channel, as it does not respect the community guidelines. */
+  updateRequired?: Maybe<ChannelUpdateRequired>;
   /** The videos of the channel. */
   videos?: Maybe<VideoConnection>;
   /**
@@ -1243,6 +1245,13 @@ export type ChannelStatsViews = Node & {
   id: Scalars['ID']['output'];
   /** The total number of views of the channel. */
   total?: Maybe<Scalars['BigInt']['output']>;
+};
+
+/** Information about required updates on the channel. */
+export type ChannelUpdateRequired = {
+  __typename?: 'ChannelUpdateRequired';
+  /** Indicates whether the name of the channel is required to be updated. */
+  name: Scalars['Boolean']['output'];
 };
 
 /** The possible sort options for channels. */
@@ -6066,11 +6075,16 @@ export type Recording = {
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The reactions created on the recording. */
   reactions?: Maybe<ReactionConnection>;
+  /** The share urls of the recording. */
+  shareUrls?: Maybe<ShareUrls>;
   /** The URL of the recording thumbnail image. */
   thumbnail?: Maybe<Image>;
   /** The title of the recording. */
   title?: Maybe<Scalars['String']['output']>;
-  /** The URL of the recording. */
+  /**
+   * The URL of the recording.
+   * @deprecated Use `shareUrls.permalink` field.
+   */
   url?: Maybe<Scalars['String']['output']>;
 };
 
@@ -9247,6 +9261,7 @@ export type ResolversTypes = {
   ChannelStatsReactions: ResolverTypeWrapper<ChannelStatsReactions>;
   ChannelStatsVideos: ResolverTypeWrapper<ChannelStatsVideos>;
   ChannelStatsViews: ResolverTypeWrapper<ChannelStatsViews>;
+  ChannelUpdateRequired: ResolverTypeWrapper<ChannelUpdateRequired>;
   ChannelsSort: ChannelsSort;
   ClearCollectionMediasInput: ClearCollectionMediasInput;
   ClearCollectionMediasPayload: ResolverTypeWrapper<ClearCollectionMediasPayload>;
@@ -9797,6 +9812,7 @@ export type ResolversParentTypes = {
   ChannelStatsReactions: ChannelStatsReactions;
   ChannelStatsVideos: ChannelStatsVideos;
   ChannelStatsViews: ChannelStatsViews;
+  ChannelUpdateRequired: ChannelUpdateRequired;
   ClearCollectionMediasInput: ClearCollectionMediasInput;
   ClearCollectionMediasPayload: ClearCollectionMediasPayload;
   ClearLikedVideosInput: ClearLikedVideosInput;
@@ -10554,6 +10570,7 @@ export type ChannelResolvers<ContextType = any, ParentType extends ResolversPare
   stats?: Resolver<Maybe<ResolversTypes['ChannelStats']>, ParentType, ContextType>;
   tagline?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   thumbnails?: Resolver<Maybe<ResolversTypes['Thumbnails']>, ParentType, ContextType>;
+  updateRequired?: Resolver<Maybe<ResolversTypes['ChannelUpdateRequired']>, ParentType, ContextType>;
   videos?: Resolver<Maybe<ResolversTypes['VideoConnection']>, ParentType, ContextType, RequireFields<ChannelVideosArgs, 'first' | 'page'>>;
   viewCount?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
   xid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -10670,6 +10687,11 @@ export type ChannelStatsVideosResolvers<ContextType = any, ParentType extends Re
 export type ChannelStatsViewsResolvers<ContextType = any, ParentType extends ResolversParentTypes['ChannelStatsViews'] = ResolversParentTypes['ChannelStatsViews']> = {
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   total?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type ChannelUpdateRequiredResolvers<ContextType = any, ParentType extends ResolversParentTypes['ChannelUpdateRequired'] = ResolversParentTypes['ChannelUpdateRequired']> = {
+  name?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
@@ -12286,6 +12308,7 @@ export type RecordingResolvers<ContextType = any, ParentType extends ResolversPa
   createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   reactions?: Resolver<Maybe<ResolversTypes['ReactionConnection']>, ParentType, ContextType, RequireFields<RecordingReactionsArgs, 'first' | 'page'>>;
+  shareUrls?: Resolver<Maybe<ResolversTypes['ShareUrls']>, ParentType, ContextType>;
   thumbnail?: Resolver<Maybe<ResolversTypes['Image']>, ParentType, ContextType, RequireFields<RecordingThumbnailArgs, 'height'>>;
   title?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -13324,6 +13347,7 @@ export type Resolvers<ContextType = any> = {
   ChannelStatsReactions?: ChannelStatsReactionsResolvers<ContextType>;
   ChannelStatsVideos?: ChannelStatsVideosResolvers<ContextType>;
   ChannelStatsViews?: ChannelStatsViewsResolvers<ContextType>;
+  ChannelUpdateRequired?: ChannelUpdateRequiredResolvers<ContextType>;
   ClearCollectionMediasPayload?: ClearCollectionMediasPayloadResolvers<ContextType>;
   ClearLikedVideosPayload?: ClearLikedVideosPayloadResolvers<ContextType>;
   ClearWatchLaterVideosPayload?: ClearWatchLaterVideosPayloadResolvers<ContextType>;
