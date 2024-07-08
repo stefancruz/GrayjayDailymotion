@@ -1912,7 +1912,6 @@ source.getContentDetails = function (url) {
 source.saveState = () => {
     return JSON.stringify(state);
 };
-};
 //Playlist
 source.isPlaylistUrl = (url) => {
     return url.startsWith(BASE_URL_PLAYLIST) ||
@@ -2056,6 +2055,14 @@ source.getUserPlaylists = () => {
         }
     });
     return playlists;
+};
+source.getChannelTemplateByClaimMap = () => {
+    return {
+        //Dailymotion claim type
+        27: {
+            0: BASE_URL + "/{{CLAIMVALUE}}",
+        }
+    };
 };
 function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
     const collections = executeGqlQuery(getHttpContext({ usePlatformAuth }), {
@@ -2539,3 +2546,4 @@ function getHttpContext(opts = { usePlatformAuth: false }) {
     return opts.usePlatformAuth ? http : httpClientAnonymous;
 }
 log("LOADED");
+//# sourceMappingURL=DailymotionScript.js.map
