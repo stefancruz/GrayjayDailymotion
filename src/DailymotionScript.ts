@@ -367,10 +367,6 @@ source.getUserSubscriptions = (): string[] => {
 		// Accept: '*/*, */*',
 		'Accept-Language': 'en-GB',
 		Referer: `${BASE_URL}/library/subscriptions`,
-		'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-		'X-DM-Neon-SSR': '0',
 		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
 		Origin: BASE_URL,
 		DNT: '1',
@@ -387,7 +383,7 @@ source.getUserSubscriptions = (): string[] => {
 
 	const fetchSubscriptions = (page, first): string[] => {
 		const jsonResponse = executeGqlQuery(
-			getHttpContext({ usePlatformAuth }),
+			http,
 			{
 				operationName: 'SUBSCRIPTIONS_QUERY',
 				variables: {
@@ -436,13 +432,9 @@ source.getUserPlaylists = (): string[] => {
 	const headers = {
 		'Content-Type': 'application/json',
 		'User-Agent': USER_AGENT,
-		// Accept: '*/*, */*',
 		'Accept-Language': 'en-GB',
-		Referer: `${BASE_URL}/library/subscriptions`,
-		'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-		'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-		'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-		'X-DM-Neon-SSR': '0',
+		Referer: 'https://www.dailymotion.com/',
+		'Sec-GPC': '1',
 		'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
 		Origin: BASE_URL,
 		DNT: '1',
@@ -450,13 +442,13 @@ source.getUserPlaylists = (): string[] => {
 		'Sec-Fetch-Dest': 'empty',
 		'Sec-Fetch-Mode': 'cors',
 		'Sec-Fetch-Site': 'same-site',
-		Priority: 'u=4',
+		Priority: 'u=1',
 		Pragma: 'no-cache',
 		'Cache-Control': 'no-cache',
 	}
 
 	const jsonResponse = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: true }),
+		http,
 		{
 			operationName: 'SUBSCRIPTIONS_QUERY',
 			headers,
@@ -993,10 +985,10 @@ function executeGqlQuery(httpClient, requestOptions) {
 		variables: requestOptions.variables,
 		query: requestOptions.query,
 	});
-
+	
 	const usePlatformAuth = requestOptions.usePlatformAuth == undefined ? false : requestOptions.usePlatformAuth;
 	const throwOnError = requestOptions.throwOnError == undefined ? true : requestOptions.throwOnError;
-
+	
 	if (!usePlatformAuth) {
 		headersToAdd.Authorization = state.anonymousUserAuthorizationToken;
 	}

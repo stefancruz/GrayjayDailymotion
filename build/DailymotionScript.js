@@ -13,7 +13,7 @@ const CLIENT_ID = 'f1a362d288c1b98099c7';
 const CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
 const X_DM_AppInfo_Id = "com.dailymotion.neon";
 const X_DM_AppInfo_Type = "website";
-const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z"; //TODO check how to get this dynamically
+const X_DM_AppInfo_Version = "v2024-07-02T13:55:47.186Z"; //TODO check how to get this dynamically
 const X_DM_Neon_SSR = "0";
 const PLATFORM = "Dailymotion";
 const PLATFORM_CLAIMTYPE = 27;
@@ -1963,10 +1963,6 @@ source.getUserSubscriptions = () => {
         // Accept: '*/*, */*',
         'Accept-Language': 'en-GB',
         Referer: `${BASE_URL}/library/subscriptions`,
-        'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-        'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-        'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-        'X-DM-Neon-SSR': '0',
         'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
         Origin: BASE_URL,
         DNT: '1',
@@ -1980,7 +1976,7 @@ source.getUserSubscriptions = () => {
     };
     const usePlatformAuth = true;
     const fetchSubscriptions = (page, first) => {
-        const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth }), {
+        const jsonResponse = executeGqlQuery(http, {
             operationName: 'SUBSCRIPTIONS_QUERY',
             variables: {
                 first: first,
@@ -2016,13 +2012,9 @@ source.getUserPlaylists = () => {
     const headers = {
         'Content-Type': 'application/json',
         'User-Agent': USER_AGENT,
-        // Accept: '*/*, */*',
         'Accept-Language': 'en-GB',
-        Referer: `${BASE_URL}/library/subscriptions`,
-        'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-        'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-        'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-        'X-DM-Neon-SSR': '0',
+        Referer: 'https://www.dailymotion.com/',
+        'Sec-GPC': '1',
         'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
         Origin: BASE_URL,
         DNT: '1',
@@ -2030,11 +2022,11 @@ source.getUserPlaylists = () => {
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
-        Priority: 'u=4',
+        Priority: 'u=1',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache',
     };
-    const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: true }), {
+    const jsonResponse = executeGqlQuery(http, {
         operationName: 'SUBSCRIPTIONS_QUERY',
         headers,
         query: SUBSCRIPTIONS_QUERY,

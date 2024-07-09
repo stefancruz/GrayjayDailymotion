@@ -27,15 +27,15 @@
     "static2.dmcdn.net"
   ],
   "authentication": {
-    "loginUrl": "https://www.dailymotion.com/signin?urlback=/video/x34e1fp",
-    "cookiesToFind": [
-      "damd",
-      "refresh_token",
-      "access_token"
-    ],
+    "loginUrl": "https://www.dailymotion.com/signin?urlback=/library",
+    "completionUrl":"https://www.dailymotion.com/library",
     "domainHeadersToFind": {
-      ".graphql.api.dailymotion.com": [
-        "Authorization"
+      "graphql.api.dailymotion.com": [
+        "Authorization",
+        "X-DM-AppInfo-Id",
+        "X-DM-AppInfo-Type",
+        "X-DM-AppInfo-Version",
+        "X-DM-Neon-SSR"
       ]
     },
     "userAgent": "Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36"

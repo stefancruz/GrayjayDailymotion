@@ -1418,6 +1418,12 @@ interface IHttp {
     * @return {void}
     **/
     setDefaultHeaders(headers: Map<string, string>): void
+
+    /**
+     * @param {Boolean} allow
+     * @return {void}
+     * */
+    setDoAllowNewCookies(allow: boolean): void
 }
 
 

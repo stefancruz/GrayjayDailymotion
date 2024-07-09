@@ -14,7 +14,7 @@ export const CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
 
 export const X_DM_AppInfo_Id = "com.dailymotion.neon"
 export const X_DM_AppInfo_Type = "website"
-export const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z" //TODO check how to get this dynamically
+export const X_DM_AppInfo_Version = "v2024-07-02T13:55:47.186Z" //TODO check how to get this dynamically
 export const X_DM_Neon_SSR = "0"
 
 export const PLATFORM = "Dailymotion";
