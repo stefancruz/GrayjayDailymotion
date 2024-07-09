@@ -1762,7 +1762,6 @@ const state = {
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST";
 const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST";
 const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST";
-let httpClientRequestToken = http.newClient(false);
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection = [];
 source.setSettings = function (settings) {
@@ -1772,14 +1771,15 @@ source.setSettings = function (settings) {
 //Source Methods
 source.enable = function (conf, settings, saveStateStr) {
     config = conf ?? {};
-    _settings = settings ?? {};
+    _settings = settings ?? {
+        hideSensitiveContent: false,
+        avatarSizeOptionIndex: 8,
+        thumbnailResolutionOptionIndex: 7,
+        preferredCountryOptionIndex: 0,
+        videosPerPageOptionIndex: 4,
+        playlistsPerPageOptionIndex: 0
+    };
     if (IS_TESTING) {
-        _settings.hideSensitiveContent = false;
-        _settings.avatarSizeOptionIndex = 8;
-        _settings.thumbnailResolutionOptionIndex = 7;
-        _settings.preferredCountryOptionIndex = 0;
-        _settings.videosPerPageOptionIndex = 4;
-        _settings.playlistsPerPageOptionIndex = 0;
         config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5";
     }
     let didSaveState = false;
@@ -1810,7 +1810,7 @@ source.enable = function (conf, settings, saveStateStr) {
             client_secret: CLIENT_SECRET,
             grant_type: 'client_credentials'
         });
-        const res = httpClientRequestToken.POST(BASE_URL_API_AUTH, body, {
+        const res = http.POST(BASE_URL_API_AUTH, body, {
             'User-Agent': USER_AGENT,
             'Content-Type': 'application/x-www-form-urlencoded',
             'Origin': BASE_URL,
@@ -2531,4 +2531,3 @@ function getPlatformSystemPlaylist(opts) {
     return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection, videos);
 }
 log("LOADED");
-//# sourceMappingURL=DailymotionScript.js.map
