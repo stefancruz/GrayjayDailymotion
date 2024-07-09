@@ -95,7 +95,6 @@ import {
 
 
 
-let httpClientAnonymous: IHttp = http.newClient(false);
 let httpClientRequestToken: IHttp = http.newClient(false);
 
 
@@ -203,7 +202,7 @@ source.searchSuggestions = function (query): string[] {
 	try {
 
 		const jsonResponse = executeGqlQuery(
-			getHttpContext({ usePlatformAuth: false }),
+			http,
 			{
 				operationName: 'AUTOCOMPLETE_QUERY',
 				variables: {
@@ -241,7 +240,7 @@ source.getChannel = function (url) {
 	const channel_name = getChannelNameFromUrl(url);
 
 	const channelDetails = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: false }),
+		http,
 		{
 			operationName: 'CHANNEL_QUERY_DESKTOP',
 			variables: {
@@ -313,20 +312,18 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 
 	const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
 
-	const httpClient = getHttpContext({ usePlatformAuth });
-
 	const thumbnailResolutionIndex = _settings.thumbnailResolutionOptionIndex;
 
 	if (url === LIKE_PLAYLIST_ID) {
-		return getLikePlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+		return getLikePlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
 	if (url === FAVORITES_PLAYLIST_ID) {
-		return getFavoritesPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+		return getFavoritesPlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
 	if (url === RECENTLY_WATCHED_PLAYLIST_ID) {
-		return getRecentlyWatchedPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+		return getRecentlyWatchedPlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
 	}
 
 	const xid = url.split('/').pop();
@@ -338,7 +335,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
 	}
 
 	let jsonResponse = executeGqlQuery(
-		httpClient,
+		http,
 		{
 			operationName: 'PLAYLIST_VIDEO_QUERY',
 			variables,
@@ -493,7 +490,7 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false): str
 
 
 	const collections = executeGqlQuery(
-		getHttpContext({ usePlatformAuth }),
+		http,
 		{
 			operationName: 'CHANNEL_PLAYLISTS_QUERY',
 			variables: {
@@ -544,7 +541,7 @@ function searchPlaylists(contextQuery) {
 
 
 	const jsonResponse = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: false }),
+		http,
 		{
 			operationName: 'SEARCH_QUERY',
 			variables: variables,
@@ -608,11 +605,9 @@ function getVideoPager(params, page) {
 
 	let obj;
 
-	const anonymousHttpClient = getHttpContext({ usePlatformAuth: false });
-
 	try {
 		obj = executeGqlQuery(
-			anonymousHttpClient,
+			http,
 			{
 				operationName: 'SEACH_DISCOVERY_QUERY',
 				variables: {
@@ -664,9 +659,8 @@ function getChannelContentsPager(url, page, type, order, filters) {
 		sort = LikedMediaSort.Recent;
 	}
 
-	const anonymousHttpClient = getHttpContext({ usePlatformAuth: false });
 	const jsonResponse = executeGqlQuery(
-		anonymousHttpClient,
+		http,
 		{
 			operationName: 'CHANNEL_VIDEOS_QUERY',
 			variables: {
@@ -731,7 +725,7 @@ function getSearchPagerAll(contextQuery): VideoPager {
 
 
 	const jsonResponse = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: false }),
+		http,
 		{
 			operationName: 'SEARCH_QUERY',
 			variables: variables,
@@ -786,7 +780,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		headers1["Cookie"] = "ff=off"
 	}
 
-	const player_metadataResponse = getHttpContext({ usePlatformAuth }).GET(player_metadata_url, headers1, usePlatformAuth);
+	const player_metadataResponse = http.GET(player_metadata_url, headers1, usePlatformAuth);
 
 	if (!player_metadataResponse.isOk) {
 		throw new UnavailableException('Unable to get player metadata');
@@ -841,7 +835,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 			query: WATCHING_VIDEO
 		});
 
-	const video_details_response = getHttpContext({ usePlatformAuth }).POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth)
+	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth)
 
 	if (video_details_response.code != 200) {
 		throw new UnavailableException('Failed to get video details');
@@ -871,7 +865,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 function getSearchChannelPager(context) {
 
 	const searchResponse = executeGqlQuery(
-		getHttpContext({ usePlatformAuth: false }), {
+		http, {
 		operationName: "SEARCH_QUERY",
 		variables: {
 			query: context.q,
@@ -1133,11 +1127,6 @@ function getPlatformSystemPlaylist(opts: IPlatformSystemPlaylist): PlatformPlayl
 	}
 
 	return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection as Collection, videos);
-}
-
-
-function getHttpContext(opts: { usePlatformAuth: boolean } = { usePlatformAuth: false }): IHttp {
-	return opts.usePlatformAuth ? http : httpClientAnonymous;
 }
 
 log("LOADED");
