@@ -48,7 +48,7 @@ npm run build
 
 npm start - will build and watch for changes
 
-# notes:
+## Notes
 - Content of the 'build' folder should not be manually changed since it's recreated for each build. 
 - Used [rollup](https://rollupjs.org/) to bundle all the scripts into one.
 - Used npm shrinkwrap to lock the dependency versions of the project. This should avoid new bugs, vulnerabilities and breaking changes (in minor and patches), introduced when the dependencies are automatically updated by npm.
