@@ -11,7 +11,7 @@ module.exports = {
   output: {
     file: `${dest}/DailymotionScript.js`,
     format: 'cjs', // Use IIFE format for browser compatibility
-    sourcemap: false
+    sourcemap: true
   },
   plugins: [
     del({ targets: `${dest}/*` }), // Clean up the dist folder before building

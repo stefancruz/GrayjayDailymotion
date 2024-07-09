@@ -49,6 +49,24 @@ export type ActivateUserPayload = {
   status?: Maybe<Status>;
 };
 
+/** The possible values for an Activity. */
+export enum Activity {
+  /** An activity that is `favorited`. */
+  Favorited = 'FAVORITED',
+  /** An activity that is `liked`. */
+  Liked = 'LIKED',
+  /** An activity that is `saved`. */
+  Saved = 'SAVED',
+  /** An activity that is `watched`. */
+  Watched = 'WATCHED'
+}
+
+/** The available input fields of an Activity operator. */
+export type ActivityOperator = {
+  /** Short for equal, must match the given data exactly. */
+  eq?: InputMaybe<Activity>;
+};
+
 /** The input fields to add a video to a collection. */
 export type AddCollectionVideoInput = {
   /** The ID generated for the client performing the mutation. */
@@ -98,6 +116,8 @@ export type Algorithm = {
 
 /** The possible values for the name of algorithm. */
 export enum AlgorithmName {
+  /** An algorithm to explore content based on location. */
+  Explore = 'EXPLORE',
   /** An algorithm that considers what content to feature. */
   Featured = 'FEATURED',
   /** A personalized algorithm. */
@@ -255,7 +275,12 @@ export type AnalyticsReport = Node & {
   __typename?: 'AnalyticsReport';
   /** The Dailymotion ID of the channel in the report. */
   channelXid?: Maybe<Scalars['String']['output']>;
-  /** The creation date of the report. */
+  /** The date and time (ISO 8601 format) when the report was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date of the report.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['Date']['output']>;
   /** The Dailymotion user who created the report. */
   creator?: Maybe<User>;
@@ -815,6 +840,8 @@ export type Channel = Node & {
    * @deprecated Use `logolURL` field.
    */
   thumbnails?: Maybe<Thumbnails>;
+  /** Required updates on the channel, as it does not respect the community guidelines. */
+  updateRequired?: Maybe<ChannelUpdateRequired>;
   /** The videos of the channel. */
   videos?: Maybe<VideoConnection>;
   /**
@@ -971,7 +998,7 @@ export type ChannelConnection = {
 
 /** The input fields to create a channel. */
 export type ChannelCreateInput = {
-  /** The URL of the avatar of the channel. @deprecated(reason: "Use input field `avatarUrl`.") */
+  /** @deprecated(reason: "Use `avatarUrl` input field.") - The URL of the avatar of the channel. */
   avatarURL?: InputMaybe<Scalars['String']['input']>;
   /** The url of the avatar of the channel. */
   avatarUrl?: InputMaybe<Scalars['String']['input']>;
@@ -1220,6 +1247,13 @@ export type ChannelStatsViews = Node & {
   total?: Maybe<Scalars['BigInt']['output']>;
 };
 
+/** Information about required updates on the channel. */
+export type ChannelUpdateRequired = {
+  __typename?: 'ChannelUpdateRequired';
+  /** Indicates whether the name of the channel is required to be updated. */
+  name: Scalars['Boolean']['output'];
+};
+
 /** The possible sort options for channels. */
 export enum ChannelsSort {
   /** Sort by popular. */
@@ -1298,7 +1332,12 @@ export type Collection = Content & Node & {
    * @deprecated Use `creator` field.
    */
   channel?: Maybe<Channel>;
-  /** The creation date (DateTime ISO8601) of the collection. */
+  /** The date and time (ISO 8601 format) when the collection was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date (DateTime ISO8601) of the collection.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The creator that created the Collection. */
   creator?: Maybe<Channel>;
@@ -1335,7 +1374,12 @@ export type Collection = Content & Node & {
    * @deprecated Use `thumbnailURL` field.
    */
   thumbnails?: Maybe<Thumbnails>;
-  /** The updated date (DateTime ISO8601) of the collection. */
+  /** The date and time (ISO 8601 format) when the collection was updated. */
+  updateDate: Scalars['DateTime']['output'];
+  /**
+   * The updated date (DateTime ISO8601) of the collection.
+   * @deprecated Use `updateDate` field.
+   */
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
   /** The videos of the collection. */
   videos?: Maybe<VideoConnection>;
@@ -1489,7 +1533,7 @@ export type Comment = Node & {
   /** The metrics of the comment. */
   metrics?: Maybe<CommentMetrics>;
   /** The commented story. */
-  opener: Story;
+  opener?: Maybe<Story>;
   /** The content of the comment. */
   text: Scalars['String']['output'];
   /** The last update date (DateTime ISO8601) of the comment. */
@@ -1637,6 +1681,8 @@ export type Conversation = Node & {
   dailymotionAd?: Maybe<DailymotionAd>;
   /** The ID of the object. */
   id: Scalars['ID']['output'];
+  /** A list of interactions. */
+  interactions?: Maybe<InteractionConnection>;
   /** The Story. */
   story?: Maybe<Story>;
 };
@@ -1673,8 +1719,12 @@ export type ConversationEdge = {
 export type ConversationFilter = {
   /** Filter conversations by algorithm name. */
   algorithm?: InputMaybe<AlgorithmNameOperator>;
+  /** Filter conversations by id. */
+  id?: InputMaybe<IdOperator>;
   /** Filter conversations by story. */
   story?: InputMaybe<StoryOperator>;
+  /** Filter conversations by story ID. */
+  storyId?: InputMaybe<IdOperator>;
 };
 
 /** Information about a country. */
@@ -1723,14 +1773,18 @@ export type CreateBehaviorRuleInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   /** Indicates whether the rule is enabled. */
   enabled?: InputMaybe<Scalars['Boolean']['input']>;
-  /** The end date and time (DateTime ISO8601) of the rule if enabled. */
+  /** @deprecated(reason: "Use `endDate` input field.") - The end date and time (DateTime ISO8601) of the rule if enabled. */
   endAt?: InputMaybe<Scalars['DateTime']['input']>;
+  /** The date and time (ISO 8601 format) when the rule ends (if enabled). */
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
   /** Experiment configuration. If set, the rule will be an experiment (contains JSON). */
   experiment?: InputMaybe<Scalars['String']['input']>;
   /** The name of the new rule. */
   name: Scalars['String']['input'];
-  /** Start date and time (DateTime ISO8601) of the rule if enabled. */
+  /** @deprecated(reason: "Use `endDate` input field.") - Start date and time (DateTime ISO8601) of the rule if enabled. */
   startAt?: InputMaybe<Scalars['DateTime']['input']>;
+  /** The date and time (ISO 8601 format) when the rule starts (if enabled). */
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
   /** The tags associated with the rule. Useful for filtering. */
   tags?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
 };
@@ -1821,7 +1875,7 @@ export type CreateUserInput = {
   /** The gender of the user. */
   gender?: InputMaybe<Gender>;
   lastName?: InputMaybe<Scalars['String']['input']>;
-  /** The name of the user. @deprecated(reason: Use `firstName` and `lastName` respectively). */
+  /** @deprecated(reason: "Use `firstName` and `lastName` respectively.") - The name of the user. */
   name?: InputMaybe<Scalars['String']['input']>;
   /** The nickname of the user. */
   nickname?: InputMaybe<Scalars['String']['input']>;
@@ -2040,7 +2094,12 @@ export enum EmbedType {
 /** Represents an experiment (A/B testing) matched/enabled for a client. */
 export type ExperimentMatch = Node & {
   __typename?: 'ExperimentMatch';
-  /** The end date and time (DateTime ISO8601) of the experiment if enabled. */
+  /** The date and time (ISO 8601 format) when the experiment ends (if enabled). */
+  endDate?: Maybe<Scalars['DateTime']['output']>;
+  /**
+   * The end date and time (DateTime ISO8601) of the experiment if enabled.
+   * @deprecated Use `endDate` field.
+   */
   endingAt?: Maybe<Scalars['DateTime']['output']>;
   /** The ID of the object. */
   id: Scalars['ID']['output'];
@@ -2048,6 +2107,11 @@ export type ExperimentMatch = Node & {
   matched?: Maybe<Scalars['Boolean']['output']>;
   /** A unique name for the experiment. */
   name?: Maybe<Scalars['String']['output']>;
+  /**
+   * The reviewed date (DateTime ISO8601) of the media.
+   * @deprecated Use `reviewDate` field.
+   */
+  reviewedAt?: Maybe<Scalars['DateTime']['output']>;
   /** The tags associated to the experiment. Useful for filtering. */
   tags?: Maybe<BehaviorRuleTagConnection>;
   /** A unique uuid for the experiment. */
@@ -2114,7 +2178,7 @@ export type FallbackCountryEdge = {
   node?: Maybe<FallbackCountry>;
 };
 
-/** Represents a Favorite (an interaction). */
+/** Represents a Favorite (an activity). */
 export type Favorite = History & Node & {
   __typename?: 'Favorite';
   /** The ID of the object. */
@@ -2370,7 +2434,12 @@ export type FollowedChannel = Node & {
   __typename?: 'FollowedChannel';
   /** The channel that is being followed. */
   channel?: Maybe<Channel>;
-  /** The date and time (DateTime ISO8601) the channel was followed at. */
+  /** The date and time (ISO 8601 format) when the channel was followed. */
+  followDate: Scalars['DateTime']['output'];
+  /**
+   * The date and time (DateTime ISO8601) the channel was followed at.
+   * @deprecated Use `followDate` field
+   */
   followedAt?: Maybe<Scalars['DateTime']['output']>;
   /** The ID of the object. */
   id: Scalars['ID']['output'];
@@ -2411,6 +2480,8 @@ export enum FollowedChannelsSort {
 /** Information about a topic that is being followed by a user. */
 export type FollowedTopic = Node & {
   __typename?: 'FollowedTopic';
+  /** The date and time (ISO 8601 format) when the topic was followed. */
+  followDate: Scalars['DateTime']['output'];
   /** The date and time (Date ISO8601) the topic was followed at. */
   followedAt?: Maybe<Scalars['DateTime']['output']>;
   /** The ID of the object. */
@@ -2717,7 +2788,7 @@ export type HistoryEdge = {
 /** The available input fields of a History filter. */
 export type HistoryFilter = {
   /** Filter history by the activity. */
-  activity: InteractionOperator;
+  activity: ActivityOperator;
   /** Filter history by the post. */
   post: PostOperator;
 };
@@ -2759,22 +2830,27 @@ export type Image = Node & {
   width?: Maybe<Scalars['Int']['output']>;
 };
 
-/** The possible values for an Interaction. */
-export enum Interaction {
-  /** An interaction that is `favorited`. */
-  Favorited = 'FAVORITED',
-  /** An interaction that is `liked`. */
-  Liked = 'LIKED',
-  /** An interaction that is `saved`. */
-  Saved = 'SAVED',
-  /** An interaction that is `watched`. */
-  Watched = 'WATCHED'
-}
+/** Types that can be an Interaction. */
+export type Interaction = Comment | Reaction;
 
-/** The available input fields of an Interaction operator. */
-export type InteractionOperator = {
-  /** Short for equal, must match the given data exactly. */
-  eq?: InputMaybe<Interaction>;
+/** A connection to a list of items. */
+export type InteractionConnection = {
+  __typename?: 'InteractionConnection';
+  /** A list of edges. */
+  edges: Array<Maybe<InteractionEdge>>;
+  /** The metadata of the connection. */
+  metadata: Metadata;
+  /** Information to aid in pagination. */
+  pageInfo: PageInfo;
+  /** The total number of items. A null value indicates that the information is unavailable for the connection. */
+  totalCount?: Maybe<Scalars['Int']['output']>;
+};
+
+/** An edge in a connection. */
+export type InteractionEdge = {
+  __typename?: 'InteractionEdge';
+  /** The item at the end of the edge. */
+  node?: Maybe<Interaction>;
 };
 
 /** Information of an interest. */
@@ -2981,7 +3057,12 @@ export type Live = Content & Node & Recording & {
   channel?: Maybe<Channel>;
   /** The channel claiming revenue sharing on the live. */
   claimer?: Maybe<Channel>;
-  /** The last aired date (DateTime ISO8601), if never aired, then the creation date (DateTime ISO8601) of the live. */
+  /** The date and time (ISO 8601 format) when the live was last aired (if never aired, then when it was created). */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The last aired date (DateTime ISO8601), if never aired, then the creation date (DateTime ISO8601) of the live.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The creator that created the Live. */
   creator?: Maybe<Channel>;
@@ -3000,8 +3081,13 @@ export type Live = Content & Node & Recording & {
   embedHtml?: Maybe<Scalars['String']['output']>;
   /** The URL to embed the live outside of Dailymotion. */
   embedURL?: Maybe<Scalars['String']['output']>;
-  /** The date (DateTime ISO8601) the live ends. */
+  /**
+   * The date (DateTime ISO8601) the live ends.
+   * @deprecated Use `endDate` field.
+   */
   endAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The date and time (ISO 8601 format) when the live ends. */
+  endDate?: Maybe<Scalars['DateTime']['output']>;
   /** The geoblocked countries of the live. */
   geoblockedCountries?: Maybe<GeoblockedCountries>;
   /** The country codes (ISO 3166-1 alpha-2) that are allowed or denied by the live. */
@@ -3074,8 +3160,13 @@ export type Live = Content & Node & Recording & {
    * @deprecated Use `shareUrls` field.
    */
   sharingURLs?: Maybe<SharingUrlConnection>;
-  /** The date (DateTime ISO8601) the live started. */
+  /**
+   * The date (DateTime ISO8601) the live started.
+   * @deprecated Use `startDate` field.
+   */
   startAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The date and time (ISO 8601 format) when the live starts. */
+  startDate?: Maybe<Scalars['DateTime']['output']>;
   /**
    * The stats of the live.
    * @deprecated Use `metrics` field.
@@ -3101,7 +3192,12 @@ export type Live = Content & Node & Recording & {
   title?: Maybe<Scalars['String']['output']>;
   /** The topics associated to the live. */
   topics?: Maybe<TopicConnection>;
-  /** The updated date (DateTime ISO8601) of the live. */
+  /** The date and time (ISO 8601 format) when the live was updated. */
+  updateDate: Scalars['DateTime']['output'];
+  /**
+   * The updated date (DateTime ISO8601) of the live.
+   * @deprecated Use `updateDate` field.
+   */
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
   /**
    * The URL of the live.
@@ -3495,7 +3591,12 @@ export type MediaModeration = Node & {
   __typename?: 'MediaModeration';
   /** The ID of the object. */
   id: Scalars['ID']['output'];
-  /** The reviewed date (DateTime ISO8601) of the media. */
+  /** The date and time (ISO 8601 format) when the media was reviewed. */
+  reviewDate?: Maybe<Scalars['DateTime']['output']>;
+  /**
+   * The reviewed date (DateTime ISO8601) of the media.
+   * @deprecated Use `reviewDate` field.
+   */
   reviewedAt?: Maybe<Scalars['DateTime']['output']>;
 };
 
@@ -4605,7 +4706,12 @@ export enum PartnerReportDimension {
 /** A partner report file. */
 export type PartnerReportFile = Node & {
   __typename?: 'PartnerReportFile';
-  /** The creation date of the report. */
+  /** The date and time (ISO 8601 format) when the report was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date of the report.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The download links of the report. */
   downloadLinks?: Maybe<ReportFileDownloadLinkConnection>;
@@ -5483,7 +5589,12 @@ export type QueryVideosArgs = {
 /** Represents a Reaction in a recording format. */
 export type Reaction = Content & Node & Recording & {
   __typename?: 'Reaction';
-  /** The creation date (DateTime ISO8601) of the reaction. */
+  /** The date and time (ISO 8601 format) when the reaction was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date (DateTime ISO8601) of the reaction.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The channel who created the reaction. */
   creator?: Maybe<Channel>;
@@ -5955,15 +6066,25 @@ export type RecommendedRecordingEdge = {
 
 /** Represents a node with a Recording. */
 export type Recording = {
-  /** The creation date (DateTime ISO8601) of the recording. */
+  /** The date and time (ISO 8601 format) when the recording was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date (DateTime ISO8601) of the recording.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The reactions created on the recording. */
   reactions?: Maybe<ReactionConnection>;
+  /** The share urls of the recording. */
+  shareUrls?: Maybe<ShareUrls>;
   /** The URL of the recording thumbnail image. */
   thumbnail?: Maybe<Image>;
   /** The title of the recording. */
   title?: Maybe<Scalars['String']['output']>;
-  /** The URL of the recording. */
+  /**
+   * The URL of the recording.
+   * @deprecated Use `shareUrls.permalink` field.
+   */
   url?: Maybe<Scalars['String']['output']>;
 };
 
@@ -6229,7 +6350,7 @@ export type ReportVideoInput = {
    *   If omitted, indicates whole video is reported.
    */
   timecode?: InputMaybe<Scalars['String']['input']>;
-  /** The type of report. Valid types are (child_abuse, copyrightowner, crime_apology, disinformation, harmful_for_children, hateful_content, porn, spam, terrorism, violent). @deprecated(reason: "Use input field `violation`."). */
+  /** @deprecated(reason: "Use `violation` input field.") - The type of report. Valid types are (child_abuse, copyrightowner, crime_apology, disinformation, harmful_for_children, hateful_content, porn, spam, terrorism, violent). */
   type?: InputMaybe<Scalars['String']['input']>;
   /** The Dailymotion ID of the video to report. */
   videoXid: Scalars['String']['input'];
@@ -6363,31 +6484,51 @@ export enum RolePermission {
 /** Represents a rule. */
 export type Rule = Node & {
   __typename?: 'Rule';
-  /** Indicates if the condition is a complex condition, a.k.a custom made. */
+  /** Indicates if the rule has a complex (customized) condition. */
   complexCondition?: Maybe<Scalars['Boolean']['output']>;
-  /** The detailed logic of the feature. */
+  /** The detailed logic of the rule. */
   condition?: Maybe<Scalars['String']['output']>;
-  /** The creation date and time (DateTime ISO8601) of the feature. */
+  /** The date and time (ISO 8601 format) when the rule was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date and time (DateTime ISO8601) of the feature.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
-  /** The unique id of the user that created the feature. */
+  /** The unique id of the user that created the rule. */
   creatorXid?: Maybe<Scalars['String']['output']>;
-  /** A human-readable description of the feature. */
+  /** A human-readable description of the rule. */
   description?: Maybe<Scalars['String']['output']>;
-  /** Whether the feature is enabled or not. */
+  /** Indicated whether the feature is enabled. */
   enabled?: Maybe<Scalars['Boolean']['output']>;
-  /** End date and time (DateTime ISO8601) of the feature if enabled. */
+  /**
+   * End date and time (DateTime ISO8601) of the feature if enabled.
+   * @deprecated Use `endDate` field
+   */
   endAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The date and time (ISO 8601 format) when the rule ends. */
+  endDate?: Maybe<Scalars['DateTime']['output']>;
   /** The A/B experiment logic and configuration. */
   experiment?: Maybe<Scalars['String']['output']>;
   /** The ID of the object. */
   id: Scalars['ID']['output'];
-  /** The name for the feature. */
+  /** The name of the rule. */
   name?: Maybe<Scalars['String']['output']>;
-  /** Start date and time (DateTime ISO8601) of the feature if enabled. */
+  /**
+   * Start date and time (DateTime ISO8601) of the feature if enabled.
+   * @deprecated Use `starDate` field
+   */
   startAt?: Maybe<Scalars['DateTime']['output']>;
+  /** The date and time (ISO 8601 format) when the rule starts. */
+  startDate?: Maybe<Scalars['DateTime']['output']>;
   /** The tags associated with the rule. Useful for filtering. */
   tags?: Maybe<BehaviorRuleTagConnection>;
-  /** The last update date-time of the feature. */
+  /** The date and time (ISO 8601 format) when the rule was updated. */
+  updateDate: Scalars['DateTime']['output'];
+  /**
+   * The last update date-time of the feature.
+   * @deprecated Use `updateDate` field.
+   */
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
   /** A unique immutable uuid for the rule (used by experiment). */
   uuid?: Maybe<Scalars['String']['output']>;
@@ -6892,7 +7033,12 @@ export type Topic = Node & {
   collection?: Maybe<Collection>;
   /** The URL of the cover image. */
   coverURL?: Maybe<Scalars['String']['output']>;
-  /** The creation date (DateTime ISO8601) of the topic. */
+  /** The date and time (ISO 8601 format) when the topic was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date (DateTime ISO8601) of the topic.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The ID of the object. */
   id: Scalars['ID']['output'];
@@ -6911,7 +7057,12 @@ export type Topic = Node & {
    * @deprecated Use `coverURL` field.
    */
   thumbnails?: Maybe<Thumbnails>;
-  /** The update date (DateTime ISO8601) of the topic. */
+  /** The date and time (ISO 8601 format) when the topic was updated. */
+  updateDate: Scalars['DateTime']['output'];
+  /**
+   * The update date (DateTime ISO8601) of the topic.
+   * @deprecated Use `updateDate` field.
+   */
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
   /**
    * The URL of the topic.
@@ -7144,8 +7295,10 @@ export type UpdateBehaviorRuleInput = {
   description?: InputMaybe<Scalars['String']['input']>;
   /** Indicate whether the rule/condition is enabled. */
   enabled?: InputMaybe<Scalars['Boolean']['input']>;
-  /** End date and time (DateTime ISO8601) of the rule if enabled. */
+  /** @deprecated(reason: "Use `endDate` input field.") - End date and time (DateTime ISO8601) of the rule if enabled. */
   endAt?: InputMaybe<Scalars['DateTime']['input']>;
+  /** The date and time (ISO 8601 format) when the rule ends. */
+  endDate?: InputMaybe<Scalars['DateTime']['input']>;
   /** Experiment configuration. If set, this rule will be an experiment (contains JSON). */
   experiment?: InputMaybe<Scalars['String']['input']>;
   /** The name of the selected rule to update. */
@@ -7154,6 +7307,8 @@ export type UpdateBehaviorRuleInput = {
   newName?: InputMaybe<Scalars['String']['input']>;
   /** Start date and time (DateTime ISO8601) of the rule if enabled. */
   startAt?: InputMaybe<Scalars['DateTime']['input']>;
+  /** @deprecated(reason: "Use `startDate` input field.") - The date and time (ISO 8601 format) when the rule starts. */
+  startDate?: InputMaybe<Scalars['DateTime']['input']>;
   /** The tags associated with the rule. Useful for filtering. */
   tags?: InputMaybe<Array<InputMaybe<Scalars['String']['input']>>>;
 };
@@ -7303,7 +7458,7 @@ export type UpdateUserInput = {
   birthday?: InputMaybe<Scalars['DateTime']['input']>;
   /** The ID generated for the client performing the mutation. */
   clientMutationId?: InputMaybe<Scalars['String']['input']>;
-  /** The email address of the user. This field is deprecated: Use mutation `emailChangeRequest`. */
+  /** @deprecated(reason: "Use mutation `emailChangeRequest`.") - The email address of the user. */
   email?: InputMaybe<Scalars['String']['input']>;
   /** The Facebook ID of the user. */
   facebookID?: InputMaybe<Scalars['String']['input']>;
@@ -7316,7 +7471,7 @@ export type UpdateUserInput = {
   lastName?: InputMaybe<Scalars['String']['input']>;
   /** The Microsoft ID of the user. */
   microsoftID?: InputMaybe<Scalars['String']['input']>;
-  /** The name of the user. @deprecated(reason: Use `firstName` and `lastName` respectively). */
+  /** @deprecated(reason: "Use `firstName` and `lastName` respectively.") - The name of the user. */
   name?: InputMaybe<Scalars['String']['input']>;
   /** The new password for the user. */
   newPassword?: InputMaybe<Scalars['String']['input']>;
@@ -7441,7 +7596,12 @@ export type User = Node & {
    * @deprecated Use `channel.banner`.
    */
   coverURL?: Maybe<Scalars['String']['output']>;
-  /** The creation date (DateTime ISO8601) of the user. */
+  /** The date and time (ISO 8601 format) when the user was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date (DateTime ISO8601) of the user.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The email address of the user. */
   email?: Maybe<Scalars['String']['output']>;
@@ -8129,7 +8289,12 @@ export type Video = Content & Node & Recording & {
   collections?: Maybe<CollectionConnection>;
   /** The comments of the video. */
   comments?: Maybe<CommentConnection>;
-  /** The creation date (DateTime ISO8601) of the video. */
+  /** The date and time (ISO 8601 format) when the video was created. */
+  createDate: Scalars['DateTime']['output'];
+  /**
+   * The creation date (DateTime ISO8601) of the video.
+   * @deprecated Use `createDate` field.
+   */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
   /** The creator that created the video. */
   creator?: Maybe<Channel>;
@@ -8286,7 +8451,12 @@ export type Video = Content & Node & Recording & {
   title?: Maybe<Scalars['String']['output']>;
   /** The list of topics related to the media. */
   topics?: Maybe<TopicConnection>;
-  /** The last update date (DateTime ISO8601) of the video. */
+  /** The date and time (ISO 8601 format) when the video was updated. */
+  updateDate: Scalars['DateTime']['output'];
+  /**
+   * The last update date (DateTime ISO8601) of the video.
+   * @deprecated Use `updateDate` field.
+   */
   updatedAt?: Maybe<Scalars['DateTime']['output']>;
   /** The upload info of the video, read-only for the owner of the video. */
   uploadInfo?: Maybe<MediaUploadInfo>;
@@ -8788,7 +8958,7 @@ export type VisibilityOperator = {
   eq: Visibility;
 };
 
-/** Represents a Watch (an interaction). */
+/** Represents a Watch (an activity). */
 export type Watch = History & Node & {
   __typename?: 'Watch';
   /** The ID of the object. */
@@ -8982,6 +9152,7 @@ export type DirectiveResolverFn<TResult = {}, TParent = {}, TContext = {}, TArgs
 /** Mapping of union types */
 export type ResolversUnionTypes<_RefType extends Record<string, unknown>> = {
   Component: ( Channel ) | ( Collection ) | ( Live ) | ( Omit<Poll, 'component' | 'post'> & { component?: Maybe<_RefType['Component']>, post?: Maybe<_RefType['Post']> } ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( ReactionVideo ) | ( Topic ) | ( Video );
+  Interaction: ( Omit<Comment, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } );
   Media: ( Live ) | ( Video );
   MediaStreams: ( LiveStreams ) | ( VideoStreams );
   Post: ( Collection ) | ( Live ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( ReactionVideo ) | ( Video );
@@ -8997,7 +9168,7 @@ export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = 
   Content: ( Collection ) | ( Live ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( Video );
   History: ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } );
   Metric: ( BookmarkMetric ) | ( ChannelMetric ) | ( CollectionMetric ) | ( CommentMetric ) | ( LikeMetric ) | ( LiveMetric ) | ( ReactionMetric ) | ( VideoMetric );
-  Node: ( Omit<Analytics, 'timeSeries' | 'topValues'> & { timeSeries: _RefType['AnalyticsPayload'], topValues: _RefType['AnalyticsPayload'] } ) | ( AnalyticsGroupedPayloadItem ) | ( AnalyticsReport ) | ( Attribute ) | ( Behavior ) | ( BehaviorRuleTag ) | ( Channel ) | ( ChannelEngagementMetrics ) | ( ChannelExternalLinks ) | ( ChannelMetrics ) | ( ChannelShareUrls ) | ( ChannelStats ) | ( ChannelStatsFollowers ) | ( ChannelStatsReactions ) | ( ChannelStatsVideos ) | ( ChannelStatsViews ) | ( Collection ) | ( CollectionEngagementMetrics ) | ( CollectionMetrics ) | ( CollectionStats ) | ( CollectionStatsVideos ) | ( Omit<Comment, 'opener'> & { opener: _RefType['Story'] } ) | ( CommentEngagementMetrics ) | ( CommentMetrics ) | ( CommentViewerEngagement ) | ( ContentCategory ) | ( Omit<Conversation, 'story'> & { story?: Maybe<_RefType['Story']> } ) | ( Country ) | ( CuratedCategory ) | ( DailymotionAd ) | ( EmailChangeRequest ) | ( ExperimentMatch ) | ( FallbackCountry ) | ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( FeatureMatch ) | ( FeaturedContent ) | ( FileUpload ) | ( FollowedChannel ) | ( FollowedTopic ) | ( Follower ) | ( FollowerEngagement ) | ( Following ) | ( FollowingChannelStartsLive ) | ( FollowingChannelUploadsVideo ) | ( FollowingStartsLive ) | ( GeoblockedCountries ) | ( Geoblocking ) | ( Hashtag ) | ( HashtagEngagementMetrics ) | ( HashtagMetrics ) | ( Image ) | ( Interest ) | ( Language ) | ( Live ) | ( LiveEngagementMetrics ) | ( LiveMetrics ) | ( LiveShareUrls ) | ( LiveStats ) | ( LiveStatsViews ) | ( LiveStreams ) | ( LiveViewerEngagement ) | ( Localization ) | ( LocalizationMe ) | ( MediaModeration ) | ( MediaTag ) | ( MediaUploadInfo ) | ( Metadata ) | ( MonetizationInsights ) | ( Neon ) | ( NotificationSettings ) | ( Organization ) | ( OrganizationAnalysis ) | ( OrganizationStats ) | ( OrganizationStatsChannels ) | ( Partner ) | ( PartnerReportFile ) | ( PartnerSpace ) | ( Player ) | ( PlayerQueue ) | ( Omit<Poll, 'component' | 'post'> & { component?: Maybe<_RefType['Component']>, post?: Maybe<_RefType['Post']> } ) | ( PollOption ) | ( PollShareUrls ) | ( ProductUpdates ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( ReactionEngagementMetrics ) | ( ReactionMetrics ) | ( ReactionShareUrls ) | ( ReactionVideo ) | ( ReactionVideoStats ) | ( ReactionVideoStatsBookmarks ) | ( ReactionVideoStatsFavorites ) | ( ReactionVideoStatsLikes ) | ( ReactionVideoStatsReactionVideos ) | ( ReactionVideoStatsSaves ) | ( ReactionViewerEngagement ) | ( Omit<RecommendedRecording, 'recording'> & { recording?: Maybe<_RefType['Recording']> } ) | ( RemindUnwatchedVideos ) | ( ReportFileDownloadLink ) | ( Restriction ) | ( Rule ) | ( Search ) | ( Omit<Section, 'relatedComponent'> & { relatedComponent?: Maybe<_RefType['Component']> } ) | ( SharingUrl ) | ( Subdivision ) | ( Subtitle ) | ( Suggestion ) | ( SupportedCountry ) | ( SupportedLanguage ) | ( Thumbnails ) | ( Tips ) | ( Topic ) | ( TopicLabel ) | ( TopicShareUrls ) | ( TopicStats ) | ( TopicStatsFollowers ) | ( TopicStatsVideos ) | ( TopicWhitelistStatus ) | ( User ) | ( UserInterest ) | ( UserPollAnswer ) | ( UserStats ) | ( UserStatsCollections ) | ( UserStatsFollowers ) | ( UserStatsFollowingChannels ) | ( UserStatsFollowingTopics ) | ( UserStatsLikedVideos ) | ( UserStatsReactionVideos ) | ( UserStatsUploadedVideos ) | ( UserStatsVideos ) | ( UserStatsWatchLater ) | ( UserStatsWatchedVideos ) | ( Video ) | ( VideoDigest ) | ( VideoEngagementMetrics ) | ( VideoMetrics ) | ( VideoShareUrls ) | ( VideoStats ) | ( VideoStatsBookmarks ) | ( VideoStatsFavorites ) | ( VideoStatsLikes ) | ( VideoStatsReactionVideos ) | ( VideoStatsSaves ) | ( VideoStatsViews ) | ( VideoStreams ) | ( VideoViewerEngagement ) | ( Views ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } ) | ( Web ) | ( WebMetadata ) | ( WebMetadataConnection );
+  Node: ( Omit<Analytics, 'timeSeries' | 'topValues'> & { timeSeries: _RefType['AnalyticsPayload'], topValues: _RefType['AnalyticsPayload'] } ) | ( AnalyticsGroupedPayloadItem ) | ( AnalyticsReport ) | ( Attribute ) | ( Behavior ) | ( BehaviorRuleTag ) | ( Channel ) | ( ChannelEngagementMetrics ) | ( ChannelExternalLinks ) | ( ChannelMetrics ) | ( ChannelShareUrls ) | ( ChannelStats ) | ( ChannelStatsFollowers ) | ( ChannelStatsReactions ) | ( ChannelStatsVideos ) | ( ChannelStatsViews ) | ( Collection ) | ( CollectionEngagementMetrics ) | ( CollectionMetrics ) | ( CollectionStats ) | ( CollectionStatsVideos ) | ( Omit<Comment, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( CommentEngagementMetrics ) | ( CommentMetrics ) | ( CommentViewerEngagement ) | ( ContentCategory ) | ( Omit<Conversation, 'story'> & { story?: Maybe<_RefType['Story']> } ) | ( Country ) | ( CuratedCategory ) | ( DailymotionAd ) | ( EmailChangeRequest ) | ( ExperimentMatch ) | ( FallbackCountry ) | ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( FeatureMatch ) | ( FeaturedContent ) | ( FileUpload ) | ( FollowedChannel ) | ( FollowedTopic ) | ( Follower ) | ( FollowerEngagement ) | ( Following ) | ( FollowingChannelStartsLive ) | ( FollowingChannelUploadsVideo ) | ( FollowingStartsLive ) | ( GeoblockedCountries ) | ( Geoblocking ) | ( Hashtag ) | ( HashtagEngagementMetrics ) | ( HashtagMetrics ) | ( Image ) | ( Interest ) | ( Language ) | ( Live ) | ( LiveEngagementMetrics ) | ( LiveMetrics ) | ( LiveShareUrls ) | ( LiveStats ) | ( LiveStatsViews ) | ( LiveStreams ) | ( LiveViewerEngagement ) | ( Localization ) | ( LocalizationMe ) | ( MediaModeration ) | ( MediaTag ) | ( MediaUploadInfo ) | ( Metadata ) | ( MonetizationInsights ) | ( Neon ) | ( NotificationSettings ) | ( Organization ) | ( OrganizationAnalysis ) | ( OrganizationStats ) | ( OrganizationStatsChannels ) | ( Partner ) | ( PartnerReportFile ) | ( PartnerSpace ) | ( Player ) | ( PlayerQueue ) | ( Omit<Poll, 'component' | 'post'> & { component?: Maybe<_RefType['Component']>, post?: Maybe<_RefType['Post']> } ) | ( PollOption ) | ( PollShareUrls ) | ( ProductUpdates ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( ReactionEngagementMetrics ) | ( ReactionMetrics ) | ( ReactionShareUrls ) | ( ReactionVideo ) | ( ReactionVideoStats ) | ( ReactionVideoStatsBookmarks ) | ( ReactionVideoStatsFavorites ) | ( ReactionVideoStatsLikes ) | ( ReactionVideoStatsReactionVideos ) | ( ReactionVideoStatsSaves ) | ( ReactionViewerEngagement ) | ( Omit<RecommendedRecording, 'recording'> & { recording?: Maybe<_RefType['Recording']> } ) | ( RemindUnwatchedVideos ) | ( ReportFileDownloadLink ) | ( Restriction ) | ( Rule ) | ( Search ) | ( Omit<Section, 'relatedComponent'> & { relatedComponent?: Maybe<_RefType['Component']> } ) | ( SharingUrl ) | ( Subdivision ) | ( Subtitle ) | ( Suggestion ) | ( SupportedCountry ) | ( SupportedLanguage ) | ( Thumbnails ) | ( Tips ) | ( Topic ) | ( TopicLabel ) | ( TopicShareUrls ) | ( TopicStats ) | ( TopicStatsFollowers ) | ( TopicStatsVideos ) | ( TopicWhitelistStatus ) | ( User ) | ( UserInterest ) | ( UserPollAnswer ) | ( UserStats ) | ( UserStatsCollections ) | ( UserStatsFollowers ) | ( UserStatsFollowingChannels ) | ( UserStatsFollowingTopics ) | ( UserStatsLikedVideos ) | ( UserStatsReactionVideos ) | ( UserStatsUploadedVideos ) | ( UserStatsVideos ) | ( UserStatsWatchLater ) | ( UserStatsWatchedVideos ) | ( Video ) | ( VideoDigest ) | ( VideoEngagementMetrics ) | ( VideoMetrics ) | ( VideoShareUrls ) | ( VideoStats ) | ( VideoStatsBookmarks ) | ( VideoStatsFavorites ) | ( VideoStatsLikes ) | ( VideoStatsReactionVideos ) | ( VideoStatsSaves ) | ( VideoStatsViews ) | ( VideoStreams ) | ( VideoViewerEngagement ) | ( Views ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } ) | ( Web ) | ( WebMetadata ) | ( WebMetadataConnection );
   PostEngagementMetrics: ( LiveEngagementMetrics ) | ( ReactionEngagementMetrics ) | ( VideoEngagementMetrics );
   PostMetrics: ( LiveMetrics ) | ( ReactionMetrics ) | ( VideoMetrics );
   Recording: ( Live ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( Video );
@@ -9010,6 +9181,8 @@ export type ResolversTypes = {
   AccountType: AccountType;
   ActivateUserInput: ActivateUserInput;
   ActivateUserPayload: ResolverTypeWrapper<ActivateUserPayload>;
+  Activity: Activity;
+  ActivityOperator: ActivityOperator;
   AddCollectionVideoInput: AddCollectionVideoInput;
   AddCollectionVideoPayload: ResolverTypeWrapper<AddCollectionVideoPayload>;
   AddWatchLaterVideoInput: AddWatchLaterVideoInput;
@@ -9088,6 +9261,7 @@ export type ResolversTypes = {
   ChannelStatsReactions: ResolverTypeWrapper<ChannelStatsReactions>;
   ChannelStatsVideos: ResolverTypeWrapper<ChannelStatsVideos>;
   ChannelStatsViews: ResolverTypeWrapper<ChannelStatsViews>;
+  ChannelUpdateRequired: ResolverTypeWrapper<ChannelUpdateRequired>;
   ChannelsSort: ChannelsSort;
   ClearCollectionMediasInput: ClearCollectionMediasInput;
   ClearCollectionMediasPayload: ResolverTypeWrapper<ClearCollectionMediasPayload>;
@@ -9108,7 +9282,7 @@ export type ResolversTypes = {
   CollectionMetrics: ResolverTypeWrapper<CollectionMetrics>;
   CollectionStats: ResolverTypeWrapper<CollectionStats>;
   CollectionStatsVideos: ResolverTypeWrapper<CollectionStatsVideos>;
-  Comment: ResolverTypeWrapper<Omit<Comment, 'opener'> & { opener: ResolversTypes['Story'] }>;
+  Comment: ResolverTypeWrapper<Omit<Comment, 'opener'> & { opener?: Maybe<ResolversTypes['Story']> }>;
   CommentConnection: ResolverTypeWrapper<CommentConnection>;
   CommentEdge: ResolverTypeWrapper<CommentEdge>;
   CommentEngagementMetrics: ResolverTypeWrapper<CommentEngagementMetrics>;
@@ -9232,8 +9406,9 @@ export type ResolversTypes = {
   IDOperator: IdOperator;
   Image: ResolverTypeWrapper<Image>;
   Int: ResolverTypeWrapper<Scalars['Int']['output']>;
-  Interaction: Interaction;
-  InteractionOperator: InteractionOperator;
+  Interaction: ResolverTypeWrapper<ResolversUnionTypes<ResolversTypes>['Interaction']>;
+  InteractionConnection: ResolverTypeWrapper<InteractionConnection>;
+  InteractionEdge: ResolverTypeWrapper<Omit<InteractionEdge, 'node'> & { node?: Maybe<ResolversTypes['Interaction']> }>;
   Interest: ResolverTypeWrapper<Interest>;
   InterestConnection: ResolverTypeWrapper<InterestConnection>;
   InterestEdge: ResolverTypeWrapper<InterestEdge>;
@@ -9570,6 +9745,7 @@ export type ResolversTypes = {
 export type ResolversParentTypes = {
   ActivateUserInput: ActivateUserInput;
   ActivateUserPayload: ActivateUserPayload;
+  ActivityOperator: ActivityOperator;
   AddCollectionVideoInput: AddCollectionVideoInput;
   AddCollectionVideoPayload: AddCollectionVideoPayload;
   AddWatchLaterVideoInput: AddWatchLaterVideoInput;
@@ -9636,6 +9812,7 @@ export type ResolversParentTypes = {
   ChannelStatsReactions: ChannelStatsReactions;
   ChannelStatsVideos: ChannelStatsVideos;
   ChannelStatsViews: ChannelStatsViews;
+  ChannelUpdateRequired: ChannelUpdateRequired;
   ClearCollectionMediasInput: ClearCollectionMediasInput;
   ClearCollectionMediasPayload: ClearCollectionMediasPayload;
   ClearLikedVideosInput: ClearLikedVideosInput;
@@ -9655,7 +9832,7 @@ export type ResolversParentTypes = {
   CollectionMetrics: CollectionMetrics;
   CollectionStats: CollectionStats;
   CollectionStatsVideos: CollectionStatsVideos;
-  Comment: Omit<Comment, 'opener'> & { opener: ResolversParentTypes['Story'] };
+  Comment: Omit<Comment, 'opener'> & { opener?: Maybe<ResolversParentTypes['Story']> };
   CommentConnection: CommentConnection;
   CommentEdge: CommentEdge;
   CommentEngagementMetrics: CommentEngagementMetrics;
@@ -9771,7 +9948,9 @@ export type ResolversParentTypes = {
   IDOperator: IdOperator;
   Image: Image;
   Int: Scalars['Int']['output'];
-  InteractionOperator: InteractionOperator;
+  Interaction: ResolversUnionTypes<ResolversParentTypes>['Interaction'];
+  InteractionConnection: InteractionConnection;
+  InteractionEdge: Omit<InteractionEdge, 'node'> & { node?: Maybe<ResolversParentTypes['Interaction']> };
   Interest: Interest;
   InterestConnection: InterestConnection;
   InterestEdge: InterestEdge;
@@ -10213,6 +10392,7 @@ export type AnalyticsPayloadResolvers<ContextType = any, ParentType extends Reso
 
 export type AnalyticsReportResolvers<ContextType = any, ParentType extends ResolversParentTypes['AnalyticsReport'] = ResolversParentTypes['AnalyticsReport']> = {
   channelXid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['Date']>, ParentType, ContextType>;
   creator?: Resolver<Maybe<ResolversTypes['User']>, ParentType, ContextType>;
   downloadLinks?: Resolver<Maybe<ResolversTypes['ReportFileDownloadLinkConnection']>, ParentType, ContextType, RequireFields<AnalyticsReportDownloadLinksArgs, 'page'>>;
@@ -10390,6 +10570,7 @@ export type ChannelResolvers<ContextType = any, ParentType extends ResolversPare
   stats?: Resolver<Maybe<ResolversTypes['ChannelStats']>, ParentType, ContextType>;
   tagline?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   thumbnails?: Resolver<Maybe<ResolversTypes['Thumbnails']>, ParentType, ContextType>;
+  updateRequired?: Resolver<Maybe<ResolversTypes['ChannelUpdateRequired']>, ParentType, ContextType>;
   videos?: Resolver<Maybe<ResolversTypes['VideoConnection']>, ParentType, ContextType, RequireFields<ChannelVideosArgs, 'first' | 'page'>>;
   viewCount?: Resolver<Maybe<ResolversTypes['BigInt']>, ParentType, ContextType>;
   xid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -10509,6 +10690,11 @@ export type ChannelStatsViewsResolvers<ContextType = any, ParentType extends Res
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type ChannelUpdateRequiredResolvers<ContextType = any, ParentType extends ResolversParentTypes['ChannelUpdateRequired'] = ResolversParentTypes['ChannelUpdateRequired']> = {
+  name?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type ClearCollectionMediasPayloadResolvers<ContextType = any, ParentType extends ResolversParentTypes['ClearCollectionMediasPayload'] = ResolversParentTypes['ClearCollectionMediasPayload']> = {
   clientMutationId?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   status?: Resolver<Maybe<ResolversTypes['Status']>, ParentType, ContextType>;
@@ -10535,6 +10721,7 @@ export type ClearWatchedVideosPayloadResolvers<ContextType = any, ParentType ext
 
 export type CollectionResolvers<ContextType = any, ParentType extends ResolversParentTypes['Collection'] = ResolversParentTypes['Collection']> = {
   channel?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   creator?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -10549,6 +10736,7 @@ export type CollectionResolvers<ContextType = any, ParentType extends ResolversP
   thumbnail?: Resolver<Maybe<ResolversTypes['Image']>, ParentType, ContextType, RequireFields<CollectionThumbnailArgs, 'height'>>;
   thumbnailURL?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<CollectionThumbnailUrlArgs, 'size'>>;
   thumbnails?: Resolver<Maybe<ResolversTypes['Thumbnails']>, ParentType, ContextType>;
+  updateDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   videos?: Resolver<Maybe<ResolversTypes['VideoConnection']>, ParentType, ContextType, RequireFields<CollectionVideosArgs, 'first' | 'page'>>;
   xid?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
@@ -10616,7 +10804,7 @@ export type CommentResolvers<ContextType = any, ParentType extends ResolversPare
   creator?: Resolver<ResolversTypes['Channel'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   metrics?: Resolver<Maybe<ResolversTypes['CommentMetrics']>, ParentType, ContextType>;
-  opener?: Resolver<ResolversTypes['Story'], ParentType, ContextType>;
+  opener?: Resolver<Maybe<ResolversTypes['Story']>, ParentType, ContextType>;
   text?: Resolver<ResolversTypes['String'], ParentType, ContextType>;
   updateDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   viewerEngagement?: Resolver<Maybe<ResolversTypes['CommentViewerEngagement']>, ParentType, ContextType>;
@@ -10707,6 +10895,7 @@ export type ConversationResolvers<ContextType = any, ParentType extends Resolver
   algorithm?: Resolver<Maybe<ResolversTypes['AlgorithmName']>, ParentType, ContextType>;
   dailymotionAd?: Resolver<Maybe<ResolversTypes['DailymotionAd']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  interactions?: Resolver<Maybe<ResolversTypes['InteractionConnection']>, ParentType, ContextType>;
   story?: Resolver<Maybe<ResolversTypes['Story']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -10851,10 +11040,12 @@ export type EmailChangeRequestResolvers<ContextType = any, ParentType extends Re
 };
 
 export type ExperimentMatchResolvers<ContextType = any, ParentType extends ResolversParentTypes['ExperimentMatch'] = ResolversParentTypes['ExperimentMatch']> = {
+  endDate?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   endingAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   matched?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  reviewedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   tags?: Resolver<Maybe<ResolversTypes['BehaviorRuleTagConnection']>, ParentType, ContextType, RequireFields<ExperimentMatchTagsArgs, 'page'>>;
   uuid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   variation?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -10987,6 +11178,7 @@ export type FollowUserPayloadResolvers<ContextType = any, ParentType extends Res
 
 export type FollowedChannelResolvers<ContextType = any, ParentType extends ResolversParentTypes['FollowedChannel'] = ResolversParentTypes['FollowedChannel']> = {
   channel?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
+  followDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   followedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   isNotificationEnabled?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
@@ -11007,6 +11199,7 @@ export type FollowedChannelEdgeResolvers<ContextType = any, ParentType extends R
 };
 
 export type FollowedTopicResolvers<ContextType = any, ParentType extends ResolversParentTypes['FollowedTopic'] = ResolversParentTypes['FollowedTopic']> = {
+  followDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   followedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   topic?: Resolver<Maybe<ResolversTypes['Topic']>, ParentType, ContextType>;
@@ -11188,6 +11381,23 @@ export type ImageResolvers<ContextType = any, ParentType extends ResolversParent
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
 
+export type InteractionResolvers<ContextType = any, ParentType extends ResolversParentTypes['Interaction'] = ResolversParentTypes['Interaction']> = {
+  __resolveType: TypeResolveFn<'Comment' | 'Reaction', ParentType, ContextType>;
+};
+
+export type InteractionConnectionResolvers<ContextType = any, ParentType extends ResolversParentTypes['InteractionConnection'] = ResolversParentTypes['InteractionConnection']> = {
+  edges?: Resolver<Array<Maybe<ResolversTypes['InteractionEdge']>>, ParentType, ContextType>;
+  metadata?: Resolver<ResolversTypes['Metadata'], ParentType, ContextType>;
+  pageInfo?: Resolver<ResolversTypes['PageInfo'], ParentType, ContextType>;
+  totalCount?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
+export type InteractionEdgeResolvers<ContextType = any, ParentType extends ResolversParentTypes['InteractionEdge'] = ResolversParentTypes['InteractionEdge']> = {
+  node?: Resolver<Maybe<ResolversTypes['Interaction']>, ParentType, ContextType>;
+  __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
+};
+
 export type InterestResolvers<ContextType = any, ParentType extends ResolversParentTypes['Interest'] = ResolversParentTypes['Interest']> = {
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   interestId?: Resolver<ResolversTypes['Int'], ParentType, ContextType>;
@@ -11278,6 +11488,7 @@ export type LiveResolvers<ContextType = any, ParentType extends ResolversParentT
   category?: Resolver<Maybe<ResolversTypes['MediaCategory']>, ParentType, ContextType>;
   channel?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
   claimer?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   creator?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
   curatedCategories?: Resolver<Maybe<ResolversTypes['CuratedCategoryConnection']>, ParentType, ContextType, RequireFields<LiveCuratedCategoriesArgs, 'page'>>;
@@ -11285,6 +11496,7 @@ export type LiveResolvers<ContextType = any, ParentType extends ResolversParentT
   embedHtml?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   embedURL?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   endAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  endDate?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   geoblockedCountries?: Resolver<Maybe<ResolversTypes['GeoblockedCountries']>, ParentType, ContextType>;
   geoblocking?: Resolver<Maybe<ResolversTypes['GeoblockingConnection']>, ParentType, ContextType, RequireFields<LiveGeoblockingArgs, 'page'>>;
   height?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
@@ -11310,6 +11522,7 @@ export type LiveResolvers<ContextType = any, ParentType extends ResolversParentT
   shareUrls?: Resolver<Maybe<ResolversTypes['LiveShareUrls']>, ParentType, ContextType>;
   sharingURLs?: Resolver<Maybe<ResolversTypes['SharingURLConnection']>, ParentType, ContextType, RequireFields<LiveSharingUrLsArgs, 'page'>>;
   startAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  startDate?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   stats?: Resolver<Maybe<ResolversTypes['LiveStats']>, ParentType, ContextType>;
   subtitles?: Resolver<Maybe<ResolversTypes['SubtitleConnection']>, ParentType, ContextType, RequireFields<LiveSubtitlesArgs, 'first' | 'page'>>;
   tags?: Resolver<Maybe<ResolversTypes['MediaTagConnection']>, ParentType, ContextType, RequireFields<LiveTagsArgs, 'page'>>;
@@ -11318,6 +11531,7 @@ export type LiveResolvers<ContextType = any, ParentType extends ResolversParentT
   thumbnails?: Resolver<Maybe<ResolversTypes['Thumbnails']>, ParentType, ContextType>;
   title?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   topics?: Resolver<Maybe<ResolversTypes['TopicConnection']>, ParentType, ContextType, RequireFields<LiveTopicsArgs, 'first' | 'page' | 'whitelistedOnly'>>;
+  updateDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   viewerEngagement?: Resolver<Maybe<ResolversTypes['LiveViewerEngagement']>, ParentType, ContextType>;
@@ -11462,6 +11676,7 @@ export type MediaEdgeResolvers<ContextType = any, ParentType extends ResolversPa
 
 export type MediaModerationResolvers<ContextType = any, ParentType extends ResolversParentTypes['MediaModeration'] = ResolversParentTypes['MediaModeration']> = {
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
+  reviewDate?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   reviewedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -11713,6 +11928,7 @@ export type PartnerResolvers<ContextType = any, ParentType extends ResolversPare
 };
 
 export type PartnerReportFileResolvers<ContextType = any, ParentType extends ResolversParentTypes['PartnerReportFile'] = ResolversParentTypes['PartnerReportFile']> = {
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   downloadLinks?: Resolver<Maybe<ResolversTypes['ReportFileDownloadLinkConnection']>, ParentType, ContextType, RequireFields<PartnerReportFileDownloadLinksArgs, 'page'>>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
@@ -11882,6 +12098,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
 };
 
 export type ReactionResolvers<ContextType = any, ParentType extends ResolversParentTypes['Reaction'] = ResolversParentTypes['Reaction']> = {
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   creator?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
   duration?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
@@ -12088,8 +12305,10 @@ export type RecommendedRecordingEdgeResolvers<ContextType = any, ParentType exte
 
 export type RecordingResolvers<ContextType = any, ParentType extends ResolversParentTypes['Recording'] = ResolversParentTypes['Recording']> = {
   __resolveType: TypeResolveFn<'Live' | 'Reaction' | 'Video', ParentType, ContextType>;
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   reactions?: Resolver<Maybe<ResolversTypes['ReactionConnection']>, ParentType, ContextType, RequireFields<RecordingReactionsArgs, 'first' | 'page'>>;
+  shareUrls?: Resolver<Maybe<ResolversTypes['ShareUrls']>, ParentType, ContextType>;
   thumbnail?: Resolver<Maybe<ResolversTypes['Image']>, ParentType, ContextType, RequireFields<RecordingThumbnailArgs, 'height'>>;
   title?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -12203,16 +12422,20 @@ export type RestrictionResolvers<ContextType = any, ParentType extends Resolvers
 export type RuleResolvers<ContextType = any, ParentType extends ResolversParentTypes['Rule'] = ResolversParentTypes['Rule']> = {
   complexCondition?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   condition?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   creatorXid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   description?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   enabled?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   endAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  endDate?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   experiment?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   startAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  startDate?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   tags?: Resolver<Maybe<ResolversTypes['BehaviorRuleTagConnection']>, ParentType, ContextType, RequireFields<RuleTagsArgs, 'page'>>;
+  updateDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   uuid?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -12417,6 +12640,7 @@ export type TipsResolvers<ContextType = any, ParentType extends ResolversParentT
 export type TopicResolvers<ContextType = any, ParentType extends ResolversParentTypes['Topic'] = ResolversParentTypes['Topic']> = {
   collection?: Resolver<Maybe<ResolversTypes['Collection']>, ParentType, ContextType, Partial<TopicCollectionArgs>>;
   coverURL?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<TopicCoverUrlArgs, 'size'>>;
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   isFollowed?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
@@ -12425,6 +12649,7 @@ export type TopicResolvers<ContextType = any, ParentType extends ResolversParent
   shareUrls?: Resolver<Maybe<ResolversTypes['TopicShareUrls']>, ParentType, ContextType>;
   stats?: Resolver<Maybe<ResolversTypes['TopicStats']>, ParentType, ContextType>;
   thumbnails?: Resolver<Maybe<ResolversTypes['Thumbnails']>, ParentType, ContextType>;
+  updateDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   videos?: Resolver<Maybe<ResolversTypes['VideoConnection']>, ParentType, ContextType, RequireFields<TopicVideosArgs, 'first' | 'page'>>;
@@ -12584,6 +12809,7 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
   collections?: Resolver<Maybe<ResolversTypes['CollectionConnection']>, ParentType, ContextType, RequireFields<UserCollectionsArgs, 'first' | 'page'>>;
   country?: Resolver<Maybe<ResolversTypes['Country']>, ParentType, ContextType>;
   coverURL?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<UserCoverUrlArgs, 'size'>>;
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   email?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   emailChangeRequest?: Resolver<Maybe<ResolversTypes['EmailChangeRequest']>, ParentType, ContextType>;
@@ -12792,6 +13018,7 @@ export type VideoResolvers<ContextType = any, ParentType extends ResolversParent
   claimer?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
   collections?: Resolver<Maybe<ResolversTypes['CollectionConnection']>, ParentType, ContextType, RequireFields<VideoCollectionsArgs, 'first' | 'page'>>;
   comments?: Resolver<Maybe<ResolversTypes['CommentConnection']>, ParentType, ContextType, RequireFields<VideoCommentsArgs, 'first' | 'page'>>;
+  createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   creator?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
   curatedCategories?: Resolver<Maybe<ResolversTypes['CuratedCategoryConnection']>, ParentType, ContextType, RequireFields<VideoCuratedCategoriesArgs, 'page'>>;
@@ -12846,6 +13073,7 @@ export type VideoResolvers<ContextType = any, ParentType extends ResolversParent
   thumbnails?: Resolver<Maybe<ResolversTypes['Thumbnails']>, ParentType, ContextType>;
   title?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   topics?: Resolver<Maybe<ResolversTypes['TopicConnection']>, ParentType, ContextType, RequireFields<VideoTopicsArgs, 'first' | 'page' | 'whitelistedOnly'>>;
+  updateDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   updatedAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
   uploadInfo?: Resolver<Maybe<ResolversTypes['MediaUploadInfo']>, ParentType, ContextType>;
   url?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
@@ -13119,6 +13347,7 @@ export type Resolvers<ContextType = any> = {
   ChannelStatsReactions?: ChannelStatsReactionsResolvers<ContextType>;
   ChannelStatsVideos?: ChannelStatsVideosResolvers<ContextType>;
   ChannelStatsViews?: ChannelStatsViewsResolvers<ContextType>;
+  ChannelUpdateRequired?: ChannelUpdateRequiredResolvers<ContextType>;
   ClearCollectionMediasPayload?: ClearCollectionMediasPayloadResolvers<ContextType>;
   ClearLikedVideosPayload?: ClearLikedVideosPayloadResolvers<ContextType>;
   ClearWatchLaterVideosPayload?: ClearWatchLaterVideosPayloadResolvers<ContextType>;
@@ -13221,6 +13450,9 @@ export type Resolvers<ContextType = any> = {
   HistoryConnection?: HistoryConnectionResolvers<ContextType>;
   HistoryEdge?: HistoryEdgeResolvers<ContextType>;
   Image?: ImageResolvers<ContextType>;
+  Interaction?: InteractionResolvers<ContextType>;
+  InteractionConnection?: InteractionConnectionResolvers<ContextType>;
+  InteractionEdge?: InteractionEdgeResolvers<ContextType>;
   Interest?: InterestResolvers<ContextType>;
   InterestConnection?: InterestConnectionResolvers<ContextType>;
   InterestEdge?: InterestEdgeResolvers<ContextType>;

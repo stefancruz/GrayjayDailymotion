@@ -13,7 +13,7 @@ const CLIENT_ID = 'f1a362d288c1b98099c7';
 const CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
 const X_DM_AppInfo_Id = "com.dailymotion.neon";
 const X_DM_AppInfo_Type = "website";
-const X_DM_AppInfo_Version = "v2024-05-16T12:17:57.363Z"; //TODO check how to get this dynamically
+const X_DM_AppInfo_Version = "v2024-07-02T13:55:47.186Z"; //TODO check how to get this dynamically
 const X_DM_Neon_SSR = "0";
 const PLATFORM = "Dailymotion";
 const PLATFORM_CLAIMTYPE = 27;
@@ -1762,7 +1762,6 @@ const state = {
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST";
 const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST";
 const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST";
-let httpClientAnonymous = http.newClient(false);
 let httpClientRequestToken = http.newClient(false);
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection = [];
@@ -1845,7 +1844,7 @@ source.getHome = function () {
 };
 source.searchSuggestions = function (query) {
     try {
-        const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
+        const jsonResponse = executeGqlQuery(http, {
             operationName: 'AUTOCOMPLETE_QUERY',
             variables: {
                 query
@@ -1872,7 +1871,7 @@ source.isChannelUrl = function (url) {
 };
 source.getChannel = function (url) {
     const channel_name = getChannelNameFromUrl(url);
-    const channelDetails = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
+    const channelDetails = executeGqlQuery(http, {
         operationName: 'CHANNEL_QUERY_DESKTOP',
         variables: {
             channel_name,
@@ -1910,10 +1909,7 @@ source.getContentDetails = function (url) {
     return getSavedVideo(url, false);
 };
 source.saveState = () => {
-    return JSON.stringify({
-        anonymousUserAuthorizationToken: state.anonymousUserAuthorizationToken,
-        anonymousUserAuthorizationTokenExpirationDate: state.anonymousUserAuthorizationTokenExpirationDate
-    });
+    return JSON.stringify(state);
 };
 //Playlist
 source.isPlaylistUrl = (url) => {
@@ -1927,16 +1923,15 @@ source.searchPlaylists = (query, type, order, filters) => {
 };
 source.getPlaylist = (url) => {
     const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
-    const httpClient = getHttpContext({ usePlatformAuth });
     const thumbnailResolutionIndex = _settings.thumbnailResolutionOptionIndex;
     if (url === LIKE_PLAYLIST_ID) {
-        return getLikePlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+        return getLikePlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
     }
     if (url === FAVORITES_PLAYLIST_ID) {
-        return getFavoritesPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+        return getFavoritesPlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
     }
     if (url === RECENTLY_WATCHED_PLAYLIST_ID) {
-        return getRecentlyWatchedPlaylist(config.id, httpClient, usePlatformAuth, thumbnailResolutionIndex);
+        return getRecentlyWatchedPlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
     }
     const xid = url.split('/').pop();
     const variables = {
@@ -1944,7 +1939,7 @@ source.getPlaylist = (url) => {
         avatar_size: CREATOR_AVATAR_HEIGHT[_settings.avatarSizeOptionIndex],
         thumbnail_resolution: THUMBNAIL_HEIGHT[thumbnailResolutionIndex],
     };
-    let jsonResponse = executeGqlQuery(httpClient, {
+    let jsonResponse = executeGqlQuery(http, {
         operationName: 'PLAYLIST_VIDEO_QUERY',
         variables,
         query: PLAYLIST_DETAILS_QUERY,
@@ -1966,10 +1961,6 @@ source.getUserSubscriptions = () => {
         // Accept: '*/*, */*',
         'Accept-Language': 'en-GB',
         Referer: `${BASE_URL}/library/subscriptions`,
-        'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-        'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-        'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-        'X-DM-Neon-SSR': '0',
         'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
         Origin: BASE_URL,
         DNT: '1',
@@ -1983,7 +1974,7 @@ source.getUserSubscriptions = () => {
     };
     const usePlatformAuth = true;
     const fetchSubscriptions = (page, first) => {
-        const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth }), {
+        const jsonResponse = executeGqlQuery(http, {
             operationName: 'SUBSCRIPTIONS_QUERY',
             variables: {
                 first: first,
@@ -2019,13 +2010,9 @@ source.getUserPlaylists = () => {
     const headers = {
         'Content-Type': 'application/json',
         'User-Agent': USER_AGENT,
-        // Accept: '*/*, */*',
         'Accept-Language': 'en-GB',
-        Referer: `${BASE_URL}/library/subscriptions`,
-        'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-        'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-        'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-        'X-DM-Neon-SSR': '0',
+        Referer: 'https://www.dailymotion.com/',
+        'Sec-GPC': '1',
         'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
         Origin: BASE_URL,
         DNT: '1',
@@ -2033,11 +2020,11 @@ source.getUserPlaylists = () => {
         'Sec-Fetch-Dest': 'empty',
         'Sec-Fetch-Mode': 'cors',
         'Sec-Fetch-Site': 'same-site',
-        Priority: 'u=4',
+        Priority: 'u=1',
         Pragma: 'no-cache',
         'Cache-Control': 'no-cache',
     };
-    const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: true }), {
+    const jsonResponse = executeGqlQuery(http, {
         operationName: 'SUBSCRIPTIONS_QUERY',
         headers,
         query: SUBSCRIPTIONS_QUERY,
@@ -2059,8 +2046,16 @@ source.getUserPlaylists = () => {
     });
     return playlists;
 };
+source.getChannelTemplateByClaimMap = () => {
+    return {
+        //Dailymotion claim type
+        27: {
+            0: BASE_URL + "/{{CLAIMVALUE}}",
+        }
+    };
+};
 function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
-    const collections = executeGqlQuery(getHttpContext({ usePlatformAuth }), {
+    const collections = executeGqlQuery(http, {
         operationName: 'CHANNEL_PLAYLISTS_QUERY',
         variables: {
             channel_name: userName,
@@ -2100,7 +2095,7 @@ function searchPlaylists(contextQuery) {
         "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex],
         "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
     };
-    const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
+    const jsonResponse = executeGqlQuery(http, {
         operationName: 'SEARCH_QUERY',
         variables: variables,
         query: SEARCH_QUERY,
@@ -2145,9 +2140,8 @@ function getVideoPager(params, page) {
         "Cache-Control": "no-cache"
     };
     let obj;
-    const anonymousHttpClient = getHttpContext({ usePlatformAuth: false });
     try {
-        obj = executeGqlQuery(anonymousHttpClient, {
+        obj = executeGqlQuery(http, {
             operationName: 'SEACH_DISCOVERY_QUERY',
             variables: {
                 avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
@@ -2189,8 +2183,7 @@ function getChannelContentsPager(url, page, type, order, filters) {
     else {
         sort = LikedMediaSort.Recent;
     }
-    const anonymousHttpClient = getHttpContext({ usePlatformAuth: false });
-    const jsonResponse = executeGqlQuery(anonymousHttpClient, {
+    const jsonResponse = executeGqlQuery(http, {
         operationName: 'CHANNEL_VIDEOS_QUERY',
         variables: {
             channel_name,
@@ -2241,7 +2234,7 @@ function getSearchPagerAll(contextQuery) {
         "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
         "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
     };
-    const jsonResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
+    const jsonResponse = executeGqlQuery(http, {
         operationName: 'SEARCH_QUERY',
         variables: variables,
         query: SEARCH_QUERY,
@@ -2284,7 +2277,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
     else {
         headers1["Cookie"] = "ff=off";
     }
-    const player_metadataResponse = getHttpContext({ usePlatformAuth }).GET(player_metadata_url, headers1, usePlatformAuth);
+    const player_metadataResponse = http.GET(player_metadata_url, headers1, usePlatformAuth);
     if (!player_metadataResponse.isOk) {
         throw new UnavailableException('Unable to get player metadata');
     }
@@ -2328,7 +2321,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
         variables,
         query: WATCHING_VIDEO
     });
-    const video_details_response = getHttpContext({ usePlatformAuth }).POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth);
+    const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth);
     if (video_details_response.code != 200) {
         throw new UnavailableException('Failed to get video details');
     }
@@ -2346,7 +2339,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
     return new PlatformVideoDetails(platformVideoDetails);
 }
 function getSearchChannelPager(context) {
-    const searchResponse = executeGqlQuery(getHttpContext({ usePlatformAuth: false }), {
+    const searchResponse = executeGqlQuery(http, {
         operationName: "SEARCH_QUERY",
         variables: {
             query: context.q,
@@ -2537,7 +2530,5 @@ function getPlatformSystemPlaylist(opts) {
     };
     return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection, videos);
 }
-function getHttpContext(opts = { usePlatformAuth: false }) {
-    return opts.usePlatformAuth ? http : httpClientAnonymous;
-}
 log("LOADED");
+//# sourceMappingURL=DailymotionScript.js.map

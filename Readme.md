@@ -19,9 +19,13 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Settings / Hide sensitive content
 - [x] - Settings / Prefered Country
 - [x] - Sign in (import subscriptions and playlists (and Likes, Favorites, Recently Watched))
-- [x] - Policentric Comments
+- [x] - Polycentric Comments
 - [x] - Subtitles
-- [x] - State management
+
+## Work in progress (wip)
+
+- [ ] - Harbor account verification
+
 
 ## Todo 
 - [ ] - Unit tests - (wip)
@@ -44,7 +48,7 @@ npm run build
 
 npm start - will build and watch for changes
 
-# notes:
+## Notes
 - Content of the 'build' folder should not be manually changed since it's recreated for each build. 
 - Used [rollup](https://rollupjs.org/) to bundle all the scripts into one.
 - Used npm shrinkwrap to lock the dependency versions of the project. This should avoid new bugs, vulnerabilities and breaking changes (in minor and patches), introduced when the dependencies are automatically updated by npm.
