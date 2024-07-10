@@ -22,14 +22,16 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Polycentric Comments
 - [x] - Subtitles
 
-## Work in progress (wip)
+## Work in progress (WIP)
 
 - [ ] - Harbor account verification
 
 
 ## Todo 
-- [ ] - Unit tests - (wip)
-- [ ] - Platform comments (not generally available) - (wip)
+- [ ] - Platform comments (not generally available) - (WIP)
+- [ ] - Thumbnails for vertical videos
+- [ ] - Optimize GraphQL queries
+- [ ] - Unit tests - (WIP)
 
 ## Known bugs
 - [ ] - Live filter in Subscriptions tab

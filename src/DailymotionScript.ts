@@ -106,14 +106,17 @@ source.setSettings = function (settings) {
 source.enable = function (conf, settings, saveStateStr) {
 
 	config = conf ?? {};
-	_settings = settings ?? {
-		hideSensitiveContent : false,
-		avatarSizeOptionIndex : 8,
-		thumbnailResolutionOptionIndex : 7,
-		preferredCountryOptionIndex : 0,
-		videosPerPageOptionIndex : 4,
-		playlistsPerPageOptionIndex : 0
+
+    const DEFAULT_SETTINGS = {
+        hideSensitiveContent: true,
+        avatarSizeOptionIndex: 8, // 720px
+        thumbnailResolutionOptionIndex: 7, // 1080px
+        preferredCountryOptionIndex: 0, // empty
+        videosPerPageOptionIndex: 3, // 20
+        playlistsPerPageOptionIndex: 0 // 5
 	};
+
+    _settings = { ...DEFAULT_SETTINGS, ...settings };
 
 	if (IS_TESTING) {
 
@@ -246,7 +249,7 @@ source.getChannel = function (url) {
 			query: CHANNEL_QUERY_DESKTOP
 		});
 
-	return SourceChannelToGrayjayChannel(config.id, url, channelDetails.data.channel as Channel);
+	return SourceChannelToGrayjayChannel(config.id, channelDetails.data.channel as Channel);
 
 };
 
@@ -676,14 +679,14 @@ function getChannelContentsPager(url, page, type, order, filters) {
 	const channel = jsonResponse?.data?.channel as Channel;
 
 	const all: (Live | Video)[] = [
-		...(channel?.lives?.edges?.map(e => e?.node as Live) ?? []),
+		...(channel?.lives?.edges?.filter(e => e?.node?.isOnAir)?.map(e => e?.node as Live) ?? []),
 		...(channel?.videos?.edges?.map(e => e?.node as Video) ?? [])
-	];
+	  ];
 
 	let videos = all
 		.map((node => SourceVideoToGrayjayVideo(config.id, node)));
 
-
+		
 	const videosHasNext = channel?.videos?.pageInfo?.hasNextPage;
 	const livesHasNext = channel?.lives?.pageInfo?.hasNextPage;
 	const hasNext = videosHasNext || livesHasNext || false;
@@ -696,7 +699,12 @@ function getChannelContentsPager(url, page, type, order, filters) {
 		filters
 	}
 
-	return new ChannelVideoPager(videos, hasNext, params, getChannelContentsPager);
+	return new ChannelVideoPager(
+		videos,
+		hasNext,
+		params,
+		getChannelContentsPager
+	);
 }
 
 function getSearchPagerAll(contextQuery): VideoPager {
@@ -758,7 +766,6 @@ function getSavedVideo(url, usePlatformAuth = false) {
 	const headers1 = {
 		"User-Agent": USER_AGENT,
 		"Accept": "*/*",
-		// "Accept-Encoding": "gzip, deflate, br, zstd",
 		"Referer": "https://geo.dailymotion.com/",
 		"Origin": "https://geo.dailymotion.com",
 		"DNT": "1",
@@ -776,7 +783,11 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		headers1["Cookie"] = "ff=off"
 	}
 
-	const player_metadataResponse = http.GET(player_metadata_url, headers1, usePlatformAuth);
+	const player_metadataResponse = http.GET(
+	  player_metadata_url,
+	  headers1,
+	  usePlatformAuth
+	);
 
 	if (!player_metadataResponse.isOk) {
 		throw new UnavailableException('Unable to get player metadata');
@@ -824,14 +835,18 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
 	};
 
-	const videoDetailsRequestBody = JSON.stringify(
-		{
+	const videoDetailsRequestBody = JSON.stringify({
 			operationName: "WATCHING_VIDEO",
 			variables,
 			query: WATCHING_VIDEO
 		});
 
-	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth)
+	const video_details_response = http.POST(
+	  BASE_URL_API,
+	  videoDetailsRequestBody,
+	  videoDetailsRequestHeaders,
+	  usePlatformAuth
+	);
 
 	if (video_details_response.code != 200) {
 		throw new UnavailableException('Failed to get video details');
@@ -839,23 +854,15 @@ function getSavedVideo(url, usePlatformAuth = false) {
 
 	const video_details = JSON.parse(video_details_response.body);
 
-	const sources: HLSSource[] = [
-		new HLSSource(
-			{
-				name: 'source',
-				duration: player_metadata?.duration,
-				url: player_metadata?.qualities?.auto[0]?.url,
-			}
-		)
-	]
-
 	const video = video_details?.data?.video as Video;
 
-	const subtitles = player_metadata?.subtitles as IDailymotionSubtitle;
+	const platformVideoDetails: PlatformVideoDetailsDef = SourceVideoToPlatformVideoDetailsDef(
+	  config.id,
+	  video,
+	  player_metadata
+	);
 
-	const platformVideoDetails: PlatformVideoDetailsDef = SourceVideoToPlatformVideoDetailsDef(config.id, video, sources, subtitles);
-
-	return new PlatformVideoDetails(platformVideoDetails)
+	return new PlatformVideoDetails(platformVideoDetails);
 }
 
 function getSearchChannelPager(context) {
@@ -873,16 +880,26 @@ function getSearchChannelPager(context) {
 	});
 
 	const results = searchResponse?.data?.search?.channels?.edges.map(edge => {
+      
 		const channel = edge.node as Channel;
-		return SourceChannelToGrayjayChannel(config.id, `${BASE_URL}/${channel.name}`, channel);
+      
+      return SourceChannelToGrayjayChannel(
+        config.id,
+        channel
+      );
 	});
 
 	const params = {
 		query: context.q,
 	}
 
-	return new SearchChannelPager(results, searchResponse?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page, getSearchChannelPager);
-
+    return new SearchChannelPager(
+      results,
+      searchResponse?.data?.search?.channels?.pageInfo?.hasNextPage,
+      params,
+      context.page,
+      getSearchChannelPager
+    );
 }
 
 function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager {

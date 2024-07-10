@@ -1579,7 +1579,7 @@ class SearchPlaylistPager extends PlaylistPager {
     }
 }
 
-const SourceChannelToGrayjayChannel = (pluginId, url, sourceChannel) => {
+const SourceChannelToGrayjayChannel = (pluginId, sourceChannel) => {
     const externalLinks = sourceChannel?.externalLinks ?? {};
     const links = Object.keys(externalLinks).reduce((acc, key) => {
         if (externalLinks[key]) {
@@ -1594,7 +1594,7 @@ const SourceChannelToGrayjayChannel = (pluginId, url, sourceChannel) => {
         banner: sourceChannel.banner?.url ?? "",
         subscribers: sourceChannel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
         description: sourceChannel?.description ?? "",
-        url,
+        url: `${BASE_URL}/${sourceChannel.name}`,
         links
     });
 };
@@ -1655,7 +1655,7 @@ const getViewCount = (sourceVideo) => {
     }
     return viewCount;
 };
-const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, sourceSubtitle) => {
+const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, player_metadata) => {
     let positiveRatingCount = 0;
     let negativeRatingCount = 0;
     const ratings = sourceVideo?.metrics?.engagement?.likes?.edges ?? [];
@@ -1672,6 +1672,14 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, so
     const isLive = getIsLive(sourceVideo);
     const viewCount = getViewCount(sourceVideo);
     const duration = isLive ? 0 : sourceVideo?.duration ?? 0;
+    const source = new HLSSource({
+        name: isLive ? 'live' : 'source',
+        duration,
+        url: player_metadata?.qualities?.auto[0]?.url,
+    });
+    const sources = [
+        source
+    ];
     const platformVideoDetails = {
         id: new PlatformID(PLATFORM, sourceVideo?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
         name: sourceVideo?.title ?? "",
@@ -1680,7 +1688,6 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, so
         uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         duration,
-        // viewCount,
         viewCount,
         url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : "",
         isLive,
@@ -1692,6 +1699,7 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, so
         hls: null,
         subtitles: []
     };
+    const sourceSubtitle = player_metadata?.subtitles;
     if (sourceSubtitle?.enable && sourceSubtitle?.data) {
         Object.keys(sourceSubtitle.data).forEach(key => {
             const subtitleData = sourceSubtitle.data[key];
@@ -1771,14 +1779,15 @@ source.setSettings = function (settings) {
 //Source Methods
 source.enable = function (conf, settings, saveStateStr) {
     config = conf ?? {};
-    _settings = settings ?? {
-        hideSensitiveContent: false,
-        avatarSizeOptionIndex: 8,
-        thumbnailResolutionOptionIndex: 7,
-        preferredCountryOptionIndex: 0,
-        videosPerPageOptionIndex: 4,
-        playlistsPerPageOptionIndex: 0
+    const DEFAULT_SETTINGS = {
+        hideSensitiveContent: true,
+        avatarSizeOptionIndex: 8, // 720px
+        thumbnailResolutionOptionIndex: 7, // 1080px
+        preferredCountryOptionIndex: 0, // empty
+        videosPerPageOptionIndex: 3, // 20
+        playlistsPerPageOptionIndex: 0 // 5
     };
+    _settings = { ...DEFAULT_SETTINGS, ...settings };
     if (IS_TESTING) {
         config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5";
     }
@@ -1879,7 +1888,7 @@ source.getChannel = function (url) {
         },
         query: CHANNEL_QUERY_DESKTOP
     });
-    return SourceChannelToGrayjayChannel(config.id, url, channelDetails.data.channel);
+    return SourceChannelToGrayjayChannel(config.id, channelDetails.data.channel);
 };
 source.getChannelContents = function (url, type, order, filters) {
     const page = 1;
@@ -2200,7 +2209,7 @@ function getChannelContentsPager(url, page, type, order, filters) {
     });
     const channel = jsonResponse?.data?.channel;
     const all = [
-        ...(channel?.lives?.edges?.map(e => e?.node) ?? []),
+        ...(channel?.lives?.edges?.filter(e => e?.node?.isOnAir)?.map(e => e?.node) ?? []),
         ...(channel?.videos?.edges?.map(e => e?.node) ?? [])
     ];
     let videos = all
@@ -2260,7 +2269,6 @@ function getSavedVideo(url, usePlatformAuth = false) {
     const headers1 = {
         "User-Agent": USER_AGENT,
         "Accept": "*/*",
-        // "Accept-Encoding": "gzip, deflate, br, zstd",
         "Referer": "https://geo.dailymotion.com/",
         "Origin": "https://geo.dailymotion.com",
         "DNT": "1",
@@ -2326,16 +2334,8 @@ function getSavedVideo(url, usePlatformAuth = false) {
         throw new UnavailableException('Failed to get video details');
     }
     const video_details = JSON.parse(video_details_response.body);
-    const sources = [
-        new HLSSource({
-            name: 'source',
-            duration: player_metadata?.duration,
-            url: player_metadata?.qualities?.auto[0]?.url,
-        })
-    ];
     const video = video_details?.data?.video;
-    const subtitles = player_metadata?.subtitles;
-    const platformVideoDetails = SourceVideoToPlatformVideoDetailsDef(config.id, video, sources, subtitles);
+    const platformVideoDetails = SourceVideoToPlatformVideoDetailsDef(config.id, video, player_metadata);
     return new PlatformVideoDetails(platformVideoDetails);
 }
 function getSearchChannelPager(context) {
@@ -2351,7 +2351,7 @@ function getSearchChannelPager(context) {
     });
     const results = searchResponse?.data?.search?.channels?.edges.map(edge => {
         const channel = edge.node;
-        return SourceChannelToGrayjayChannel(config.id, `${BASE_URL}/${channel.name}`, channel);
+        return SourceChannelToGrayjayChannel(config.id, channel);
     });
     const params = {
         query: context.q,

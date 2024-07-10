@@ -28,7 +28,7 @@
   ],
   "authentication": {
     "loginUrl": "https://www.dailymotion.com/signin?urlback=/library",
-    "completionUrl":"https://www.dailymotion.com/library",
+    "completionUrl": "https://www.dailymotion.com/library",
     "domainHeadersToFind": {
       "graphql.api.dailymotion.com": [
         "Authorization",
