@@ -647,7 +647,7 @@ export type BookmarkFilter = {
 };
 
 /** The node at the end of a BookmarksMetricEdge. */
-export type BookmarkMetric = Metric & {
+export type BookmarkMetric = Metric & Node & {
   __typename?: 'BookmarkMetric';
   /** The bookmark metric being measured. */
   bookmark: BookmarkTypename;
@@ -809,7 +809,10 @@ export type Channel = Node & {
    * @deprecated Use `avatar` field.
    */
   logoURL?: Maybe<Scalars['String']['output']>;
-  /** The medias of the channel. */
+  /**
+   * The medias of the channel.
+   * @deprecated Use `videos` or `lives` respectively.
+   */
   medias?: Maybe<MediaConnection>;
   /**
    * The metabase iframe url of the non-verified channel.
@@ -1135,7 +1138,7 @@ export enum ChannelMediasSort {
 }
 
 /** The node at the end of a ChannelMetricEdge. */
-export type ChannelMetric = Metric & {
+export type ChannelMetric = Metric & Node & {
   __typename?: 'ChannelMetric';
   /** The ID of the object. */
   id: Scalars['ID']['output'];
@@ -1248,8 +1251,10 @@ export type ChannelStatsViews = Node & {
 };
 
 /** Information about required updates on the channel. */
-export type ChannelUpdateRequired = {
+export type ChannelUpdateRequired = Node & {
   __typename?: 'ChannelUpdateRequired';
+  /** The ID of the object. */
+  id: Scalars['ID']['output'];
   /** Indicates whether the name of the channel is required to be updated. */
   name: Scalars['Boolean']['output'];
 };
@@ -1466,7 +1471,7 @@ export type CollectionFilter = {
 };
 
 /** The node at the end of a CollectionMetricEdge. */
-export type CollectionMetric = Metric & {
+export type CollectionMetric = Metric & Node & {
   __typename?: 'CollectionMetric';
   /** The ID of the object. */
   id: Scalars['ID']['output'];
@@ -2564,8 +2569,10 @@ export type FollowerEngagement = Node & {
 };
 
 /** Information about the follower engagement notifications on a Channel. */
-export type FollowerEngagementNotifications = {
+export type FollowerEngagementNotifications = Node & {
   __typename?: 'FollowerEngagementNotifications';
+  /** The ID of the object. */
+  id: Scalars['ID']['output'];
   /** Indicates whether the follower wants to received notifications when the channel uploads content. */
   uploads: Scalars['Boolean']['output'];
 };
@@ -2965,8 +2972,10 @@ export type LikeMetricFilter = {
 };
 
 /** The node at the end of a LikeEdge. */
-export type LikeNode = {
+export type LikeNode = Node & {
   __typename?: 'LikeNode';
+  /** The ID of the object. */
+  id: Scalars['ID']['output'];
   /** The post liked by the channel. */
   post?: Maybe<Post>;
   /** Indicates the like rating of the liked post from the channel. */
@@ -3100,8 +3109,17 @@ export type Live = Content & Node & Recording & {
    *   user associated with the access token must be the owner of the video. This
    *   field is rate limited. The returned url is secured: it can only be consumed by
    *   the user who made the query and it expires after a certain time.
+   * @deprecated Use `hslUrl` field.
    */
   hlsURL?: Maybe<Scalars['String']['output']>;
+  /**
+   * The URL of the adaptative bitrate manifest using the Apple HTTP Live Streaming
+   *   protocol. Without an access token this field contains null, the Dailymotion
+   *   user associated with the access token must be the owner of the video. This
+   *   field is rate limited. The returned url is secured: it can only be consumed by
+   *   the user who made the query and it expires after a certain time.
+   */
+  hlsUrl?: Maybe<Scalars['String']['output']>;
   /** The ID of the object. */
   id: Scalars['ID']['output'];
   /** The interests associated to the live. */
@@ -3342,7 +3360,7 @@ export type LiveFilter = {
 };
 
 /** The node at the end of a LiveMetricEdge. */
-export type LiveMetric = Metric & {
+export type LiveMetric = Metric & Node & {
   __typename?: 'LiveMetric';
   /** The ID of the object. */
   id: Scalars['ID']['output'];
@@ -5291,7 +5309,10 @@ export type Query = {
   localization?: Maybe<Localization>;
   /** Information about the connected user. */
   me?: Maybe<User>;
-  /** A media represents a video or a live. */
+  /**
+   * A media represents a video or a live.
+   * @deprecated Use `recording`.
+   */
   media?: Maybe<Media>;
   /** A list of media streams. */
   mediaStreams?: Maybe<MediaStreamsConnection>;
@@ -5312,6 +5333,8 @@ export type Query = {
    * @deprecated Use `reaction`.
    */
   reactionVideo?: Maybe<ReactionVideo>;
+  /** Represents a recording. */
+  recording?: Maybe<Recording>;
   /** Perform a search. */
   search?: Maybe<Search>;
   /**
@@ -5526,6 +5549,13 @@ export type QueryReactionVideoArgs = {
 
 
 /** The query root of Dailymotion's GraphQL API. */
+export type QueryRecordingArgs = {
+  id: Scalars['ID']['input'];
+  password?: InputMaybe<Scalars['String']['input']>;
+};
+
+
+/** The query root of Dailymotion's GraphQL API. */
 export type QueryTopicArgs = {
   xid?: InputMaybe<Scalars['String']['input']>;
 };
@@ -5608,8 +5638,17 @@ export type Reaction = Content & Node & Recording & {
    *   user associated with the access token must be the owner of the video. This
    *   field is rate limited. The returned url is secured: it can only be consumed by
    *   the user who made the query and it expires after a certain time.
+   * @deprecated Use `hslUrl` field.
    */
   hlsURL?: Maybe<Scalars['String']['output']>;
+  /**
+   * The URL of the adaptive bitrate manifest using the Apple HTTP Live Streaming
+   *   protocol. Without an access token this field contains null, the Dailymotion
+   *   user associated with the access token must be the owner of the video. This
+   *   field is rate limited. The returned url is secured: it can only be consumed by
+   *   the user who made the query and it expires after a certain time.
+   */
+  hlsUrl?: Maybe<Scalars['String']['output']>;
   /** The ID of the object. */
   id: Scalars['ID']['output'];
   /** Indicates whether the reaction allows comments to be posted. */
@@ -5715,7 +5754,7 @@ export type ReactionEngagementMetricsLikesArgs = {
 };
 
 /** The node at the end of a ReactionMetricEdge. */
-export type ReactionMetric = Metric & {
+export type ReactionMetric = Metric & Node & {
   __typename?: 'ReactionMetric';
   /** The ID of the object. */
   id: Scalars['ID']['output'];
@@ -6073,6 +6112,14 @@ export type Recording = {
    * @deprecated Use `createDate` field.
    */
   createdAt?: Maybe<Scalars['DateTime']['output']>;
+  /**
+   * The URL of the adaptative bitrate manifest using the Apple HTTP Live Streaming
+   *   protocol. Without an access token this field contains null, the Dailymotion
+   *   user associated with the access token must be the owner of the video. This
+   *   field is rate limited. The returned url is secured: it can only be consumed by
+   *   the user who made the query and it expires after a certain time.
+   */
+  hlsUrl?: Maybe<Scalars['String']['output']>;
   /** The reactions created on the recording. */
   reactions?: Maybe<ReactionConnection>;
   /** The share urls of the recording. */
@@ -6809,6 +6856,8 @@ export type Story = Channel | Collection | ContentCategory | Hashtag | Live | Po
 export type StoryOperator = {
   /** Short for equal, must match the given data exactly. */
   eq?: InputMaybe<StoryTypename>;
+  /** Short for in array, must NOT be an element of the array. */
+  in?: InputMaybe<Array<StoryTypename>>;
 };
 
 /** The possible types for a story. */
@@ -7571,17 +7620,17 @@ export type User = Node & {
   /** The user's birthday in (DateTime ISO8601). */
   birthday?: Maybe<Scalars['DateTime']['output']>;
   /** Indicates whether the user can access to partner HQ. */
-  canAccessPartnerHQ?: Maybe<Scalars['Boolean']['output']>;
+  canAccessPartnerHQ: Scalars['Boolean']['output'];
   /**
    * Indicates whether the user can change its nickname.
    * @deprecated Use `channel.canChangeName`.
    */
-  canChangeNickname?: Maybe<Scalars['Boolean']['output']>;
+  canChangeNickname: Scalars['Boolean']['output'];
   /**
    * Indicates whether the user can change its username.
    * @deprecated Use `channel.canChangeName`.
    */
-  canChangeUsername?: Maybe<Scalars['Boolean']['output']>;
+  canChangeUsername: Scalars['Boolean']['output'];
   /** The channel of the Partner. */
   channel?: Maybe<Channel>;
   /**
@@ -7648,26 +7697,26 @@ export type User = Node & {
    * Indicates whether the user has a channel.
    * @deprecated Use `channel` field, if not null, then true.
    */
-  hasChannel?: Maybe<Scalars['Boolean']['output']>;
+  hasChannel: Scalars['Boolean']['output'];
   /** Indicates whether the user has any linked social accounts. */
-  hasLinkedSocialAccounts?: Maybe<Scalars['Boolean']['output']>;
+  hasLinkedSocialAccounts: Scalars['Boolean']['output'];
   /** Indicates whether the user has any (pending or active) organization memberships. */
-  hasOrganizationMemberships?: Maybe<Scalars['Boolean']['output']>;
+  hasOrganizationMemberships: Scalars['Boolean']['output'];
   /** The ID of the object. */
   id: Scalars['ID']['output'];
   /** The interests of the user. */
   interests?: Maybe<UserInterestConnection>;
   /** Indicates whether the user is an admin. */
-  isAdmin?: Maybe<Scalars['Boolean']['output']>;
+  isAdmin: Scalars['Boolean']['output'];
   /** Indicates whether the user is confirmed. */
-  isConfirmed?: Maybe<Scalars['Boolean']['output']>;
+  isConfirmed: Scalars['Boolean']['output'];
   /** Indicates whether the user can mass report videos as copyright owner. */
-  isCopyrightOwnerMassReport?: Maybe<Scalars['Boolean']['output']>;
+  isCopyrightOwnerMassReport: Scalars['Boolean']['output'];
   /**
    * Indicates whether the user is followed by the connected user. Returns `False` if no user is connected.
    * @deprecated Use `channel.followerEngagement` field.
    */
-  isFollowed?: Maybe<Scalars['Boolean']['output']>;
+  isFollowed: Scalars['Boolean']['output'];
   /** The language of the user. */
   language?: Maybe<Language>;
   /** The last name of the user. */
@@ -8333,8 +8382,17 @@ export type Video = Content & Node & Recording & {
    *   user associated with the access token must be the owner of the video. This
    *   field is rate limited. The returned url is secured: it can only be consumed by
    *   the user who made the query and it expires after a certain time.
+   * @deprecated Use `hslUrl` field.
    */
   hlsURL?: Maybe<Scalars['String']['output']>;
+  /**
+   * The URL of the adaptative bitrate manifest using the Apple HTTP Live Streaming
+   *   protocol. Without an access token this field contains null, the Dailymotion
+   *   user associated with the access token must be the owner of the video. This
+   *   field is rate limited. The returned url is secured: it can only be consumed by
+   *   the user who made the query and it expires after a certain time.
+   */
+  hlsUrl?: Maybe<Scalars['String']['output']>;
   /** The ID of the object. */
   id: Scalars['ID']['output'];
   /** The interests associated to the video. */
@@ -8679,7 +8737,7 @@ export type VideoFilter = {
 };
 
 /** The node at the end of a VideoMetricEdge. */
-export type VideoMetric = Metric & {
+export type VideoMetric = Metric & Node & {
   __typename?: 'VideoMetric';
   /** The ID of the object. */
   id: Scalars['ID']['output'];
@@ -9168,7 +9226,7 @@ export type ResolversInterfaceTypes<_RefType extends Record<string, unknown>> = 
   Content: ( Collection ) | ( Live ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( Video );
   History: ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } );
   Metric: ( BookmarkMetric ) | ( ChannelMetric ) | ( CollectionMetric ) | ( CommentMetric ) | ( LikeMetric ) | ( LiveMetric ) | ( ReactionMetric ) | ( VideoMetric );
-  Node: ( Omit<Analytics, 'timeSeries' | 'topValues'> & { timeSeries: _RefType['AnalyticsPayload'], topValues: _RefType['AnalyticsPayload'] } ) | ( AnalyticsGroupedPayloadItem ) | ( AnalyticsReport ) | ( Attribute ) | ( Behavior ) | ( BehaviorRuleTag ) | ( Channel ) | ( ChannelEngagementMetrics ) | ( ChannelExternalLinks ) | ( ChannelMetrics ) | ( ChannelShareUrls ) | ( ChannelStats ) | ( ChannelStatsFollowers ) | ( ChannelStatsReactions ) | ( ChannelStatsVideos ) | ( ChannelStatsViews ) | ( Collection ) | ( CollectionEngagementMetrics ) | ( CollectionMetrics ) | ( CollectionStats ) | ( CollectionStatsVideos ) | ( Omit<Comment, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( CommentEngagementMetrics ) | ( CommentMetrics ) | ( CommentViewerEngagement ) | ( ContentCategory ) | ( Omit<Conversation, 'story'> & { story?: Maybe<_RefType['Story']> } ) | ( Country ) | ( CuratedCategory ) | ( DailymotionAd ) | ( EmailChangeRequest ) | ( ExperimentMatch ) | ( FallbackCountry ) | ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( FeatureMatch ) | ( FeaturedContent ) | ( FileUpload ) | ( FollowedChannel ) | ( FollowedTopic ) | ( Follower ) | ( FollowerEngagement ) | ( Following ) | ( FollowingChannelStartsLive ) | ( FollowingChannelUploadsVideo ) | ( FollowingStartsLive ) | ( GeoblockedCountries ) | ( Geoblocking ) | ( Hashtag ) | ( HashtagEngagementMetrics ) | ( HashtagMetrics ) | ( Image ) | ( Interest ) | ( Language ) | ( Live ) | ( LiveEngagementMetrics ) | ( LiveMetrics ) | ( LiveShareUrls ) | ( LiveStats ) | ( LiveStatsViews ) | ( LiveStreams ) | ( LiveViewerEngagement ) | ( Localization ) | ( LocalizationMe ) | ( MediaModeration ) | ( MediaTag ) | ( MediaUploadInfo ) | ( Metadata ) | ( MonetizationInsights ) | ( Neon ) | ( NotificationSettings ) | ( Organization ) | ( OrganizationAnalysis ) | ( OrganizationStats ) | ( OrganizationStatsChannels ) | ( Partner ) | ( PartnerReportFile ) | ( PartnerSpace ) | ( Player ) | ( PlayerQueue ) | ( Omit<Poll, 'component' | 'post'> & { component?: Maybe<_RefType['Component']>, post?: Maybe<_RefType['Post']> } ) | ( PollOption ) | ( PollShareUrls ) | ( ProductUpdates ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( ReactionEngagementMetrics ) | ( ReactionMetrics ) | ( ReactionShareUrls ) | ( ReactionVideo ) | ( ReactionVideoStats ) | ( ReactionVideoStatsBookmarks ) | ( ReactionVideoStatsFavorites ) | ( ReactionVideoStatsLikes ) | ( ReactionVideoStatsReactionVideos ) | ( ReactionVideoStatsSaves ) | ( ReactionViewerEngagement ) | ( Omit<RecommendedRecording, 'recording'> & { recording?: Maybe<_RefType['Recording']> } ) | ( RemindUnwatchedVideos ) | ( ReportFileDownloadLink ) | ( Restriction ) | ( Rule ) | ( Search ) | ( Omit<Section, 'relatedComponent'> & { relatedComponent?: Maybe<_RefType['Component']> } ) | ( SharingUrl ) | ( Subdivision ) | ( Subtitle ) | ( Suggestion ) | ( SupportedCountry ) | ( SupportedLanguage ) | ( Thumbnails ) | ( Tips ) | ( Topic ) | ( TopicLabel ) | ( TopicShareUrls ) | ( TopicStats ) | ( TopicStatsFollowers ) | ( TopicStatsVideos ) | ( TopicWhitelistStatus ) | ( User ) | ( UserInterest ) | ( UserPollAnswer ) | ( UserStats ) | ( UserStatsCollections ) | ( UserStatsFollowers ) | ( UserStatsFollowingChannels ) | ( UserStatsFollowingTopics ) | ( UserStatsLikedVideos ) | ( UserStatsReactionVideos ) | ( UserStatsUploadedVideos ) | ( UserStatsVideos ) | ( UserStatsWatchLater ) | ( UserStatsWatchedVideos ) | ( Video ) | ( VideoDigest ) | ( VideoEngagementMetrics ) | ( VideoMetrics ) | ( VideoShareUrls ) | ( VideoStats ) | ( VideoStatsBookmarks ) | ( VideoStatsFavorites ) | ( VideoStatsLikes ) | ( VideoStatsReactionVideos ) | ( VideoStatsSaves ) | ( VideoStatsViews ) | ( VideoStreams ) | ( VideoViewerEngagement ) | ( Views ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } ) | ( Web ) | ( WebMetadata ) | ( WebMetadataConnection );
+  Node: ( Omit<Analytics, 'timeSeries' | 'topValues'> & { timeSeries: _RefType['AnalyticsPayload'], topValues: _RefType['AnalyticsPayload'] } ) | ( AnalyticsGroupedPayloadItem ) | ( AnalyticsReport ) | ( Attribute ) | ( Behavior ) | ( BehaviorRuleTag ) | ( BookmarkMetric ) | ( Channel ) | ( ChannelEngagementMetrics ) | ( ChannelExternalLinks ) | ( ChannelMetric ) | ( ChannelMetrics ) | ( ChannelShareUrls ) | ( ChannelStats ) | ( ChannelStatsFollowers ) | ( ChannelStatsReactions ) | ( ChannelStatsVideos ) | ( ChannelStatsViews ) | ( ChannelUpdateRequired ) | ( Collection ) | ( CollectionEngagementMetrics ) | ( CollectionMetric ) | ( CollectionMetrics ) | ( CollectionStats ) | ( CollectionStatsVideos ) | ( Omit<Comment, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( CommentEngagementMetrics ) | ( CommentMetrics ) | ( CommentViewerEngagement ) | ( ContentCategory ) | ( Omit<Conversation, 'story'> & { story?: Maybe<_RefType['Story']> } ) | ( Country ) | ( CuratedCategory ) | ( DailymotionAd ) | ( EmailChangeRequest ) | ( ExperimentMatch ) | ( FallbackCountry ) | ( Omit<Favorite, 'post'> & { post: _RefType['Post'] } ) | ( FeatureMatch ) | ( FeaturedContent ) | ( FileUpload ) | ( FollowedChannel ) | ( FollowedTopic ) | ( Follower ) | ( FollowerEngagement ) | ( FollowerEngagementNotifications ) | ( Following ) | ( FollowingChannelStartsLive ) | ( FollowingChannelUploadsVideo ) | ( FollowingStartsLive ) | ( GeoblockedCountries ) | ( Geoblocking ) | ( Hashtag ) | ( HashtagEngagementMetrics ) | ( HashtagMetrics ) | ( Image ) | ( Interest ) | ( Language ) | ( Omit<LikeNode, 'post'> & { post?: Maybe<_RefType['Post']> } ) | ( Live ) | ( LiveEngagementMetrics ) | ( LiveMetric ) | ( LiveMetrics ) | ( LiveShareUrls ) | ( LiveStats ) | ( LiveStatsViews ) | ( LiveStreams ) | ( LiveViewerEngagement ) | ( Localization ) | ( LocalizationMe ) | ( MediaModeration ) | ( MediaTag ) | ( MediaUploadInfo ) | ( Metadata ) | ( MonetizationInsights ) | ( Neon ) | ( NotificationSettings ) | ( Organization ) | ( OrganizationAnalysis ) | ( OrganizationStats ) | ( OrganizationStatsChannels ) | ( Partner ) | ( PartnerReportFile ) | ( PartnerSpace ) | ( Player ) | ( PlayerQueue ) | ( Omit<Poll, 'component' | 'post'> & { component?: Maybe<_RefType['Component']>, post?: Maybe<_RefType['Post']> } ) | ( PollOption ) | ( PollShareUrls ) | ( ProductUpdates ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( ReactionEngagementMetrics ) | ( ReactionMetric ) | ( ReactionMetrics ) | ( ReactionShareUrls ) | ( ReactionVideo ) | ( ReactionVideoStats ) | ( ReactionVideoStatsBookmarks ) | ( ReactionVideoStatsFavorites ) | ( ReactionVideoStatsLikes ) | ( ReactionVideoStatsReactionVideos ) | ( ReactionVideoStatsSaves ) | ( ReactionViewerEngagement ) | ( Omit<RecommendedRecording, 'recording'> & { recording?: Maybe<_RefType['Recording']> } ) | ( RemindUnwatchedVideos ) | ( ReportFileDownloadLink ) | ( Restriction ) | ( Rule ) | ( Search ) | ( Omit<Section, 'relatedComponent'> & { relatedComponent?: Maybe<_RefType['Component']> } ) | ( SharingUrl ) | ( Subdivision ) | ( Subtitle ) | ( Suggestion ) | ( SupportedCountry ) | ( SupportedLanguage ) | ( Thumbnails ) | ( Tips ) | ( Topic ) | ( TopicLabel ) | ( TopicShareUrls ) | ( TopicStats ) | ( TopicStatsFollowers ) | ( TopicStatsVideos ) | ( TopicWhitelistStatus ) | ( User ) | ( UserInterest ) | ( UserPollAnswer ) | ( UserStats ) | ( UserStatsCollections ) | ( UserStatsFollowers ) | ( UserStatsFollowingChannels ) | ( UserStatsFollowingTopics ) | ( UserStatsLikedVideos ) | ( UserStatsReactionVideos ) | ( UserStatsUploadedVideos ) | ( UserStatsVideos ) | ( UserStatsWatchLater ) | ( UserStatsWatchedVideos ) | ( Video ) | ( VideoDigest ) | ( VideoEngagementMetrics ) | ( VideoMetric ) | ( VideoMetrics ) | ( VideoShareUrls ) | ( VideoStats ) | ( VideoStatsBookmarks ) | ( VideoStatsFavorites ) | ( VideoStatsLikes ) | ( VideoStatsReactionVideos ) | ( VideoStatsSaves ) | ( VideoStatsViews ) | ( VideoStreams ) | ( VideoViewerEngagement ) | ( Views ) | ( Omit<Watch, 'post'> & { post: _RefType['Post'] } ) | ( Web ) | ( WebMetadata ) | ( WebMetadataConnection );
   PostEngagementMetrics: ( LiveEngagementMetrics ) | ( ReactionEngagementMetrics ) | ( VideoEngagementMetrics );
   PostMetrics: ( LiveMetrics ) | ( ReactionMetrics ) | ( VideoMetrics );
   Recording: ( Live ) | ( Omit<Reaction, 'opener'> & { opener?: Maybe<_RefType['Story']> } ) | ( Video );
@@ -10691,6 +10749,7 @@ export type ChannelStatsViewsResolvers<ContextType = any, ParentType extends Res
 };
 
 export type ChannelUpdateRequiredResolvers<ContextType = any, ParentType extends ResolversParentTypes['ChannelUpdateRequired'] = ResolversParentTypes['ChannelUpdateRequired']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   name?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -11246,6 +11305,7 @@ export type FollowerEngagementResolvers<ContextType = any, ParentType extends Re
 };
 
 export type FollowerEngagementNotificationsResolvers<ContextType = any, ParentType extends ResolversParentTypes['FollowerEngagementNotifications'] = ResolversParentTypes['FollowerEngagementNotifications']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   uploads?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
 };
@@ -11461,6 +11521,7 @@ export type LikeMetricEdgeResolvers<ContextType = any, ParentType extends Resolv
 };
 
 export type LikeNodeResolvers<ContextType = any, ParentType extends ResolversParentTypes['LikeNode'] = ResolversParentTypes['LikeNode']> = {
+  id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   post?: Resolver<Maybe<ResolversTypes['Post']>, ParentType, ContextType>;
   rating?: Resolver<Maybe<ResolversTypes['LikeRating']>, ParentType, ContextType>;
   __isTypeOf?: IsTypeOfResolverFn<ParentType, ContextType>;
@@ -11501,6 +11562,7 @@ export type LiveResolvers<ContextType = any, ParentType extends ResolversParentT
   geoblocking?: Resolver<Maybe<ResolversTypes['GeoblockingConnection']>, ParentType, ContextType, RequireFields<LiveGeoblockingArgs, 'page'>>;
   height?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   hlsURL?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hlsUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   interests?: Resolver<Maybe<ResolversTypes['InterestConnection']>, ParentType, ContextType, RequireFields<LiveInterestsArgs, 'page'>>;
   isBookmarked?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
@@ -11840,7 +11902,7 @@ export type NeonResolvers<ContextType = any, ParentType extends ResolversParentT
 };
 
 export type NodeResolvers<ContextType = any, ParentType extends ResolversParentTypes['Node'] = ResolversParentTypes['Node']> = {
-  __resolveType: TypeResolveFn<'Analytics' | 'AnalyticsGroupedPayloadItem' | 'AnalyticsReport' | 'Attribute' | 'Behavior' | 'BehaviorRuleTag' | 'Channel' | 'ChannelEngagementMetrics' | 'ChannelExternalLinks' | 'ChannelMetrics' | 'ChannelShareUrls' | 'ChannelStats' | 'ChannelStatsFollowers' | 'ChannelStatsReactions' | 'ChannelStatsVideos' | 'ChannelStatsViews' | 'Collection' | 'CollectionEngagementMetrics' | 'CollectionMetrics' | 'CollectionStats' | 'CollectionStatsVideos' | 'Comment' | 'CommentEngagementMetrics' | 'CommentMetrics' | 'CommentViewerEngagement' | 'ContentCategory' | 'Conversation' | 'Country' | 'CuratedCategory' | 'DailymotionAd' | 'EmailChangeRequest' | 'ExperimentMatch' | 'FallbackCountry' | 'Favorite' | 'FeatureMatch' | 'FeaturedContent' | 'FileUpload' | 'FollowedChannel' | 'FollowedTopic' | 'Follower' | 'FollowerEngagement' | 'Following' | 'FollowingChannelStartsLive' | 'FollowingChannelUploadsVideo' | 'FollowingStartsLive' | 'GeoblockedCountries' | 'Geoblocking' | 'Hashtag' | 'HashtagEngagementMetrics' | 'HashtagMetrics' | 'Image' | 'Interest' | 'Language' | 'Live' | 'LiveEngagementMetrics' | 'LiveMetrics' | 'LiveShareUrls' | 'LiveStats' | 'LiveStatsViews' | 'LiveStreams' | 'LiveViewerEngagement' | 'Localization' | 'LocalizationMe' | 'MediaModeration' | 'MediaTag' | 'MediaUploadInfo' | 'Metadata' | 'MonetizationInsights' | 'Neon' | 'NotificationSettings' | 'Organization' | 'OrganizationAnalysis' | 'OrganizationStats' | 'OrganizationStatsChannels' | 'Partner' | 'PartnerReportFile' | 'PartnerSpace' | 'Player' | 'PlayerQueue' | 'Poll' | 'PollOption' | 'PollShareUrls' | 'ProductUpdates' | 'Reaction' | 'ReactionEngagementMetrics' | 'ReactionMetrics' | 'ReactionShareUrls' | 'ReactionVideo' | 'ReactionVideoStats' | 'ReactionVideoStatsBookmarks' | 'ReactionVideoStatsFavorites' | 'ReactionVideoStatsLikes' | 'ReactionVideoStatsReactionVideos' | 'ReactionVideoStatsSaves' | 'ReactionViewerEngagement' | 'RecommendedRecording' | 'RemindUnwatchedVideos' | 'ReportFileDownloadLink' | 'Restriction' | 'Rule' | 'Search' | 'Section' | 'SharingURL' | 'Subdivision' | 'Subtitle' | 'Suggestion' | 'SupportedCountry' | 'SupportedLanguage' | 'Thumbnails' | 'Tips' | 'Topic' | 'TopicLabel' | 'TopicShareUrls' | 'TopicStats' | 'TopicStatsFollowers' | 'TopicStatsVideos' | 'TopicWhitelistStatus' | 'User' | 'UserInterest' | 'UserPollAnswer' | 'UserStats' | 'UserStatsCollections' | 'UserStatsFollowers' | 'UserStatsFollowingChannels' | 'UserStatsFollowingTopics' | 'UserStatsLikedVideos' | 'UserStatsReactionVideos' | 'UserStatsUploadedVideos' | 'UserStatsVideos' | 'UserStatsWatchLater' | 'UserStatsWatchedVideos' | 'Video' | 'VideoDigest' | 'VideoEngagementMetrics' | 'VideoMetrics' | 'VideoShareUrls' | 'VideoStats' | 'VideoStatsBookmarks' | 'VideoStatsFavorites' | 'VideoStatsLikes' | 'VideoStatsReactionVideos' | 'VideoStatsSaves' | 'VideoStatsViews' | 'VideoStreams' | 'VideoViewerEngagement' | 'Views' | 'Watch' | 'Web' | 'WebMetadata' | 'WebMetadataConnection', ParentType, ContextType>;
+  __resolveType: TypeResolveFn<'Analytics' | 'AnalyticsGroupedPayloadItem' | 'AnalyticsReport' | 'Attribute' | 'Behavior' | 'BehaviorRuleTag' | 'BookmarkMetric' | 'Channel' | 'ChannelEngagementMetrics' | 'ChannelExternalLinks' | 'ChannelMetric' | 'ChannelMetrics' | 'ChannelShareUrls' | 'ChannelStats' | 'ChannelStatsFollowers' | 'ChannelStatsReactions' | 'ChannelStatsVideos' | 'ChannelStatsViews' | 'ChannelUpdateRequired' | 'Collection' | 'CollectionEngagementMetrics' | 'CollectionMetric' | 'CollectionMetrics' | 'CollectionStats' | 'CollectionStatsVideos' | 'Comment' | 'CommentEngagementMetrics' | 'CommentMetrics' | 'CommentViewerEngagement' | 'ContentCategory' | 'Conversation' | 'Country' | 'CuratedCategory' | 'DailymotionAd' | 'EmailChangeRequest' | 'ExperimentMatch' | 'FallbackCountry' | 'Favorite' | 'FeatureMatch' | 'FeaturedContent' | 'FileUpload' | 'FollowedChannel' | 'FollowedTopic' | 'Follower' | 'FollowerEngagement' | 'FollowerEngagementNotifications' | 'Following' | 'FollowingChannelStartsLive' | 'FollowingChannelUploadsVideo' | 'FollowingStartsLive' | 'GeoblockedCountries' | 'Geoblocking' | 'Hashtag' | 'HashtagEngagementMetrics' | 'HashtagMetrics' | 'Image' | 'Interest' | 'Language' | 'LikeNode' | 'Live' | 'LiveEngagementMetrics' | 'LiveMetric' | 'LiveMetrics' | 'LiveShareUrls' | 'LiveStats' | 'LiveStatsViews' | 'LiveStreams' | 'LiveViewerEngagement' | 'Localization' | 'LocalizationMe' | 'MediaModeration' | 'MediaTag' | 'MediaUploadInfo' | 'Metadata' | 'MonetizationInsights' | 'Neon' | 'NotificationSettings' | 'Organization' | 'OrganizationAnalysis' | 'OrganizationStats' | 'OrganizationStatsChannels' | 'Partner' | 'PartnerReportFile' | 'PartnerSpace' | 'Player' | 'PlayerQueue' | 'Poll' | 'PollOption' | 'PollShareUrls' | 'ProductUpdates' | 'Reaction' | 'ReactionEngagementMetrics' | 'ReactionMetric' | 'ReactionMetrics' | 'ReactionShareUrls' | 'ReactionVideo' | 'ReactionVideoStats' | 'ReactionVideoStatsBookmarks' | 'ReactionVideoStatsFavorites' | 'ReactionVideoStatsLikes' | 'ReactionVideoStatsReactionVideos' | 'ReactionVideoStatsSaves' | 'ReactionViewerEngagement' | 'RecommendedRecording' | 'RemindUnwatchedVideos' | 'ReportFileDownloadLink' | 'Restriction' | 'Rule' | 'Search' | 'Section' | 'SharingURL' | 'Subdivision' | 'Subtitle' | 'Suggestion' | 'SupportedCountry' | 'SupportedLanguage' | 'Thumbnails' | 'Tips' | 'Topic' | 'TopicLabel' | 'TopicShareUrls' | 'TopicStats' | 'TopicStatsFollowers' | 'TopicStatsVideos' | 'TopicWhitelistStatus' | 'User' | 'UserInterest' | 'UserPollAnswer' | 'UserStats' | 'UserStatsCollections' | 'UserStatsFollowers' | 'UserStatsFollowingChannels' | 'UserStatsFollowingTopics' | 'UserStatsLikedVideos' | 'UserStatsReactionVideos' | 'UserStatsUploadedVideos' | 'UserStatsVideos' | 'UserStatsWatchLater' | 'UserStatsWatchedVideos' | 'Video' | 'VideoDigest' | 'VideoEngagementMetrics' | 'VideoMetric' | 'VideoMetrics' | 'VideoShareUrls' | 'VideoStats' | 'VideoStatsBookmarks' | 'VideoStatsFavorites' | 'VideoStatsLikes' | 'VideoStatsReactionVideos' | 'VideoStatsSaves' | 'VideoStatsViews' | 'VideoStreams' | 'VideoViewerEngagement' | 'Views' | 'Watch' | 'Web' | 'WebMetadata' | 'WebMetadataConnection', ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
 };
 
@@ -12085,6 +12147,7 @@ export type QueryResolvers<ContextType = any, ParentType extends ResolversParent
   polls?: Resolver<Maybe<ResolversTypes['PollConnection']>, ParentType, ContextType, RequireFields<QueryPollsArgs, 'first' | 'page'>>;
   reaction?: Resolver<Maybe<ResolversTypes['Reaction']>, ParentType, ContextType, RequireFields<QueryReactionArgs, 'xid'>>;
   reactionVideo?: Resolver<Maybe<ResolversTypes['ReactionVideo']>, ParentType, ContextType, RequireFields<QueryReactionVideoArgs, 'xid'>>;
+  recording?: Resolver<Maybe<ResolversTypes['Recording']>, ParentType, ContextType, RequireFields<QueryRecordingArgs, 'id'>>;
   search?: Resolver<Maybe<ResolversTypes['Search']>, ParentType, ContextType>;
   supportedCountries?: Resolver<Maybe<Array<Maybe<ResolversTypes['Country']>>>, ParentType, ContextType>;
   topic?: Resolver<Maybe<ResolversTypes['Topic']>, ParentType, ContextType, Partial<QueryTopicArgs>>;
@@ -12104,6 +12167,7 @@ export type ReactionResolvers<ContextType = any, ParentType extends ResolversPar
   duration?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   hashtags?: Resolver<Maybe<ResolversTypes['HashtagConnection']>, ParentType, ContextType, RequireFields<ReactionHashtagsArgs, 'first' | 'page'>>;
   hlsURL?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hlsUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   isCommentsEnabled?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
   isReactionsEnabled?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
@@ -12307,6 +12371,7 @@ export type RecordingResolvers<ContextType = any, ParentType extends ResolversPa
   __resolveType: TypeResolveFn<'Live' | 'Reaction' | 'Video', ParentType, ContextType>;
   createDate?: Resolver<ResolversTypes['DateTime'], ParentType, ContextType>;
   createdAt?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
+  hlsUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   reactions?: Resolver<Maybe<ResolversTypes['ReactionConnection']>, ParentType, ContextType, RequireFields<RecordingReactionsArgs, 'first' | 'page'>>;
   shareUrls?: Resolver<Maybe<ResolversTypes['ShareUrls']>, ParentType, ContextType>;
   thumbnail?: Resolver<Maybe<ResolversTypes['Image']>, ParentType, ContextType, RequireFields<RecordingThumbnailArgs, 'height'>>;
@@ -12802,9 +12867,9 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
   appleID?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   avatarURL?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType, RequireFields<UserAvatarUrlArgs, 'size'>>;
   birthday?: Resolver<Maybe<ResolversTypes['DateTime']>, ParentType, ContextType>;
-  canAccessPartnerHQ?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  canChangeNickname?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  canChangeUsername?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  canAccessPartnerHQ?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  canChangeNickname?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  canChangeUsername?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   channel?: Resolver<Maybe<ResolversTypes['Channel']>, ParentType, ContextType>;
   collections?: Resolver<Maybe<ResolversTypes['CollectionConnection']>, ParentType, ContextType, RequireFields<UserCollectionsArgs, 'first' | 'page'>>;
   country?: Resolver<Maybe<ResolversTypes['Country']>, ParentType, ContextType>;
@@ -12824,15 +12889,15 @@ export type UserResolvers<ContextType = any, ParentType extends ResolversParentT
   fullName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   gender?: Resolver<Maybe<ResolversTypes['Gender']>, ParentType, ContextType>;
   googleplusID?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
-  hasChannel?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  hasLinkedSocialAccounts?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  hasOrganizationMemberships?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  hasChannel?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  hasLinkedSocialAccounts?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  hasOrganizationMemberships?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   interests?: Resolver<Maybe<ResolversTypes['UserInterestConnection']>, ParentType, ContextType, RequireFields<UserInterestsArgs, 'enabledOnly' | 'page'>>;
-  isAdmin?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  isConfirmed?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  isCopyrightOwnerMassReport?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
-  isFollowed?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
+  isAdmin?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  isConfirmed?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  isCopyrightOwnerMassReport?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
+  isFollowed?: Resolver<ResolversTypes['Boolean'], ParentType, ContextType>;
   language?: Resolver<Maybe<ResolversTypes['Language']>, ParentType, ContextType>;
   lastName?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   likedMedias?: Resolver<Maybe<ResolversTypes['MediaConnection']>, ParentType, ContextType, RequireFields<UserLikedMediasArgs, 'first' | 'page'>>;
@@ -13033,6 +13098,7 @@ export type VideoResolvers<ContextType = any, ParentType extends ResolversParent
   hashtags?: Resolver<Maybe<ResolversTypes['HashtagConnection']>, ParentType, ContextType, RequireFields<VideoHashtagsArgs, 'first' | 'page'>>;
   height?: Resolver<Maybe<ResolversTypes['Int']>, ParentType, ContextType>;
   hlsURL?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
+  hlsUrl?: Resolver<Maybe<ResolversTypes['String']>, ParentType, ContextType>;
   id?: Resolver<ResolversTypes['ID'], ParentType, ContextType>;
   interests?: Resolver<Maybe<ResolversTypes['InterestConnection']>, ParentType, ContextType, RequireFields<VideoInterestsArgs, 'page'>>;
   is360?: Resolver<Maybe<ResolversTypes['Boolean']>, ParentType, ContextType>;
