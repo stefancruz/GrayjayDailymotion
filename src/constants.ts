@@ -1,5 +1,8 @@
 export const BASE_URL = "https://www.dailymotion.com";
 export const BASE_URL_API = "https://graphql.api.dailymotion.com";
+export const BASE_URL_COMMENTS = "https://api-2-0.spot.im/v1.0.0/conversation/read";
+export const BASE_URL_COMMENTS_AUTH = "https://api-2-0.spot.im/v1.0.0/authenticate";
+export const BASE_URL_COMMENTS_THUMBNAILS = "https://images.spot.im/image/upload";
 export const BASE_URL_API_AUTH = `${BASE_URL_API}/oauth/token`;
 export const BASE_URL_VIDEO = `${BASE_URL}/video`;
 export const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;

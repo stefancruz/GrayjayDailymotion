@@ -16,6 +16,7 @@
     "Http"
   ],
   "allowEval": false,
+  "allowAllHttpHeaderAccess": true,
   "allowUrls": [
     "dailymotion.com",
     "www.dailymotion.com",
@@ -24,7 +25,8 @@
     "s1.dmcdn.net",
     "s2.dmcdn.net",
     "static1.dmcdn.net",
-    "static2.dmcdn.net"
+    "static2.dmcdn.net",
+    "api-2-0.spot.im"
   ],
   "authentication": {
     "loginUrl": "https://www.dailymotion.com/signin?urlback=/library",

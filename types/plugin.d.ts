@@ -233,7 +233,7 @@ declare class PlatformComment {
     contextUrl: string;
     author: PlatformAuthorLink;
     message: string;
-    rating: any;
+    rating: IRating;
     date: number;
     replyCount: number;
     context: any;
@@ -1047,7 +1047,7 @@ declare class PlaylistPager {
 declare class CommentPager {
     context: any
 
-    constructor(results: PlatformVideo[], hasMore: boolean, context: any) {
+    constructor(results: PlatformComment[], hasMore: boolean, context: any) {
         this.plugin_type = "CommentPager";
         this.results = results ?? [];
         this.hasMore = hasMore ?? false;
@@ -1085,20 +1085,20 @@ interface Source {
     searchSuggestions(query: string): string[];
     search(query: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getSearchCapabilities(): ResultCapabilities;
-    
+
     // Optional
     searchChannelVideos?(channelUrl: string, query: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getSearchChannelVideoCapabilities?(): ResultCapabilities;
-    
+
     isChannelUrl(url: string): boolean;
     getChannel(url: string): PlatformChannel | null;
-    
+
     getChannelVideos(url: string, type: string, order: string, filters: FilterGroup[]): VideoPager;
     getChannelCapabilities(): ResultCapabilities;
     getSearchChannelContentsCapabilities(): ResultCapabilities;
     getPeekChannelTypes(): string[];
-    peekChannelContents (url, type): PlatformVideo[]
-    
+    peekChannelContents(url, type): PlatformVideo[]
+
     isVideoDetailsUrl(url: string): boolean;
     getVideoDetails(url: string): PlatformVideoDetails;
 
@@ -1124,6 +1124,10 @@ interface Source {
     searchChannels(query: string): ChannelPager;
 
     getContentDetails(url: string): PlatformVideoDetails;
+
+    getComments(url: string): CommentPager;
+
+    getSubComments(comment: PlatformComment): CommentPager;
 
     getChannelPlaylists(url: string): PlaylistPager;
 
@@ -1431,7 +1435,7 @@ let http: IHttp
 
 
 interface IPager<T> {
-    hasMorePages() : Boolean;
+    hasMorePages(): Boolean;
     nextPage();
-    getResults() : List<T>;
+    getResults(): List<T>;
 }

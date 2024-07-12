@@ -2,6 +2,9 @@
 
 const BASE_URL = "https://www.dailymotion.com";
 const BASE_URL_API = "https://graphql.api.dailymotion.com";
+const BASE_URL_COMMENTS = "https://api-2-0.spot.im/v1.0.0/conversation/read";
+const BASE_URL_COMMENTS_AUTH = "https://api-2-0.spot.im/v1.0.0/authenticate";
+const BASE_URL_COMMENTS_THUMBNAILS = "https://images.spot.im/image/upload";
 const BASE_URL_API_AUTH = `${BASE_URL_API}/oauth/token`;
 const BASE_URL_VIDEO = `${BASE_URL}/video`;
 const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;
@@ -1765,7 +1768,8 @@ let config;
 let _settings;
 const state = {
     anonymousUserAuthorizationToken: "",
-    anonymousUserAuthorizationTokenExpirationDate: 0
+    anonymousUserAuthorizationTokenExpirationDate: 0,
+    messageServiceToken: ""
 };
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST";
 const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST";
@@ -1798,6 +1802,7 @@ source.enable = function (conf, settings, saveStateStr) {
             if (saveState) {
                 state.anonymousUserAuthorizationToken = saveState.anonymousUserAuthorizationToken;
                 state.anonymousUserAuthorizationTokenExpirationDate = saveState.anonymousUserAuthorizationTokenExpirationDate;
+                state.messageServiceToken = saveState.messageServiceToken;
                 if (!isTokenValid()) {
                     log("Token expired. Fetching a new one.");
                 }
@@ -1813,7 +1818,7 @@ source.enable = function (conf, settings, saveStateStr) {
         didSaveState = false;
     }
     if (!didSaveState) {
-        log("Getting a new token");
+        log("Getting a new tokens");
         const body = objectToUrlEncodedString({
             client_id: CLIENT_ID,
             client_secret: CLIENT_SECRET,
@@ -1844,8 +1849,28 @@ source.enable = function (conf, settings, saveStateStr) {
         }
         state.anonymousUserAuthorizationToken = `${json.token_type} ${json.access_token}`;
         state.anonymousUserAuthorizationTokenExpirationDate = Date.now() + (json.expires_in * 1000);
-        log(`json.expires_in: ${json.expires_in}`);
-        log(`state.anonymousUserAuthorizationTokenExpirationDate: ${state.anonymousUserAuthorizationTokenExpirationDate}`);
+        // get token for message service api-2-0.spot.im
+        const authenticateIm = http.POST(BASE_URL_COMMENTS_AUTH, "", {
+            'User-Agent': USER_AGENT,
+            Accept: '*/*',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'x-spot-id': 'sp_vWPN1lBu',
+            'x-post-id': 'no$post',
+            'Content-Type': 'application/json',
+            'Origin': BASE_URL,
+            Connection: 'keep-alive',
+            Referer: BASE_URL,
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'cross-site',
+            Priority: 'u=6',
+            'Content-Length': '0'
+        }, false);
+        if (!authenticateIm.isOk) {
+            // throw new UnavailableException('Failed to authenticate to comments service');
+            log('Failed to authenticate to comments service');
+        }
+        state.messageServiceToken = authenticateIm.headers["x-access-token"][0];
     }
 };
 source.getHome = function () {
@@ -1920,6 +1945,67 @@ source.getContentDetails = function (url) {
 source.saveState = () => {
     return JSON.stringify(state);
 };
+source.getSubComments = (comment) => {
+    const params = { "count": 5, "offset": 0, "parent_id": comment.context.id, "sort_by": "best", "child_count": comment.replyCount };
+    return getCommentPager(comment.contextUrl, params, 0);
+};
+source.getComments = (url) => {
+    const params = { "sort_by": "best", "offset": 0, "count": 10, "message_id": null, "depth": 2, "child_count": 2 };
+    return getCommentPager(url, params, 0);
+};
+function getCommentPager(url, params, page) {
+    try {
+        const xid = url.split('/').pop();
+        const commentsHeaders = {
+            'User-Agent': USER_AGENT,
+            Accept: 'application/json',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'x-access-token': state.messageServiceToken,
+            'Content-Type': 'application/json',
+            'x-spot-id': 'sp_vWPN1lBu',
+            'x-post-id': xid,
+            'Origin': BASE_URL,
+            Connection: 'keep-alive',
+            Referer: BASE_URL,
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'cross-site',
+            Priority: 'u=6',
+            TE: 'trailers'
+        };
+        const commentRequest = http.POST(BASE_URL_COMMENTS, JSON.stringify(params), commentsHeaders, false);
+        if (!commentRequest.isOk) {
+            throw new UnavailableException('Failed to authenticate to comments service');
+        }
+        const comments = JSON.parse(commentRequest.body);
+        const users = comments.conversation.users;
+        const results = comments.conversation.comments.map(v => {
+            const user = users[v.user_id];
+            return new Comment({
+                contextUrl: url,
+                author: new PlatformAuthorLink(new PlatformID(PLATFORM, user.id ?? "", config.id), user.display_name ?? "", "", `${BASE_URL_COMMENTS_THUMBNAILS}/${user.image_id}`),
+                message: v.content[0].text,
+                rating: new RatingLikes(v.stars),
+                date: v.written_at,
+                replyCount: v.total_replies_count ?? 0,
+                context: { id: v.id }
+            });
+        });
+        return new PlatformCommentPager(results, comments.conversation.has_next, url, params, ++page);
+    }
+    catch (error) {
+        bridge.log('Failed to get comments:' + error?.message);
+        return new PlatformCommentPager([], false, url, params, 0);
+    }
+}
+class PlatformCommentPager extends CommentPager {
+    constructor(results, hasMore, path, params, page) {
+        super(results, hasMore, { path, params, page });
+    }
+    nextPage() {
+        return getCommentPager(this.context.path, this.context.params, (this.context.page ?? 0) + 1);
+    }
+}
 //Playlist
 source.isPlaylistUrl = (url) => {
     return url.startsWith(BASE_URL_PLAYLIST) ||
