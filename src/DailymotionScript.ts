@@ -104,7 +104,6 @@ const authenticatedPlaylistCollection: string[] = [];
 
 source.setSettings = function (settings) {
 	_settings = settings;
-	http.GET(BASE_URL, {}, true);
 }
 
 //Source Methods
@@ -161,8 +160,7 @@ source.enable = function (conf, settings, saveStateStr) {
 			grant_type: 'client_credentials'
 		});
 
-		const responses = http
-		.batch()
+		const responses = http.batch()
 		.POST(BASE_URL_API_AUTH, body, {
 			'User-Agent': USER_AGENT,
 			'Content-Type': 'application/x-www-form-urlencoded',
@@ -898,26 +896,16 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		headers1["Cookie"] = "ff=off"
 	}
 
-	const player_metadataResponse = http.GET(
-	  player_metadata_url,
-	  headers1,
-	  usePlatformAuth
-	);
-
-	if (!player_metadataResponse.isOk) {
-		throw new UnavailableException('Unable to get player metadata');
-	}
-
-	const player_metadata = JSON.parse(player_metadataResponse.body);
-
-	if (player_metadata.error) {
-
-		if (player_metadata.error.code && ERROR_TYPES[player_metadata.error.code] !== undefined) {
-			throw new UnavailableException(ERROR_TYPES[player_metadata.error.code]);
-		}
-
-		throw new UnavailableException('This content is not available');
-	}
+	const videoDetailsRequestBody = JSON.stringify({
+		operationName: "WATCHING_VIDEO",
+		variables:
+		{
+			"xid": id,
+			"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+			"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
+		},
+		query: WATCHING_VIDEO
+	});
 
 	const videoDetailsRequestHeaders: IDictionary<string> = {
 		"Content-Type": "application/json",
@@ -939,29 +927,42 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		"Pragma": "no-cache",
 		"Cache-Control": "no-cache"
 	};
-
+	
 	if (!usePlatformAuth) {
 		videoDetailsRequestHeaders.Authorization = state.anonymousUserAuthorizationToken;
 	}
+	
+	const responses = http.batch()
+			.GET(
+				player_metadata_url,
+				headers1,
+				usePlatformAuth
+			)
+			.POST(
+				BASE_URL_API,
+				videoDetailsRequestBody,
+				videoDetailsRequestHeaders,
+				usePlatformAuth
+			  )
+		.execute()
 
-	const variables = {
-		"xid": id,
-		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
-		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
-	};
+	const player_metadataResponse = responses[0];
+	const video_details_response = responses[1];
 
-	const videoDetailsRequestBody = JSON.stringify({
-			operationName: "WATCHING_VIDEO",
-			variables,
-			query: WATCHING_VIDEO
-		});
+	if (!player_metadataResponse.isOk) {
+		throw new UnavailableException('Unable to get player metadata');
+	}
 
-	const video_details_response = http.POST(
-	  BASE_URL_API,
-	  videoDetailsRequestBody,
-	  videoDetailsRequestHeaders,
-	  usePlatformAuth
-	);
+	const player_metadata = JSON.parse(player_metadataResponse.body);
+
+	if (player_metadata.error) {
+
+		if (player_metadata.error.code && ERROR_TYPES[player_metadata.error.code] !== undefined) {
+			throw new UnavailableException(ERROR_TYPES[player_metadata.error.code]);
+		}
+
+		throw new UnavailableException('This content is not available');
+	}	
 
 	if (video_details_response.code != 200) {
 		throw new UnavailableException('Failed to get video details');
