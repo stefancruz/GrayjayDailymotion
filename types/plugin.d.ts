@@ -491,6 +491,7 @@ declare class Config {
     allowEval?: boolean;
     allowUrls?: string[];
     settings?: PluginSetting[];
+    allowAllHttpHeaderAccess?: boolean;
 }
 
 declare class ResultCapabilities {

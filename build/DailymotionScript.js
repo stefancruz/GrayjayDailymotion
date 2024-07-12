@@ -1541,7 +1541,7 @@ source.enable = function (conf, settings, saveStateStr) {
             client_secret: CLIENT_SECRET,
             grant_type: 'client_credentials'
         });
-        const responses = http.batch()
+        let batchRequests = http.batch()
             .POST(BASE_URL_API_AUTH, body, {
             'User-Agent': USER_AGENT,
             'Content-Type': 'application/x-www-form-urlencoded',
@@ -1555,24 +1555,26 @@ source.enable = function (conf, settings, saveStateStr) {
             'Priority': 'u=4',
             'Pragma': 'no-cache',
             'Cache-Control': 'no-cache'
-        }, false)
-            .POST(BASE_URL_COMMENTS_AUTH, "", {
-            'User-Agent': USER_AGENT,
-            Accept: '*/*',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'x-spot-id': 'sp_vWPN1lBu',
-            'x-post-id': 'no$post',
-            'Content-Type': 'application/json',
-            'Origin': BASE_URL,
-            Connection: 'keep-alive',
-            Referer: BASE_URL,
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'cross-site',
-            Priority: 'u=6',
-            'Content-Length': '0'
-        }, false)
-            .execute();
+        }, false);
+        if (config.allowAllHttpHeaderAccess) {
+            batchRequests = batchRequests.POST(BASE_URL_COMMENTS_AUTH, "", {
+                'User-Agent': USER_AGENT,
+                Accept: '*/*',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'x-spot-id': 'sp_vWPN1lBu',
+                'x-post-id': 'no$post',
+                'Content-Type': 'application/json',
+                'Origin': BASE_URL,
+                Connection: 'keep-alive',
+                Referer: BASE_URL,
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'cross-site',
+                Priority: 'u=6',
+                'Content-Length': '0'
+            }, false);
+        }
+        const responses = batchRequests.execute();
         const res = responses[0];
         if (res.code !== 200) {
             console.error('Failed to get token', res);
@@ -1583,14 +1585,16 @@ source.enable = function (conf, settings, saveStateStr) {
             console.error('Invalid token response', res);
             throw new ScriptException("", 'Invalid token response: ' + res.body);
         }
-        const authenticateIm = responses[1];
-        if (!authenticateIm.isOk) {
-            // throw new UnavailableException('Failed to authenticate to comments service');
-            log('Failed to authenticate to comments service');
-        }
         state.anonymousUserAuthorizationToken = `${json.token_type} ${json.access_token}`;
         state.anonymousUserAuthorizationTokenExpirationDate = Date.now() + (json.expires_in * 1000);
-        state.messageServiceToken = authenticateIm.headers["x-access-token"][0];
+        if (config.allowAllHttpHeaderAccess) {
+            const authenticateIm = responses[1];
+            if (!authenticateIm.isOk) {
+                // throw new UnavailableException('Failed to authenticate to comments service');
+                log('Failed to authenticate to comments service');
+            }
+            state.messageServiceToken = authenticateIm.headers["x-access-token"][0];
+        }
     }
 };
 source.getHome = function () {
@@ -1670,6 +1674,9 @@ source.getSubComments = (comment) => {
     return getCommentPager(comment.contextUrl, params, 0);
 };
 source.getComments = (url) => {
+    if (!config.allowAllHttpHeaderAccess) {
+        return new PlatformCommentPager([], false, url, {}, 0);
+    }
     const params = { "sort_by": "best", "offset": 0, "count": 10, "message_id": null, "depth": 2, "child_count": 2 };
     return getCommentPager(url, params, 0);
 };

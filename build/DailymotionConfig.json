@@ -16,7 +16,7 @@
     "Http"
   ],
   "allowEval": false,
-  "allowAllHttpHeaderAccess": true,
+  "allowAllHttpHeaderAccess": false,
   "allowUrls": [
     "dailymotion.com",
     "www.dailymotion.com",
