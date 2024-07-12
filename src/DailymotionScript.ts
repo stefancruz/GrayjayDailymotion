@@ -13,8 +13,6 @@ const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST";
 
 
 import {
-	CREATOR_AVATAR_HEIGHT,
-	THUMBNAIL_HEIGHT,
 	BASE_URL,
 	SEARCH_CAPABILITIES,
 	BASE_URL_VIDEO,
@@ -28,8 +26,6 @@ import {
 	BASE_URL_METADATA,
 	ERROR_TYPES,
 	LikedMediaSort,
-	VIDEOS_PER_PAGE_OPTIONS,
-	PLAYLISTS_PER_PAGE_OPTIONS,
 	CLIENT_ID,
 	CLIENT_SECRET,
 	BASE_URL_API_AUTH,
@@ -60,7 +56,6 @@ import {
 import {
 	getChannelNameFromUrl,
 	isUsernameUrl,
-	getPreferredCountry,
 	getQuery,
 	objectToUrlEncodedString,
 	generateUUIDv4
@@ -106,10 +101,22 @@ source.setSettings = function (settings) {
 	_settings = settings;
 }
 
+let COUNTRY_NAMES_TO_CODE: string[] = [];
+let VIDEOS_PER_PAGE_OPTIONS: number[]= [];
+let PLAYLISTS_PER_PAGE_OPTIONS: number[] = [];
+let CREATOR_AVATAR_HEIGHT: string[] = [];
+let THUMBNAIL_HEIGHT: string[] = [];
+
 //Source Methods
 source.enable = function (conf, settings, saveStateStr) {
 
 	config = conf ?? {};
+
+	COUNTRY_NAMES_TO_CODE = config?.settings?.find(s => s.variable == "preferredCountryOptionIndex")?.options ?? [];
+	VIDEOS_PER_PAGE_OPTIONS = config?.settings?.find(s => s.variable == "videosPerPageOptionIndex")?.options?.map(s => parseInt(s)) ?? [];
+	PLAYLISTS_PER_PAGE_OPTIONS = config?.settings?.find(s => s.variable == "playlistsPerPageOptionIndex")?.options?.map(s => parseInt(s)) ?? [];
+	CREATOR_AVATAR_HEIGHT = config?.settings?.find(s => s.variable == "avatarSizeOptionIndex")?.options?.map(s => `SQUARE_${s.replace("px","")}`) ?? [];
+	THUMBNAIL_HEIGHT = config?.settings?.find(s => s.variable == "thumbnailResolutionOptionIndex")?.options?.map(s => `PORTRAIT_${s.replace("px","")}`) ?? [];
 
     const DEFAULT_SETTINGS = {
         hideSensitiveContent: true,
@@ -689,7 +696,7 @@ function searchPlaylists(contextQuery) {
 function getVideoPager(params, page) {
 
 	const count = VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex];
-
+	
 	if (!params) {
 		params = {};
 	}
@@ -770,7 +777,7 @@ function getChannelContentsPager(url, page, type, order, filters) {
 	} else {
 		sort = LikedMediaSort.Recent;
 	}
-
+	
 	const jsonResponse = executeGqlQuery(
 		http,
 		{
@@ -788,7 +795,7 @@ function getChannelContentsPager(url, page, type, order, filters) {
 			},
 			query: CHANNEL_VIDEOS_QUERY
 		});
-
+		
 	const channel = jsonResponse?.data?.channel as Channel;
 
 	const all: (Live | Video)[] = [
@@ -1256,6 +1263,13 @@ function getPlatformSystemPlaylist(opts: IPlatformSystemPlaylist): PlatformPlayl
 	}
 
 	return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection as Collection, videos);
+}
+
+function getPreferredCountry(preferredCountryIndex) {
+    const country = COUNTRY_NAMES_TO_CODE[preferredCountryIndex];
+	const parts = country.split('-');
+	const code = parts[0] ?? "";
+    return (code  || '').toLowerCase();
 }
 
 log("LOADED");

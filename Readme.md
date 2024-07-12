@@ -32,6 +32,7 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Save state between clients;
 - [x] - Batch http requests when possible;
 - [ ] - Optimize GraphQL queries;
+- [ ] - Clean up request Headers;
 - [ ] - Stop using configuration option allowAllHttpHeaderAccess;
 - [ ] - Unit tests - (WIP);
 - [ ] - Dev submit;

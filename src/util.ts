@@ -1,15 +1,7 @@
 import {
     BASE_URL,
-    COUNTRY_NAMES,
-    COUNTRY_NAMES_TO_CODE,
     DURATION_THRESHOLDS
 } from './constants'
-
-export function getPreferredCountry(preferredCountryIndex) {
-    const countryName = COUNTRY_NAMES[preferredCountryIndex];
-    const code = COUNTRY_NAMES_TO_CODE[countryName];
-    return (code  || '').toLowerCase();
-}
 
 export const objectToUrlEncodedString = (obj) => {
 
