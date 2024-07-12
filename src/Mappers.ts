@@ -1,7 +1,7 @@
 import { Channel, Collection, Live, Maybe, Video } from "../types/CodeGenDailymotion";
 import { BASE_URL, BASE_URL_PLAYLIST, BASE_URL_VIDEO, NEGATIVE_RATINGS_LABELS, PLATFORM, PLATFORM_CLAIMTYPE, POSITIVE_RATINGS_LABELS } from "./constants";
 
-export const SourceChannelToGrayjayChannel = (pluginId: string, url: string, sourceChannel: Channel): PlatformChannel => {
+export const SourceChannelToGrayjayChannel = (pluginId: string, sourceChannel: Channel): PlatformChannel => {
     const externalLinks = sourceChannel?.externalLinks ?? {};
 
     const links = Object.keys(externalLinks).reduce((acc, key) => {
@@ -18,7 +18,7 @@ export const SourceChannelToGrayjayChannel = (pluginId: string, url: string, sou
         banner: sourceChannel.banner?.url ?? "",
         subscribers: sourceChannel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
         description: sourceChannel?.description ?? "",
-        url,
+        url: `${BASE_URL}/${sourceChannel.name}`,
         links
     });
 }
@@ -101,16 +101,17 @@ const getViewCount = (sourceVideo: Video | Live): number => {
 export const SourceVideoToPlatformVideoDetailsDef = (
     pluginId: string,
     sourceVideo: Video | Live,
-    sources: HLSSource[],
-    sourceSubtitle: IDailymotionSubtitle
+    player_metadata
 ): PlatformVideoDetailsDef => {
 
     let positiveRatingCount = 0;
+    
     let negativeRatingCount = 0;
 
     const ratings = sourceVideo?.metrics?.engagement?.likes?.edges ?? [];
 
     for (const edge of ratings) {
+
         const ratingName = edge?.node?.rating as string;
         const ratingTotal = edge?.node?.total as number;
 
@@ -125,15 +126,24 @@ export const SourceVideoToPlatformVideoDetailsDef = (
     const viewCount = getViewCount(sourceVideo);
     const duration = isLive ? 0 : (sourceVideo as Video)?.duration ?? 0;
 
+    const source = new HLSSource({
+        name: isLive ? 'live': 'source',
+        duration,
+        url: player_metadata?.qualities?.auto[0]?.url,
+    });
+  
+    const sources = [
+        source
+    ];
+    
     const platformVideoDetails: PlatformVideoDetailsDef = {
         id: new PlatformID(PLATFORM, sourceVideo?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
         name: sourceVideo?.title ?? "",
-        thumbnails: new Thumbnails([new Thumbnail(sourceVideo?.thumbnail?.url ?? "", 0)]),
+        thumbnails: new Thumbnails([new Thumbnail(sourceVideo?.thumbnail?.url ?? "", 0)]), 
         author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceVideo?.creator),
         uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         duration,
-        // viewCount,
         viewCount,
         url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : "",
         isLive,
@@ -145,6 +155,9 @@ export const SourceVideoToPlatformVideoDetailsDef = (
         hls: null,
         subtitles: []
     };
+    
+    const sourceSubtitle = player_metadata?.subtitles as IDailymotionSubtitle;
+  
 
     if (sourceSubtitle?.enable && sourceSubtitle?.data) {
         Object.keys(sourceSubtitle.data).forEach(key => {

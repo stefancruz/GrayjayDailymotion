@@ -21,18 +21,29 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [x] - Sign in (import subscriptions and playlists (and Likes, Favorites, Recently Watched))
 - [x] - Polycentric Comments
 - [x] - Subtitles
+- [x] - Platform comments (not generally available on Platform) - (WIP)
 
-## Work in progress (wip)
+## Work in progress (WIP)
 
 - [ ] - Harbor account verification
 
+## Internals
+
+- [x] - Save state between clients;
+- [x] - Batch http requests when possible;
+- [ ] - Optimize GraphQL queries;
+- [ ] - Clean up request Headers;
+- [ ] - Stop using configuration option allowAllHttpHeaderAccess;
+- [ ] - Unit tests - (WIP);
+- [ ] - Dev submit;
+
 
 ## Todo 
-- [ ] - Unit tests - (wip)
-- [ ] - Platform comments (not generally available) - (wip)
+- [ ] - Search creator's content;
 
-## Known bugs
+## Grayjay
 - [ ] - Live filter in Subscriptions tab
+- [ ] - Thumbnails for vertical videos
 
 
 ## Install

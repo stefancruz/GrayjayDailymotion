@@ -3159,6 +3159,11 @@
             "kind": "INTERFACE",
             "name": "Metric",
             "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
           }
         ],
         "enumValues": null,
@@ -3792,7 +3797,7 @@
               },
               {
                 "name": "isPrivate",
-                "description": "Filter collections by whether it is private. @deprecated(reason: \"Use `filter: { visibility: { eq: VISIBILITY_ENUM }}`.\")",
+                "description": "@deprecated(reason: \"Use `filter: { visibility: { eq: VISIBILITY_ENUM }}`.\") - Filter collections by whether it is private.",
                 "type": {
                   "kind": "SCALAR",
                   "name": "Boolean",
@@ -4181,7 +4186,7 @@
               },
               {
                 "name": "isOnAir",
-                "description": "Filter lives by whether or not it is on air. @deprecated(reason: \"Use `filter: {onair: {eq: boolean}`.\")",
+                "description": "@deprecated(reason: \"Use `filter: {onair: {eq: boolean}`.\") - Filter lives by whether or not it is on air.",
                 "type": {
                   "kind": "SCALAR",
                   "name": "Boolean",
@@ -4205,7 +4210,7 @@
               },
               {
                 "name": "startIn",
-                "description": "Filter lives by the schedueled start time (in minutes).",
+                "description": "Filter lives by the scheduled start time (in minutes).",
                 "type": {
                   "kind": "SCALAR",
                   "name": "Int",
@@ -4403,8 +4408,8 @@
               "name": "MediaConnection",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `videos` or `lives` respectively."
           },
           {
             "name": "metabaseIframeURL",
@@ -5539,6 +5544,11 @@
             "kind": "INTERFACE",
             "name": "Metric",
             "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
           }
         ],
         "enumValues": null,
@@ -6054,6 +6064,22 @@
         "description": "Information about required updates on the channel.",
         "fields": [
           {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "name",
             "description": "Indicates whether the name of the channel is required to be updated.",
             "args": [],
@@ -6071,7 +6097,13 @@
           }
         ],
         "inputFields": null,
-        "interfaces": [],
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -7003,6 +7035,11 @@
           {
             "kind": "INTERFACE",
             "name": "Metric",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
             "ofType": null
           }
         ],
@@ -12355,6 +12392,22 @@
         "description": "Information about the follower engagement notifications on a Channel.",
         "fields": [
           {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "uploads",
             "description": "Indicates whether the follower wants to received notifications when the channel uploads content.",
             "args": [],
@@ -12372,7 +12425,13 @@
           }
         ],
         "inputFields": null,
-        "interfaces": [],
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -14351,6 +14410,22 @@
         "description": "The node at the end of a LikeEdge.",
         "fields": [
           {
+            "name": "id",
+            "description": "The ID of the object.",
+            "args": [],
+            "type": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "ID",
+                "ofType": null
+              }
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
             "name": "post",
             "description": "The post liked by the channel.",
             "args": [],
@@ -14376,7 +14451,13 @@
           }
         ],
         "inputFields": null,
-        "interfaces": [],
+        "interfaces": [
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
+            "ofType": null
+          }
+        ],
         "enumValues": null,
         "possibleTypes": null
       },
@@ -14901,6 +14982,18 @@
           },
           {
             "name": "hlsURL",
+            "description": "The URL of the adaptative bitrate manifest using the Apple HTTP Live Streaming\n  protocol. Without an access token this field contains null, the Dailymotion\n  user associated with the access token must be the owner of the video. This\n  field is rate limited. The returned url is secured: it can only be consumed by\n  the user who made the query and it expires after a certain time.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": true,
+            "deprecationReason": "Use `hslUrl` field."
+          },
+          {
+            "name": "hlsUrl",
             "description": "The URL of the adaptative bitrate manifest using the Apple HTTP Live Streaming\n  protocol. Without an access token this field contains null, the Dailymotion\n  user associated with the access token must be the owner of the video. This\n  field is rate limited. The returned url is secured: it can only be consumed by\n  the user who made the query and it expires after a certain time.",
             "args": [],
             "type": {
@@ -15862,6 +15955,11 @@
           {
             "kind": "INTERFACE",
             "name": "Metric",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
             "ofType": null
           }
         ],
@@ -19861,7 +19959,7 @@
               },
               {
                 "name": "device",
-                "description": "The device that want to access the space. Available devices are (desktop, mobile, tablet, tv).",
+                "description": "@deprecated(reason: \"Value is determined by request_info.application_type.\") - The device that want to access the space. Available devices are (desktop, mobile, tablet, tv).",
                 "type": {
                   "kind": "SCALAR",
                   "name": "String",
@@ -20090,6 +20188,11 @@
           },
           {
             "kind": "OBJECT",
+            "name": "BookmarkMetric",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "Channel",
             "ofType": null
           },
@@ -20101,6 +20204,11 @@
           {
             "kind": "OBJECT",
             "name": "ChannelExternalLinks",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "ChannelMetric",
             "ofType": null
           },
           {
@@ -20140,12 +20248,22 @@
           },
           {
             "kind": "OBJECT",
+            "name": "ChannelUpdateRequired",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "Collection",
             "ofType": null
           },
           {
             "kind": "OBJECT",
             "name": "CollectionEngagementMetrics",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "CollectionMetric",
             "ofType": null
           },
           {
@@ -20265,6 +20383,11 @@
           },
           {
             "kind": "OBJECT",
+            "name": "FollowerEngagementNotifications",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "Following",
             "ofType": null
           },
@@ -20325,12 +20448,22 @@
           },
           {
             "kind": "OBJECT",
+            "name": "LikeNode",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
             "name": "Live",
             "ofType": null
           },
           {
             "kind": "OBJECT",
             "name": "LiveEngagementMetrics",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "LiveMetric",
             "ofType": null
           },
           {
@@ -20481,6 +20614,11 @@
           {
             "kind": "OBJECT",
             "name": "ReactionEngagementMetrics",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "ReactionMetric",
             "ofType": null
           },
           {
@@ -20726,6 +20864,11 @@
           {
             "kind": "OBJECT",
             "name": "VideoEngagementMetrics",
+            "ofType": null
+          },
+          {
+            "kind": "OBJECT",
+            "name": "VideoMetric",
             "ofType": null
           },
           {
@@ -24689,7 +24832,7 @@
               },
               {
                 "name": "id",
-                "description": "The ID of the feed. Deprecated.",
+                "description": "@deprecated(reason: \"Use `filter.id` input field.\") - The ID of the feed.",
                 "type": {
                   "kind": "SCALAR",
                   "name": "ID",
@@ -24832,7 +24975,7 @@
             "args": [
               {
                 "name": "password",
-                "description": "The password of the live (required if it is passsword protected).",
+                "description": "The password to access the live (required if password-protected).",
                 "type": {
                   "kind": "SCALAR",
                   "name": "String",
@@ -25067,7 +25210,7 @@
             "args": [
               {
                 "name": "password",
-                "description": "The password of the media (required if it is passsword protected).",
+                "description": "The password to access the media (required if password-protected).",
                 "type": {
                   "kind": "SCALAR",
                   "name": "String",
@@ -25099,8 +25242,8 @@
               "name": "Media",
               "ofType": null
             },
-            "isDeprecated": false,
-            "deprecationReason": null
+            "isDeprecated": true,
+            "deprecationReason": "Use `recording`."
           },
           {
             "name": "mediaStreams",
@@ -25258,7 +25401,7 @@
               },
               {
                 "name": "mediaXid",
-                "description": "The Dailymotion ID of the media. @deprecated(reason: \"Use `recordingXid`.\")",
+                "description": "@deprecated(reason: \"Use `recordingXid`.\") - The Dailymotion ID of the media.",
                 "type": {
                   "kind": "SCALAR",
                   "name": "String",
@@ -25294,7 +25437,7 @@
               },
               {
                 "name": "videoXid",
-                "description": "The Dailymotion ID of the video. @deprecated(reason: \"Use `recordingXid`.\")",
+                "description": "@deprecated(reason: \"Use `recordingXid`.\") - The Dailymotion ID of the video.",
                 "type": {
                   "kind": "SCALAR",
                   "name": "String",
@@ -25448,6 +25591,47 @@
             },
             "isDeprecated": true,
             "deprecationReason": "Use `reaction`."
+          },
+          {
+            "name": "recording",
+            "description": "Represents a recording.",
+            "args": [
+              {
+                "name": "id",
+                "description": "The ID of the Recording.",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "ID",
+                    "ofType": null
+                  }
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              },
+              {
+                "name": "password",
+                "description": "The password to access the recording (required if password-protected).",
+                "type": {
+                  "kind": "SCALAR",
+                  "name": "String",
+                  "ofType": null
+                },
+                "defaultValue": null,
+                "isDeprecated": false,
+                "deprecationReason": null
+              }
+            ],
+            "type": {
+              "kind": "INTERFACE",
+              "name": "Recording",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           },
           {
             "name": "search",
@@ -25614,7 +25798,7 @@
             "args": [
               {
                 "name": "password",
-                "description": "The password of the video (required if it is password protected).",
+                "description": "The password to access the video (required if password-protected).",
                 "type": {
                   "kind": "SCALAR",
                   "name": "String",
@@ -25655,7 +25839,7 @@
             "args": [
               {
                 "name": "password",
-                "description": "The password of the video or live (required if it is password protected).",
+                "description": "The password to access the video or live (required if password-protected).",
                 "type": {
                   "kind": "SCALAR",
                   "name": "String",
@@ -26042,6 +26226,18 @@
           },
           {
             "name": "hlsURL",
+            "description": "The URL of the adaptive bitrate manifest using the Apple HTTP Live Streaming\n  protocol. Without an access token this field contains null, the Dailymotion\n  user associated with the access token must be the owner of the video. This\n  field is rate limited. The returned url is secured: it can only be consumed by\n  the user who made the query and it expires after a certain time.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": true,
+            "deprecationReason": "Use `hslUrl` field."
+          },
+          {
+            "name": "hlsUrl",
             "description": "The URL of the adaptive bitrate manifest using the Apple HTTP Live Streaming\n  protocol. Without an access token this field contains null, the Dailymotion\n  user associated with the access token must be the owner of the video. This\n  field is rate limited. The returned url is secured: it can only be consumed by\n  the user who made the query and it expires after a certain time.",
             "args": [],
             "type": {
@@ -26554,6 +26750,11 @@
           {
             "kind": "INTERFACE",
             "name": "Metric",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
             "ofType": null
           }
         ],
@@ -28194,6 +28395,18 @@
             },
             "isDeprecated": true,
             "deprecationReason": "Use `createDate` field."
+          },
+          {
+            "name": "hlsUrl",
+            "description": "The URL of the adaptative bitrate manifest using the Apple HTTP Live Streaming\n  protocol. Without an access token this field contains null, the Dailymotion\n  user associated with the access token must be the owner of the video. This\n  field is rate limited. The returned url is secured: it can only be consumed by\n  the user who made the query and it expires after a certain time.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
+            "isDeprecated": false,
+            "deprecationReason": null
           },
           {
             "name": "reactions",
@@ -31670,6 +31883,26 @@
               "kind": "ENUM",
               "name": "StoryTypename",
               "ofType": null
+            },
+            "defaultValue": null,
+            "isDeprecated": false,
+            "deprecationReason": null
+          },
+          {
+            "name": "in",
+            "description": "Short for in array, must NOT be an element of the array.",
+            "type": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "ENUM",
+                  "name": "StoryTypename",
+                  "ofType": null
+                }
+              }
             },
             "defaultValue": null,
             "isDeprecated": false,
@@ -35311,9 +35544,13 @@
             "description": "Indicates whether the user can access to partner HQ.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -35323,9 +35560,13 @@
             "description": "Indicates whether the user can change its nickname.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": true,
             "deprecationReason": "Use `channel.canChangeName`."
@@ -35335,9 +35576,13 @@
             "description": "Indicates whether the user can change its username.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": true,
             "deprecationReason": "Use `channel.canChangeName`."
@@ -35983,9 +36228,13 @@
             "description": "Indicates whether the user has a channel.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": true,
             "deprecationReason": "Use `channel` field, if not null, then true."
@@ -35995,9 +36244,13 @@
             "description": "Indicates whether the user has any linked social accounts.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -36007,9 +36260,13 @@
             "description": "Indicates whether the user has any (pending or active) organization memberships.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -36084,9 +36341,13 @@
             "description": "Indicates whether the user is an admin.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -36096,9 +36357,13 @@
             "description": "Indicates whether the user is confirmed.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -36108,9 +36373,13 @@
             "description": "Indicates whether the user can mass report videos as copyright owner.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": false,
             "deprecationReason": null
@@ -36120,9 +36389,13 @@
             "description": "Indicates whether the user is followed by the connected user. Returns `False` if no user is connected.",
             "args": [],
             "type": {
-              "kind": "SCALAR",
-              "name": "Boolean",
-              "ofType": null
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "Boolean",
+                "ofType": null
+              }
             },
             "isDeprecated": true,
             "deprecationReason": "Use `channel.followerEngagement` field."
@@ -38893,6 +39166,18 @@
               "name": "String",
               "ofType": null
             },
+            "isDeprecated": true,
+            "deprecationReason": "Use `hslUrl` field."
+          },
+          {
+            "name": "hlsUrl",
+            "description": "The URL of the adaptative bitrate manifest using the Apple HTTP Live Streaming\n  protocol. Without an access token this field contains null, the Dailymotion\n  user associated with the access token must be the owner of the video. This\n  field is rate limited. The returned url is secured: it can only be consumed by\n  the user who made the query and it expires after a certain time.",
+            "args": [],
+            "type": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            },
             "isDeprecated": false,
             "deprecationReason": null
           },
@@ -40188,6 +40473,11 @@
           {
             "kind": "INTERFACE",
             "name": "Metric",
+            "ofType": null
+          },
+          {
+            "kind": "INTERFACE",
+            "name": "Node",
             "ofType": null
           }
         ],

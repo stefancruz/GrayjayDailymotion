@@ -2,6 +2,9 @@
 
 const BASE_URL = "https://www.dailymotion.com";
 const BASE_URL_API = "https://graphql.api.dailymotion.com";
+const BASE_URL_COMMENTS = "https://api-2-0.spot.im/v1.0.0/conversation/read";
+const BASE_URL_COMMENTS_AUTH = "https://api-2-0.spot.im/v1.0.0/authenticate";
+const BASE_URL_COMMENTS_THUMBNAILS = "https://images.spot.im/image/upload";
 const BASE_URL_API_AUTH = `${BASE_URL_API}/oauth/token`;
 const BASE_URL_VIDEO = `${BASE_URL}/video`;
 const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;
@@ -47,293 +50,6 @@ const NEGATIVE_RATINGS_LABELS = [
     "SLEEPING_FACE", // boring
     "FISHING_POLE" // waste of time
 ];
-const VIDEOS_PER_PAGE_OPTIONS = [
-    5,
-    10,
-    15,
-    20,
-    25
-];
-const PLAYLISTS_PER_PAGE_OPTIONS = [
-    5,
-    10,
-    15,
-    20
-];
-const COUNTRY_NAMES_TO_CODE = {
-    "": "",
-    "Afghanistan": "AF",
-    "Aland Islands": "AX",
-    "Albania": "AL",
-    "Algeria": "DZ",
-    "American Samoa": "AS",
-    "Andorra": "AD",
-    "Angola": "AO",
-    "Anguilla": "AI",
-    "Antarctica": "AQ",
-    "Antigua and Barbuda": "AG",
-    "Argentina": "AR",
-    "Armenia": "AM",
-    "Aruba": "AW",
-    "Australia": "AU",
-    "Austria": "AT",
-    "Azerbaijan": "AZ",
-    "Bahamas": "BS",
-    "Bahrain": "BH",
-    "Bangladesh": "BD",
-    "Barbados": "BB",
-    "Belarus": "BY",
-    "Belgium": "BE",
-    "Belize": "BZ",
-    "Benin": "BJ",
-    "Bermuda": "BM",
-    "Bhutan": "BT",
-    "Bolivia": "BO",
-    "Bonaire, Sint Eustatius and Saba": "BQ",
-    "Bosnia and Herzegovina": "BA",
-    "Botswana": "BW",
-    "Bouvet Island": "BV",
-    "Brazil": "BR",
-    "British Indian Ocean Territory": "IO",
-    "Brunei Darussalam": "BN",
-    "Bulgaria": "BG",
-    "Burkina Faso": "BF",
-    "Burundi": "BI",
-    "Cambodia": "KH",
-    "Cameroon": "CM",
-    "Canada": "CA",
-    "Cabo Verde": "CV",
-    "Cayman Islands": "KY",
-    "Central African Republic": "CF",
-    "Chad": "TD",
-    "Chile": "CL",
-    "China": "CN",
-    "Christmas Island": "CX",
-    "Cocos (Keeling) Islands": "CC",
-    "Colombia": "CO",
-    "Comoros": "KM",
-    "Congo": "CG",
-    "Congo, Democratic Republic of the": "CD",
-    "Cook Islands": "CK",
-    "Costa Rica": "CR",
-    "Cote d'Ivoire": "CI",
-    "Croatia": "HR",
-    "Cuba": "CU",
-    "Curacao": "CW",
-    "Cyprus": "CY",
-    "Czech Republic": "CZ",
-    "Denmark": "DK",
-    "Djibouti": "DJ",
-    "Dominica": "DM",
-    "Dominican Republic": "DO",
-    "Ecuador": "EC",
-    "Egypt": "EG",
-    "El Salvador": "SV",
-    "Equatorial Guinea": "GQ",
-    "Eritrea": "ER",
-    "Estonia": "EE",
-    "Eswatini": "SZ",
-    "Ethiopia": "ET",
-    "Falkland Islands (Malvinas)": "FK",
-    "Faroe Islands": "FO",
-    "Fiji": "FJ",
-    "Finland": "FI",
-    "France": "FR",
-    "French Guiana": "GF",
-    "French Polynesia": "PF",
-    "French Southern Territories": "TF",
-    "Gabon": "GA",
-    "Gambia": "GM",
-    "Georgia": "GE",
-    "Germany": "DE",
-    "Ghana": "GH",
-    "Gibraltar": "GI",
-    "Greece": "GR",
-    "Greenland": "GL",
-    "Grenada": "GD",
-    "Guadeloupe": "GP",
-    "Guam": "GU",
-    "Guatemala": "GT",
-    "Guernsey": "GG",
-    "Guinea": "GN",
-    "Guinea-Bissau": "GW",
-    "Guyana": "GY",
-    "Haiti": "HT",
-    "Heard Island and McDonald Islands": "HM",
-    "Holy See": "VA",
-    "Honduras": "HN",
-    "Hong Kong": "HK",
-    "Hungary": "HU",
-    "Iceland": "IS",
-    "India": "IN",
-    "Indonesia": "ID",
-    "Iran": "IR",
-    "Iraq": "IQ",
-    "Ireland": "IE",
-    "Isle of Man": "IM",
-    "Israel": "IL",
-    "Italy": "IT",
-    "Jamaica": "JM",
-    "Japan": "JP",
-    "Jersey": "JE",
-    "Jordan": "JO",
-    "Kazakhstan": "KZ",
-    "Kenya": "KE",
-    "Kiribati": "KI",
-    "Korea, Democratic People's Republic of": "KP",
-    "Korea, Republic of": "KR",
-    "Kuwait": "KW",
-    "Kyrgyzstan": "KG",
-    "Lao People's Democratic Republic": "LA",
-    "Latvia": "LV",
-    "Lebanon": "LB",
-    "Lesotho": "LS",
-    "Liberia": "LR",
-    "Libya": "LY",
-    "Liechtenstein": "LI",
-    "Lithuania": "LT",
-    "Luxembourg": "LU",
-    "Macao": "MO",
-    "North Macedonia": "MK",
-    "Madagascar": "MG",
-    "Malawi": "MW",
-    "Malaysia": "MY",
-    "Maldives": "MV",
-    "Mali": "ML",
-    "Malta": "MT",
-    "Marshall Islands": "MH",
-    "Martinique": "MQ",
-    "Mauritania": "MR",
-    "Mauritius": "MU",
-    "Mayotte": "YT",
-    "Mexico": "MX",
-    "Micronesia, Federated States of": "FM",
-    "Moldova, Republic of": "MD",
-    "Monaco": "MC",
-    "Mongolia": "MN",
-    "Montenegro": "ME",
-    "Montserrat": "MS",
-    "Morocco": "MA",
-    "Mozambique": "MZ",
-    "Myanmar": "MM",
-    "Namibia": "NA",
-    "Nauru": "NR",
-    "Nepal": "NP",
-    "Netherlands": "NL",
-    "New Caledonia": "NC",
-    "New Zealand": "NZ",
-    "Nicaragua": "NI",
-    "Niger": "NE",
-    "Nigeria": "NG",
-    "Niue": "NU",
-    "Norfolk Island": "NF",
-    "Northern Mariana Islands": "MP",
-    "Norway": "NO",
-    "Oman": "OM",
-    "Pakistan": "PK",
-    "Palau": "PW",
-    "Palestine, State of": "PS",
-    "Panama": "PA",
-    "Papua New Guinea": "PG",
-    "Paraguay": "PY",
-    "Peru": "PE",
-    "Philippines": "PH",
-    "Pitcairn": "PN",
-    "Poland": "PL",
-    "Portugal": "PT",
-    "Puerto Rico": "PR",
-    "Qatar": "QA",
-    "Reunion": "RE",
-    "Romania": "RO",
-    "Russian Federation": "RU",
-    "Rwanda": "RW",
-    "Saint Barthelemy": "BL",
-    "Saint Helena, Ascension and Tristan da Cunha": "SH",
-    "Saint Kitts and Nevis": "KN",
-    "Saint Lucia": "LC",
-    "Saint Martin (French part)": "MF",
-    "Saint Pierre and Miquelon": "PM",
-    "Saint Vincent and the Grenadines": "VC",
-    "Samoa": "WS",
-    "San Marino": "SM",
-    "Sao Tome and Principe": "ST",
-    "Saudi Arabia": "SA",
-    "Senegal": "SN",
-    "Serbia": "RS",
-    "Seychelles": "SC",
-    "Sierra Leone": "SL",
-    "Singapore": "SG",
-    "Sint Maarten (Dutch part)": "SX",
-    "Slovakia": "SK",
-    "Slovenia": "SI",
-    "Solomon Islands": "SB",
-    "Somalia": "SO",
-    "South Africa": "ZA",
-    "South Georgia and the South Sandwich Islands": "GS",
-    "South Sudan": "SS",
-    "Spain": "ES",
-    "Sri Lanka": "LK",
-    "Sudan": "SD",
-    "Suriname": "SR",
-    "Svalbard and Jan Mayen": "SJ",
-    "Sweden": "SE",
-    "Switzerland": "CH",
-    "Syrian Arab Republic": "SY",
-    "Taiwan, Province of China": "TW",
-    "Tajikistan": "TJ",
-    "Tanzania, United Republic of": "TZ",
-    "Thailand": "TH",
-    "Timor-Leste": "TL",
-    "Togo": "TG",
-    "Tokelau": "TK",
-    "Tonga": "TO",
-    "Trinidad and Tobago": "TT",
-    "Tunisia": "TN",
-    "Turkey": "TR",
-    "Turkmenistan": "TM",
-    "Turks and Caicos Islands": "TC",
-    "Tuvalu": "TV",
-    "Uganda": "UG",
-    "Ukraine": "UA",
-    "United Arab Emirates": "AE",
-    "United Kingdom of Great Britain and Northern Ireland": "GB",
-    "United States of America": "US",
-    "United States Minor Outlying Islands": "UM",
-    "Uruguay": "UY",
-    "Uzbekistan": "UZ",
-    "Vanuatu": "VU",
-    "Venezuela, Bolivarian Republic of": "VE",
-    "Vietnam": "VN",
-    "Virgin Islands, British": "VG",
-    "Virgin Islands, U.S.": "VI",
-    "Wallis and Futuna": "WF",
-    "Western Sahara": "EH",
-    "Yemen": "YE",
-    "Zambia": "ZM",
-    "Zimbabwe": "ZW"
-};
-const CREATOR_AVATAR_HEIGHT = [
-    "SQUARE_25",
-    "SQUARE_60",
-    "SQUARE_80",
-    "SQUARE_120",
-    "SQUARE_190",
-    "SQUARE_240",
-    "SQUARE_360",
-    "SQUARE_480",
-    "SQUARE_720"
-];
-const THUMBNAIL_HEIGHT = [
-    "PORTRAIT_60",
-    "PORTRAIT_120",
-    "PORTRAIT_180",
-    "PORTRAIT_240",
-    "PORTRAIT_360",
-    "PORTRAIT_480",
-    "PORTRAIT_720",
-    "PORTRAIT_1080"
-];
-const COUNTRY_NAMES = Object.keys(COUNTRY_NAMES_TO_CODE);
 const ERROR_TYPES = {
     "DM001": "No video has been specified, you need to specify one.",
     "DM002": "Content has been deleted.",
@@ -1413,11 +1129,6 @@ const USER_WATCHED_VIDEOS_QUERY = `
 	}
 }`;
 
-function getPreferredCountry(preferredCountryIndex) {
-    const countryName = COUNTRY_NAMES[preferredCountryIndex];
-    const code = COUNTRY_NAMES_TO_CODE[countryName];
-    return (code || '').toLowerCase();
-}
 const objectToUrlEncodedString = (obj) => {
     const encodedParams = [];
     for (const key in obj) {
@@ -1579,7 +1290,7 @@ class SearchPlaylistPager extends PlaylistPager {
     }
 }
 
-const SourceChannelToGrayjayChannel = (pluginId, url, sourceChannel) => {
+const SourceChannelToGrayjayChannel = (pluginId, sourceChannel) => {
     const externalLinks = sourceChannel?.externalLinks ?? {};
     const links = Object.keys(externalLinks).reduce((acc, key) => {
         if (externalLinks[key]) {
@@ -1594,7 +1305,7 @@ const SourceChannelToGrayjayChannel = (pluginId, url, sourceChannel) => {
         banner: sourceChannel.banner?.url ?? "",
         subscribers: sourceChannel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
         description: sourceChannel?.description ?? "",
-        url,
+        url: `${BASE_URL}/${sourceChannel.name}`,
         links
     });
 };
@@ -1655,7 +1366,7 @@ const getViewCount = (sourceVideo) => {
     }
     return viewCount;
 };
-const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, sourceSubtitle) => {
+const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, player_metadata) => {
     let positiveRatingCount = 0;
     let negativeRatingCount = 0;
     const ratings = sourceVideo?.metrics?.engagement?.likes?.edges ?? [];
@@ -1672,6 +1383,14 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, so
     const isLive = getIsLive(sourceVideo);
     const viewCount = getViewCount(sourceVideo);
     const duration = isLive ? 0 : sourceVideo?.duration ?? 0;
+    const source = new HLSSource({
+        name: isLive ? 'live' : 'source',
+        duration,
+        url: player_metadata?.qualities?.auto[0]?.url,
+    });
+    const sources = [
+        source
+    ];
     const platformVideoDetails = {
         id: new PlatformID(PLATFORM, sourceVideo?.id ?? "", pluginId, PLATFORM_CLAIMTYPE),
         name: sourceVideo?.title ?? "",
@@ -1680,7 +1399,6 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, so
         uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         duration,
-        // viewCount,
         viewCount,
         url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : "",
         isLive,
@@ -1692,6 +1410,7 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, sources, so
         hls: null,
         subtitles: []
     };
+    const sourceSubtitle = player_metadata?.subtitles;
     if (sourceSubtitle?.enable && sourceSubtitle?.data) {
         Object.keys(sourceSubtitle.data).forEach(key => {
             const subtitleData = sourceSubtitle.data[key];
@@ -1757,29 +1476,40 @@ let config;
 let _settings;
 const state = {
     anonymousUserAuthorizationToken: "",
-    anonymousUserAuthorizationTokenExpirationDate: 0
+    anonymousUserAuthorizationTokenExpirationDate: 0,
+    messageServiceToken: ""
 };
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST";
 const FAVORITES_PLAYLIST_ID = "FAVORITES_PLAYLIST";
 const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST";
-let httpClientRequestToken = http.newClient(false);
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection = [];
 source.setSettings = function (settings) {
     _settings = settings;
-    http.GET(BASE_URL, {}, true);
 };
+let COUNTRY_NAMES_TO_CODE = [];
+let VIDEOS_PER_PAGE_OPTIONS = [];
+let PLAYLISTS_PER_PAGE_OPTIONS = [];
+let CREATOR_AVATAR_HEIGHT = [];
+let THUMBNAIL_HEIGHT = [];
 //Source Methods
 source.enable = function (conf, settings, saveStateStr) {
     config = conf ?? {};
-    _settings = settings ?? {};
+    COUNTRY_NAMES_TO_CODE = config?.settings?.find(s => s.variable == "preferredCountryOptionIndex")?.options ?? [];
+    VIDEOS_PER_PAGE_OPTIONS = config?.settings?.find(s => s.variable == "videosPerPageOptionIndex")?.options?.map(s => parseInt(s)) ?? [];
+    PLAYLISTS_PER_PAGE_OPTIONS = config?.settings?.find(s => s.variable == "playlistsPerPageOptionIndex")?.options?.map(s => parseInt(s)) ?? [];
+    CREATOR_AVATAR_HEIGHT = config?.settings?.find(s => s.variable == "avatarSizeOptionIndex")?.options?.map(s => `SQUARE_${s.replace("px", "")}`) ?? [];
+    THUMBNAIL_HEIGHT = config?.settings?.find(s => s.variable == "thumbnailResolutionOptionIndex")?.options?.map(s => `PORTRAIT_${s.replace("px", "")}`) ?? [];
+    const DEFAULT_SETTINGS = {
+        hideSensitiveContent: true,
+        avatarSizeOptionIndex: 8, // 720px
+        thumbnailResolutionOptionIndex: 7, // 1080px
+        preferredCountryOptionIndex: 0, // empty
+        videosPerPageOptionIndex: 3, // 20
+        playlistsPerPageOptionIndex: 0 // 5
+    };
+    _settings = { ...DEFAULT_SETTINGS, ...settings };
     if (IS_TESTING) {
-        _settings.hideSensitiveContent = false;
-        _settings.avatarSizeOptionIndex = 8;
-        _settings.thumbnailResolutionOptionIndex = 7;
-        _settings.preferredCountryOptionIndex = 0;
-        _settings.videosPerPageOptionIndex = 4;
-        _settings.playlistsPerPageOptionIndex = 0;
         config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5";
     }
     let didSaveState = false;
@@ -1789,6 +1519,7 @@ source.enable = function (conf, settings, saveStateStr) {
             if (saveState) {
                 state.anonymousUserAuthorizationToken = saveState.anonymousUserAuthorizationToken;
                 state.anonymousUserAuthorizationTokenExpirationDate = saveState.anonymousUserAuthorizationTokenExpirationDate;
+                state.messageServiceToken = saveState.messageServiceToken;
                 if (!isTokenValid()) {
                     log("Token expired. Fetching a new one.");
                 }
@@ -1804,13 +1535,14 @@ source.enable = function (conf, settings, saveStateStr) {
         didSaveState = false;
     }
     if (!didSaveState) {
-        log("Getting a new token");
+        log("Getting a new tokens");
         const body = objectToUrlEncodedString({
             client_id: CLIENT_ID,
             client_secret: CLIENT_SECRET,
             grant_type: 'client_credentials'
         });
-        const res = httpClientRequestToken.POST(BASE_URL_API_AUTH, body, {
+        let batchRequests = http.batch()
+            .POST(BASE_URL_API_AUTH, body, {
             'User-Agent': USER_AGENT,
             'Content-Type': 'application/x-www-form-urlencoded',
             'Origin': BASE_URL,
@@ -1824,6 +1556,26 @@ source.enable = function (conf, settings, saveStateStr) {
             'Pragma': 'no-cache',
             'Cache-Control': 'no-cache'
         }, false);
+        if (config.allowAllHttpHeaderAccess) {
+            batchRequests = batchRequests.POST(BASE_URL_COMMENTS_AUTH, "", {
+                'User-Agent': USER_AGENT,
+                Accept: '*/*',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'x-spot-id': 'sp_vWPN1lBu',
+                'x-post-id': 'no$post',
+                'Content-Type': 'application/json',
+                'Origin': BASE_URL,
+                Connection: 'keep-alive',
+                Referer: BASE_URL,
+                'Sec-Fetch-Dest': 'empty',
+                'Sec-Fetch-Mode': 'cors',
+                'Sec-Fetch-Site': 'cross-site',
+                Priority: 'u=6',
+                'Content-Length': '0'
+            }, false);
+        }
+        const responses = batchRequests.execute();
+        const res = responses[0];
         if (res.code !== 200) {
             console.error('Failed to get token', res);
             throw new ScriptException("", "Failed to get token: " + res.code + " - " + res.body);
@@ -1835,8 +1587,14 @@ source.enable = function (conf, settings, saveStateStr) {
         }
         state.anonymousUserAuthorizationToken = `${json.token_type} ${json.access_token}`;
         state.anonymousUserAuthorizationTokenExpirationDate = Date.now() + (json.expires_in * 1000);
-        log(`json.expires_in: ${json.expires_in}`);
-        log(`state.anonymousUserAuthorizationTokenExpirationDate: ${state.anonymousUserAuthorizationTokenExpirationDate}`);
+        if (config.allowAllHttpHeaderAccess) {
+            const authenticateIm = responses[1];
+            if (!authenticateIm.isOk) {
+                // throw new UnavailableException('Failed to authenticate to comments service');
+                log('Failed to authenticate to comments service');
+            }
+            state.messageServiceToken = authenticateIm.headers["x-access-token"][0];
+        }
     }
 };
 source.getHome = function () {
@@ -1879,7 +1637,7 @@ source.getChannel = function (url) {
         },
         query: CHANNEL_QUERY_DESKTOP
     });
-    return SourceChannelToGrayjayChannel(config.id, url, channelDetails.data.channel);
+    return SourceChannelToGrayjayChannel(config.id, channelDetails.data.channel);
 };
 source.getChannelContents = function (url, type, order, filters) {
     const page = 1;
@@ -1911,6 +1669,70 @@ source.getContentDetails = function (url) {
 source.saveState = () => {
     return JSON.stringify(state);
 };
+source.getSubComments = (comment) => {
+    const params = { "count": 5, "offset": 0, "parent_id": comment.context.id, "sort_by": "best", "child_count": comment.replyCount };
+    return getCommentPager(comment.contextUrl, params, 0);
+};
+source.getComments = (url) => {
+    if (!config.allowAllHttpHeaderAccess) {
+        return new PlatformCommentPager([], false, url, {}, 0);
+    }
+    const params = { "sort_by": "best", "offset": 0, "count": 10, "message_id": null, "depth": 2, "child_count": 2 };
+    return getCommentPager(url, params, 0);
+};
+function getCommentPager(url, params, page) {
+    try {
+        const xid = url.split('/').pop();
+        const commentsHeaders = {
+            'User-Agent': USER_AGENT,
+            Accept: 'application/json',
+            'Accept-Language': 'en-US,en;q=0.5',
+            'x-access-token': state.messageServiceToken,
+            'Content-Type': 'application/json',
+            'x-spot-id': 'sp_vWPN1lBu',
+            'x-post-id': xid,
+            'Origin': BASE_URL,
+            Connection: 'keep-alive',
+            Referer: BASE_URL,
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'cross-site',
+            Priority: 'u=6',
+            TE: 'trailers'
+        };
+        const commentRequest = http.POST(BASE_URL_COMMENTS, JSON.stringify(params), commentsHeaders, false);
+        if (!commentRequest.isOk) {
+            throw new UnavailableException('Failed to authenticate to comments service');
+        }
+        const comments = JSON.parse(commentRequest.body);
+        const users = comments.conversation.users;
+        const results = comments.conversation.comments.map(v => {
+            const user = users[v.user_id];
+            return new Comment({
+                contextUrl: url,
+                author: new PlatformAuthorLink(new PlatformID(PLATFORM, user.id ?? "", config.id), user.display_name ?? "", "", `${BASE_URL_COMMENTS_THUMBNAILS}/${user.image_id}`),
+                message: v.content[0].text,
+                rating: new RatingLikes(v.stars),
+                date: v.written_at,
+                replyCount: v.total_replies_count ?? 0,
+                context: { id: v.id }
+            });
+        });
+        return new PlatformCommentPager(results, comments.conversation.has_next, url, params, ++page);
+    }
+    catch (error) {
+        bridge.log('Failed to get comments:' + error?.message);
+        return new PlatformCommentPager([], false, url, params, 0);
+    }
+}
+class PlatformCommentPager extends CommentPager {
+    constructor(results, hasMore, path, params, page) {
+        super(results, hasMore, { path, params, page });
+    }
+    nextPage() {
+        return getCommentPager(this.context.path, this.context.params, (this.context.page ?? 0) + 1);
+    }
+}
 //Playlist
 source.isPlaylistUrl = (url) => {
     return url.startsWith(BASE_URL_PLAYLIST) ||
@@ -2200,7 +2022,7 @@ function getChannelContentsPager(url, page, type, order, filters) {
     });
     const channel = jsonResponse?.data?.channel;
     const all = [
-        ...(channel?.lives?.edges?.map(e => e?.node) ?? []),
+        ...(channel?.lives?.edges?.filter(e => e?.node?.isOnAir)?.map(e => e?.node) ?? []),
         ...(channel?.videos?.edges?.map(e => e?.node) ?? [])
     ];
     let videos = all
@@ -2260,7 +2082,6 @@ function getSavedVideo(url, usePlatformAuth = false) {
     const headers1 = {
         "User-Agent": USER_AGENT,
         "Accept": "*/*",
-        // "Accept-Encoding": "gzip, deflate, br, zstd",
         "Referer": "https://geo.dailymotion.com/",
         "Origin": "https://geo.dailymotion.com",
         "DNT": "1",
@@ -2277,17 +2098,15 @@ function getSavedVideo(url, usePlatformAuth = false) {
     else {
         headers1["Cookie"] = "ff=off";
     }
-    const player_metadataResponse = http.GET(player_metadata_url, headers1, usePlatformAuth);
-    if (!player_metadataResponse.isOk) {
-        throw new UnavailableException('Unable to get player metadata');
-    }
-    const player_metadata = JSON.parse(player_metadataResponse.body);
-    if (player_metadata.error) {
-        if (player_metadata.error.code && ERROR_TYPES[player_metadata.error.code] !== undefined) {
-            throw new UnavailableException(ERROR_TYPES[player_metadata.error.code]);
-        }
-        throw new UnavailableException('This content is not available');
-    }
+    const videoDetailsRequestBody = JSON.stringify({
+        operationName: "WATCHING_VIDEO",
+        variables: {
+            "xid": id,
+            "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+            "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
+        },
+        query: WATCHING_VIDEO
+    });
     const videoDetailsRequestHeaders = {
         "Content-Type": "application/json",
         "User-Agent": USER_AGENT,
@@ -2311,31 +2130,28 @@ function getSavedVideo(url, usePlatformAuth = false) {
     if (!usePlatformAuth) {
         videoDetailsRequestHeaders.Authorization = state.anonymousUserAuthorizationToken;
     }
-    const variables = {
-        "xid": id,
-        "avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
-        "thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
-    };
-    const videoDetailsRequestBody = JSON.stringify({
-        operationName: "WATCHING_VIDEO",
-        variables,
-        query: WATCHING_VIDEO
-    });
-    const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth);
+    const responses = http.batch()
+        .GET(player_metadata_url, headers1, usePlatformAuth)
+        .POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth)
+        .execute();
+    const player_metadataResponse = responses[0];
+    const video_details_response = responses[1];
+    if (!player_metadataResponse.isOk) {
+        throw new UnavailableException('Unable to get player metadata');
+    }
+    const player_metadata = JSON.parse(player_metadataResponse.body);
+    if (player_metadata.error) {
+        if (player_metadata.error.code && ERROR_TYPES[player_metadata.error.code] !== undefined) {
+            throw new UnavailableException(ERROR_TYPES[player_metadata.error.code]);
+        }
+        throw new UnavailableException('This content is not available');
+    }
     if (video_details_response.code != 200) {
         throw new UnavailableException('Failed to get video details');
     }
     const video_details = JSON.parse(video_details_response.body);
-    const sources = [
-        new HLSSource({
-            name: 'source',
-            duration: player_metadata?.duration,
-            url: player_metadata?.qualities?.auto[0]?.url,
-        })
-    ];
     const video = video_details?.data?.video;
-    const subtitles = player_metadata?.subtitles;
-    const platformVideoDetails = SourceVideoToPlatformVideoDetailsDef(config.id, video, sources, subtitles);
+    const platformVideoDetails = SourceVideoToPlatformVideoDetailsDef(config.id, video, player_metadata);
     return new PlatformVideoDetails(platformVideoDetails);
 }
 function getSearchChannelPager(context) {
@@ -2351,7 +2167,7 @@ function getSearchChannelPager(context) {
     });
     const results = searchResponse?.data?.search?.channels?.edges.map(edge => {
         const channel = edge.node;
-        return SourceChannelToGrayjayChannel(config.id, `${BASE_URL}/${channel.name}`, channel);
+        return SourceChannelToGrayjayChannel(config.id, channel);
     });
     const params = {
         query: context.q,
@@ -2530,5 +2346,10 @@ function getPlatformSystemPlaylist(opts) {
     };
     return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection, videos);
 }
+function getPreferredCountry(preferredCountryIndex) {
+    const country = COUNTRY_NAMES_TO_CODE[preferredCountryIndex];
+    const parts = country.split('-');
+    const code = parts[0] ?? "";
+    return (code || '').toLowerCase();
+}
 log("LOADED");
-//# sourceMappingURL=DailymotionScript.js.map

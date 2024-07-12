@@ -3,7 +3,8 @@ let _settings: IDailymotionPluginSettings;
 
 const state = {
 	anonymousUserAuthorizationToken: "",
-	anonymousUserAuthorizationTokenExpirationDate: 0
+	anonymousUserAuthorizationTokenExpirationDate: 0,
+	messageServiceToken: ""
 };
 
 const LIKE_PLAYLIST_ID = "LIKE_PLAYLIST";
@@ -12,8 +13,6 @@ const RECENTLY_WATCHED_PLAYLIST_ID = "RECENTLY_WATCHED_PLAYLIST";
 
 
 import {
-	CREATOR_AVATAR_HEIGHT,
-	THUMBNAIL_HEIGHT,
 	BASE_URL,
 	SEARCH_CAPABILITIES,
 	BASE_URL_VIDEO,
@@ -27,11 +26,13 @@ import {
 	BASE_URL_METADATA,
 	ERROR_TYPES,
 	LikedMediaSort,
-	VIDEOS_PER_PAGE_OPTIONS,
-	PLAYLISTS_PER_PAGE_OPTIONS,
 	CLIENT_ID,
 	CLIENT_SECRET,
-	BASE_URL_API_AUTH
+	BASE_URL_API_AUTH,
+	PLATFORM,
+	BASE_URL_COMMENTS,
+	BASE_URL_COMMENTS_AUTH,
+	BASE_URL_COMMENTS_THUMBNAILS
 } from './constants';
 
 import {
@@ -55,7 +56,6 @@ import {
 import {
 	getChannelNameFromUrl,
 	isUsernameUrl,
-	getPreferredCountry,
 	getQuery,
 	objectToUrlEncodedString,
 	generateUUIDv4
@@ -94,45 +94,56 @@ import {
 } from './Mappers';
 
 
-
-let httpClientRequestToken: IHttp = http.newClient(false);
-
-
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection: string[] = [];
 
 source.setSettings = function (settings) {
 	_settings = settings;
-	http.GET(BASE_URL, {}, true);
 }
+
+let COUNTRY_NAMES_TO_CODE: string[] = [];
+let VIDEOS_PER_PAGE_OPTIONS: number[]= [];
+let PLAYLISTS_PER_PAGE_OPTIONS: number[] = [];
+let CREATOR_AVATAR_HEIGHT: string[] = [];
+let THUMBNAIL_HEIGHT: string[] = [];
 
 //Source Methods
 source.enable = function (conf, settings, saveStateStr) {
 
 	config = conf ?? {};
-	_settings = settings ?? {};
+
+	COUNTRY_NAMES_TO_CODE = config?.settings?.find(s => s.variable == "preferredCountryOptionIndex")?.options ?? [];
+	VIDEOS_PER_PAGE_OPTIONS = config?.settings?.find(s => s.variable == "videosPerPageOptionIndex")?.options?.map(s => parseInt(s)) ?? [];
+	PLAYLISTS_PER_PAGE_OPTIONS = config?.settings?.find(s => s.variable == "playlistsPerPageOptionIndex")?.options?.map(s => parseInt(s)) ?? [];
+	CREATOR_AVATAR_HEIGHT = config?.settings?.find(s => s.variable == "avatarSizeOptionIndex")?.options?.map(s => `SQUARE_${s.replace("px","")}`) ?? [];
+	THUMBNAIL_HEIGHT = config?.settings?.find(s => s.variable == "thumbnailResolutionOptionIndex")?.options?.map(s => `PORTRAIT_${s.replace("px","")}`) ?? [];
+
+    const DEFAULT_SETTINGS = {
+        hideSensitiveContent: true,
+        avatarSizeOptionIndex: 8, // 720px
+        thumbnailResolutionOptionIndex: 7, // 1080px
+        preferredCountryOptionIndex: 0, // empty
+        videosPerPageOptionIndex: 3, // 20
+        playlistsPerPageOptionIndex: 0 // 5
+	};
+
+    _settings = { ...DEFAULT_SETTINGS, ...settings };
 
 	if (IS_TESTING) {
 
-		_settings.hideSensitiveContent = false;
-		_settings.avatarSizeOptionIndex = 8;
-		_settings.thumbnailResolutionOptionIndex = 7;
-		_settings.preferredCountryOptionIndex = 0;
-		_settings.videosPerPageOptionIndex = 4;
-		_settings.playlistsPerPageOptionIndex = 0;
-
 		config.id = "9c87e8db-e75d-48f4-afe5-2d203d4b95c5";
 	}
-
+	
 	let didSaveState = false;
-
+	
 	try {
 		if (saveStateStr) {
 			const saveState = JSON.parse(saveStateStr);
 			if (saveState) {
 				state.anonymousUserAuthorizationToken = saveState.anonymousUserAuthorizationToken;
 				state.anonymousUserAuthorizationTokenExpirationDate = saveState.anonymousUserAuthorizationTokenExpirationDate;
-
+				state.messageServiceToken = saveState.messageServiceToken;
+				
 				if (!isTokenValid()) {
 					log("Token expired. Fetching a new one.");
 				} else {
@@ -148,7 +159,7 @@ source.enable = function (conf, settings, saveStateStr) {
 
 	if (!didSaveState) {
 
-		log("Getting a new token");
+		log("Getting a new tokens");
 
 		const body = objectToUrlEncodedString({
 			client_id: CLIENT_ID,
@@ -156,7 +167,8 @@ source.enable = function (conf, settings, saveStateStr) {
 			grant_type: 'client_credentials'
 		});
 
-		const res = httpClientRequestToken.POST(BASE_URL_API_AUTH, body, {
+		let batchRequests = http.batch()
+		.POST(BASE_URL_API_AUTH, body, {
 			'User-Agent': USER_AGENT,
 			'Content-Type': 'application/x-www-form-urlencoded',
 			'Origin': BASE_URL,
@@ -170,6 +182,31 @@ source.enable = function (conf, settings, saveStateStr) {
 			'Pragma': 'no-cache',
 			'Cache-Control': 'no-cache'
 		}, false);
+
+		if(config.allowAllHttpHeaderAccess){
+
+			batchRequests = batchRequests.POST(BASE_URL_COMMENTS_AUTH, "", {//// get token for message service api-2-0.spot.im
+				'User-Agent': USER_AGENT,
+				Accept: '*/*',
+				'Accept-Language': 'en-US,en;q=0.5',
+				'x-spot-id': 'sp_vWPN1lBu',
+				'x-post-id': 'no$post',
+				'Content-Type': 'application/json',
+				'Origin': BASE_URL,
+				Connection: 'keep-alive',
+				Referer: BASE_URL,
+				'Sec-Fetch-Dest': 'empty',
+				'Sec-Fetch-Mode': 'cors',
+				'Sec-Fetch-Site': 'cross-site',
+				Priority: 'u=6',
+				'Content-Length': '0'
+			}, false)
+
+		}
+
+		const responses = batchRequests.execute();
+		
+		const res = responses[0];
 
 		if (res.code !== 200) {
 			console.error('Failed to get token', res);
@@ -185,9 +222,18 @@ source.enable = function (conf, settings, saveStateStr) {
 
 		state.anonymousUserAuthorizationToken = `${json.token_type} ${json.access_token}`;
 		state.anonymousUserAuthorizationTokenExpirationDate = Date.now() + (json.expires_in * 1000);
+		
+		if(config.allowAllHttpHeaderAccess)
+		{
+			const authenticateIm = responses[1];
 
-		log(`json.expires_in: ${json.expires_in}`);
-		log(`state.anonymousUserAuthorizationTokenExpirationDate: ${state.anonymousUserAuthorizationTokenExpirationDate}`);
+			if (!authenticateIm.isOk) {
+				// throw new UnavailableException('Failed to authenticate to comments service');
+				log('Failed to authenticate to comments service');
+			}
+
+			state.messageServiceToken = authenticateIm.headers["x-access-token"][0];
+		}
 	}
 
 }
@@ -250,7 +296,7 @@ source.getChannel = function (url) {
 			query: CHANNEL_QUERY_DESKTOP
 		});
 
-	return SourceChannelToGrayjayChannel(config.id, url, channelDetails.data.channel as Channel);
+	return SourceChannelToGrayjayChannel(config.id, channelDetails.data.channel as Channel);
 
 };
 
@@ -295,6 +341,94 @@ source.getContentDetails = function (url) {
 source.saveState = () => {
 	return JSON.stringify(state);
 };
+
+source.getSubComments = (comment) => {
+	const params = { "count": 5, "offset": 0, "parent_id": comment.context.id, "sort_by": "best", "child_count": comment.replyCount };
+	return getCommentPager(comment.contextUrl, params, 0);
+}
+
+
+source.getComments = (url) => {
+
+	if(!config.allowAllHttpHeaderAccess) {
+		return new PlatformCommentPager([], false, url, {}, 0);
+	}
+
+	const params = { "sort_by": "best", "offset": 0, "count": 10, "message_id": null, "depth": 2, "child_count": 2 };
+	return getCommentPager(url, params, 0);
+}
+
+function getCommentPager(url, params, page) {
+
+	try {
+		const xid = url.split('/').pop();
+
+		const commentsHeaders = {
+			'User-Agent': USER_AGENT,
+			Accept: 'application/json',
+			'Accept-Language': 'en-US,en;q=0.5',
+			'x-access-token': state.messageServiceToken,
+			'Content-Type': 'application/json',
+			'x-spot-id': 'sp_vWPN1lBu',
+			'x-post-id': xid,
+			'Origin': BASE_URL,
+			Connection: 'keep-alive',
+			Referer: BASE_URL,
+			'Sec-Fetch-Dest': 'empty',
+			'Sec-Fetch-Mode': 'cors',
+			'Sec-Fetch-Site': 'cross-site',
+			Priority: 'u=6',
+			TE: 'trailers'
+		}
+
+		const commentRequest = http.POST(BASE_URL_COMMENTS, JSON.stringify(params), commentsHeaders, false);
+
+		if (!commentRequest.isOk) {
+			throw new UnavailableException('Failed to authenticate to comments service');
+		}
+
+		const comments = JSON.parse(commentRequest.body);
+
+		const users = comments.conversation.users;
+
+		const results = comments.conversation.comments.map(v => {
+
+			const user = users[v.user_id];
+
+			return new Comment({
+				contextUrl: url,
+				author: new PlatformAuthorLink(
+					new PlatformID(PLATFORM, user.id ?? "", config.id), 
+					user.display_name ?? "",
+					"",
+					`${BASE_URL_COMMENTS_THUMBNAILS}/${user.image_id}`
+				),
+				message: v.content[0].text,
+				rating: new RatingLikes(v.stars),
+				date: v.written_at,
+				replyCount: v.total_replies_count ?? 0,
+				context: { id: v.id }
+			});
+
+		});
+
+		return new PlatformCommentPager(results, comments.conversation.has_next, url, params, ++page);
+	} catch (error) {
+		bridge.log('Failed to get comments:' + error?.message);
+		return new PlatformCommentPager([], false, url, params, 0);
+	}
+
+}
+
+class PlatformCommentPager extends CommentPager {
+	constructor(results, hasMore, path, params, page) {
+		super(results, hasMore, { path, params, page });
+	}
+
+	nextPage() {
+		return getCommentPager(this.context.path, this.context.params, (this.context.page ?? 0) + 1);
+	}
+}
 
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
@@ -577,7 +711,7 @@ function searchPlaylists(contextQuery) {
 function getVideoPager(params, page) {
 
 	const count = VIDEOS_PER_PAGE_OPTIONS[_settings.videosPerPageOptionIndex];
-
+	
 	if (!params) {
 		params = {};
 	}
@@ -658,7 +792,7 @@ function getChannelContentsPager(url, page, type, order, filters) {
 	} else {
 		sort = LikedMediaSort.Recent;
 	}
-
+	
 	const jsonResponse = executeGqlQuery(
 		http,
 		{
@@ -676,18 +810,18 @@ function getChannelContentsPager(url, page, type, order, filters) {
 			},
 			query: CHANNEL_VIDEOS_QUERY
 		});
-
+		
 	const channel = jsonResponse?.data?.channel as Channel;
 
 	const all: (Live | Video)[] = [
-		...(channel?.lives?.edges?.map(e => e?.node as Live) ?? []),
+		...(channel?.lives?.edges?.filter(e => e?.node?.isOnAir)?.map(e => e?.node as Live) ?? []),
 		...(channel?.videos?.edges?.map(e => e?.node as Video) ?? [])
-	];
+	  ];
 
 	let videos = all
 		.map((node => SourceVideoToGrayjayVideo(config.id, node)));
 
-
+		
 	const videosHasNext = channel?.videos?.pageInfo?.hasNextPage;
 	const livesHasNext = channel?.lives?.pageInfo?.hasNextPage;
 	const hasNext = videosHasNext || livesHasNext || false;
@@ -700,7 +834,12 @@ function getChannelContentsPager(url, page, type, order, filters) {
 		filters
 	}
 
-	return new ChannelVideoPager(videos, hasNext, params, getChannelContentsPager);
+	return new ChannelVideoPager(
+		videos,
+		hasNext,
+		params,
+		getChannelContentsPager
+	);
 }
 
 function getSearchPagerAll(contextQuery): VideoPager {
@@ -762,7 +901,6 @@ function getSavedVideo(url, usePlatformAuth = false) {
 	const headers1 = {
 		"User-Agent": USER_AGENT,
 		"Accept": "*/*",
-		// "Accept-Encoding": "gzip, deflate, br, zstd",
 		"Referer": "https://geo.dailymotion.com/",
 		"Origin": "https://geo.dailymotion.com",
 		"DNT": "1",
@@ -780,22 +918,16 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		headers1["Cookie"] = "ff=off"
 	}
 
-	const player_metadataResponse = http.GET(player_metadata_url, headers1, usePlatformAuth);
-
-	if (!player_metadataResponse.isOk) {
-		throw new UnavailableException('Unable to get player metadata');
-	}
-
-	const player_metadata = JSON.parse(player_metadataResponse.body);
-
-	if (player_metadata.error) {
-
-		if (player_metadata.error.code && ERROR_TYPES[player_metadata.error.code] !== undefined) {
-			throw new UnavailableException(ERROR_TYPES[player_metadata.error.code]);
-		}
-
-		throw new UnavailableException('This content is not available');
-	}
+	const videoDetailsRequestBody = JSON.stringify({
+		operationName: "WATCHING_VIDEO",
+		variables:
+		{
+			"xid": id,
+			"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+			"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
+		},
+		query: WATCHING_VIDEO
+	});
 
 	const videoDetailsRequestHeaders: IDictionary<string> = {
 		"Content-Type": "application/json",
@@ -817,25 +949,42 @@ function getSavedVideo(url, usePlatformAuth = false) {
 		"Pragma": "no-cache",
 		"Cache-Control": "no-cache"
 	};
-
+	
 	if (!usePlatformAuth) {
 		videoDetailsRequestHeaders.Authorization = state.anonymousUserAuthorizationToken;
 	}
+	
+	const responses = http.batch()
+			.GET(
+				player_metadata_url,
+				headers1,
+				usePlatformAuth
+			)
+			.POST(
+				BASE_URL_API,
+				videoDetailsRequestBody,
+				videoDetailsRequestHeaders,
+				usePlatformAuth
+			  )
+		.execute()
 
-	const variables = {
-		"xid": id,
-		"avatar_size": CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
-		"thumbnail_resolution": THUMBNAIL_HEIGHT[_settings?.thumbnailResolutionOptionIndex]
-	};
+	const player_metadataResponse = responses[0];
+	const video_details_response = responses[1];
 
-	const videoDetailsRequestBody = JSON.stringify(
-		{
-			operationName: "WATCHING_VIDEO",
-			variables,
-			query: WATCHING_VIDEO
-		});
+	if (!player_metadataResponse.isOk) {
+		throw new UnavailableException('Unable to get player metadata');
+	}
 
-	const video_details_response = http.POST(BASE_URL_API, videoDetailsRequestBody, videoDetailsRequestHeaders, usePlatformAuth)
+	const player_metadata = JSON.parse(player_metadataResponse.body);
+
+	if (player_metadata.error) {
+
+		if (player_metadata.error.code && ERROR_TYPES[player_metadata.error.code] !== undefined) {
+			throw new UnavailableException(ERROR_TYPES[player_metadata.error.code]);
+		}
+
+		throw new UnavailableException('This content is not available');
+	}	
 
 	if (video_details_response.code != 200) {
 		throw new UnavailableException('Failed to get video details');
@@ -843,23 +992,15 @@ function getSavedVideo(url, usePlatformAuth = false) {
 
 	const video_details = JSON.parse(video_details_response.body);
 
-	const sources: HLSSource[] = [
-		new HLSSource(
-			{
-				name: 'source',
-				duration: player_metadata?.duration,
-				url: player_metadata?.qualities?.auto[0]?.url,
-			}
-		)
-	]
-
 	const video = video_details?.data?.video as Video;
 
-	const subtitles = player_metadata?.subtitles as IDailymotionSubtitle;
+	const platformVideoDetails: PlatformVideoDetailsDef = SourceVideoToPlatformVideoDetailsDef(
+	  config.id,
+	  video,
+	  player_metadata
+	);
 
-	const platformVideoDetails: PlatformVideoDetailsDef = SourceVideoToPlatformVideoDetailsDef(config.id, video, sources, subtitles);
-
-	return new PlatformVideoDetails(platformVideoDetails)
+	return new PlatformVideoDetails(platformVideoDetails);
 }
 
 function getSearchChannelPager(context) {
@@ -877,16 +1018,26 @@ function getSearchChannelPager(context) {
 	});
 
 	const results = searchResponse?.data?.search?.channels?.edges.map(edge => {
+      
 		const channel = edge.node as Channel;
-		return SourceChannelToGrayjayChannel(config.id, `${BASE_URL}/${channel.name}`, channel);
+      
+      return SourceChannelToGrayjayChannel(
+        config.id,
+        channel
+      );
 	});
 
 	const params = {
 		query: context.q,
 	}
 
-	return new SearchChannelPager(results, searchResponse?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page, getSearchChannelPager);
-
+    return new SearchChannelPager(
+      results,
+      searchResponse?.data?.search?.channels?.pageInfo?.hasNextPage,
+      params,
+      context.page,
+      getSearchChannelPager
+    );
 }
 
 function getChannelPlaylists(url: string, page: number = 1): SearchPlaylistPager {
@@ -1127,6 +1278,13 @@ function getPlatformSystemPlaylist(opts: IPlatformSystemPlaylist): PlatformPlayl
 	}
 
 	return SourceCollectionToGrayjayPlaylistDetails(opts.pluginId, collection as Collection, videos);
+}
+
+function getPreferredCountry(preferredCountryIndex) {
+    const country = COUNTRY_NAMES_TO_CODE[preferredCountryIndex];
+	const parts = country.split('-');
+	const code = parts[0] ?? "";
+    return (code  || '').toLowerCase();
 }
 
 log("LOADED");
