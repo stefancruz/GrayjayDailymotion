@@ -6,6 +6,8 @@ import {
   Video,
 } from '../types/CodeGenDailymotion';
 
+import { DailymotionStreamingContent, IDailymotionSubtitle } from '../types/types';
+
 import {
   BASE_URL,
   BASE_URL_PLAYLIST,
@@ -43,7 +45,7 @@ export const SourceChannelToGrayjayChannel = (
     thumbnail: sourceChannel?.avatar?.url ?? '',
     banner: sourceChannel.banner?.url ?? '',
     subscribers:
-      sourceChannel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
+      sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ?? 0,
     description: sourceChannel?.description ?? '',
     url: `${BASE_URL}/${sourceChannel.name}`,
     links,
@@ -60,15 +62,14 @@ export const SourceAuthorToGrayjayPlatformAuthorLink = (
     creator?.name ? `${BASE_URL}/${creator?.name}` : '',
     creator?.avatar?.url ?? '',
     creator?.followers?.totalCount ??
-      creator?.stats?.followers?.total ??
-      creator?.metrics?.engagement?.followers?.edges[0]?.node?.total ??
-      0,
+    creator?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ??
+    0,
   );
 };
 
 export const SourceVideoToGrayjayVideo = (
   pluginId: string,
-  sourceVideo?: Video | Live | null,
+  sourceVideo?: DailymotionStreamingContent,
 ): PlatformVideo => {
   const isLive = getIsLive(sourceVideo);
   const viewCount = getViewCount(sourceVideo);
@@ -147,32 +148,38 @@ export const SourceCollectionToGrayjayPlaylist = (
     name: sourceCollection?.name,
     thumbnail: sourceCollection?.thumbnail?.url,
     videoCount:
-      sourceCollection?.metrics?.engagement?.videos?.edges[0]?.node?.total,
+      sourceCollection?.metrics?.engagement?.videos?.edges?.[0]?.node?.total,
   });
 };
 
-const getIsLive = (sourceVideo?: Video | Live | null): boolean => {
+const getIsLive = (sourceVideo?: DailymotionStreamingContent): boolean => {
   return (
     (sourceVideo as Live)?.isOnAir === true ||
     (sourceVideo as Video)?.duration == undefined
   );
 };
 
-const getViewCount = (sourceVideo?: Video | Live | null): number => {
+const getViewCount = (sourceVideo?: DailymotionStreamingContent): number => {
   let viewCount = 0;
 
   if (getIsLive(sourceVideo)) {
 
     const live = sourceVideo as Live;
 
-    viewCount =
+    //TODO: live?.audienceCount and live.stats.views.total are deprecated
+    //live?.metrics?.engagement?.audience?.edges?.[0]?.node?.total is still empty
+    viewCount = 
+    live?.metrics?.engagement?.audience?.edges?.[0]?.node?.total ??
     live?.audienceCount ??
     live?.stats?.views?.total ??
-      0;
+    0
   } else {
 
     const video = sourceVideo as Video;
-
+    
+    // TODO: both fields are deprecated.
+    // video?.stats?.views?.total replaced video?.viewCount
+    // now video?.viewCount is deprecated too but there replacement is not accessible yet
     viewCount = video?.viewCount ?? video?.stats?.views?.total ?? 0;
   }
 
@@ -228,8 +235,8 @@ export const SourceVideoToPlatformVideoDetailsDef = (
       pluginId,
       sourceVideo?.creator,
     ),
-    uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
-    datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+    uploadDate: Math.floor(new Date(sourceVideo?.createDate).getTime() / 1000),
+    datetime: Math.floor(new Date(sourceVideo?.createDate).getTime() / 1000),
     duration,
     viewCount,
     url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : '',

@@ -91,6 +91,8 @@ import {
   SourceVideoToPlatformVideoDetailsDef,
 } from './Mappers';
 
+import { IDailymotionPluginSettings, IDictionary, IPlatformSystemPlaylist } from '../types/types';
+
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection: string[] = [];
 
@@ -811,14 +813,14 @@ function getHomePager(params, page) {
   }
 
   const results =
-    obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.edges
+    obj?.data?.home?.neon?.sections?.edges?.[0]?.node?.components?.edges
       ?.filter((edge) => edge?.node?.id)
       ?.map((edge) => {
         return SourceVideoToGrayjayVideo(config.id, edge.node as Video);
       });
 
   const hasMore =
-    obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.pageInfo
+    obj?.data?.home?.neon?.sections?.edges?.[0]?.node?.components?.pageInfo
       ?.hasNextPage ?? false;
   
   return new SearchPagerAll(results, hasMore, params, page, getHomePager);

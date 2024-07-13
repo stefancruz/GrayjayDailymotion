@@ -36,6 +36,7 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [ ] - Stop using configuration option allowAllHttpHeaderAccess;
 - [ ] - Unit tests - (WIP);
 - [ ] - Dev submit;
+- [ ] - API fields deprecated with replacement not available yet (video?.viewCount, video?.stats?.views?.total);
 
 
 ## Todo 

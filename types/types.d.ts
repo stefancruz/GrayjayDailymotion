@@ -1,3 +1,7 @@
+import { Video, Live } from "./CodeGenDailymotion";
+
+type DailymotionStreamingContent = Video | Live | null;
+
 interface IDailymotionPluginSettings {
   hideSensitiveContent: boolean;
   preferredCountryOptionIndex: number;

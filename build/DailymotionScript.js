@@ -1306,7 +1306,7 @@ const SourceChannelToGrayjayChannel = (pluginId, sourceChannel) => {
         name: sourceChannel?.displayName ?? '',
         thumbnail: sourceChannel?.avatar?.url ?? '',
         banner: sourceChannel.banner?.url ?? '',
-        subscribers: sourceChannel?.metrics?.engagement?.followers?.edges[0]?.node?.total ?? 0,
+        subscribers: sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ?? 0,
         description: sourceChannel?.description ?? '',
         url: `${BASE_URL}/${sourceChannel.name}`,
         links,
@@ -1314,8 +1314,7 @@ const SourceChannelToGrayjayChannel = (pluginId, sourceChannel) => {
 };
 const SourceAuthorToGrayjayPlatformAuthorLink = (pluginId, creator) => {
     return new PlatformAuthorLink(new PlatformID(PLATFORM, creator?.id ?? '', pluginId, PLATFORM_CLAIMTYPE), creator?.displayName ?? '', creator?.name ? `${BASE_URL}/${creator?.name}` : '', creator?.avatar?.url ?? '', creator?.followers?.totalCount ??
-        creator?.stats?.followers?.total ??
-        creator?.metrics?.engagement?.followers?.edges[0]?.node?.total ??
+        creator?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ??
         0);
 };
 const SourceVideoToGrayjayVideo = (pluginId, sourceVideo) => {
@@ -1360,7 +1359,7 @@ const SourceCollectionToGrayjayPlaylist = (pluginId, sourceCollection) => {
         author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceCollection?.creator),
         name: sourceCollection?.name,
         thumbnail: sourceCollection?.thumbnail?.url,
-        videoCount: sourceCollection?.metrics?.engagement?.videos?.edges[0]?.node?.total,
+        videoCount: sourceCollection?.metrics?.engagement?.videos?.edges?.[0]?.node?.total,
     });
 };
 const getIsLive = (sourceVideo) => {
@@ -1371,13 +1370,19 @@ const getViewCount = (sourceVideo) => {
     let viewCount = 0;
     if (getIsLive(sourceVideo)) {
         const live = sourceVideo;
+        //TODO: live?.audienceCount and live.stats.views.total are deprecated
+        //live?.metrics?.engagement?.audience?.edges?.[0]?.node?.total is still empty
         viewCount =
-            live?.audienceCount ??
+            live?.metrics?.engagement?.audience?.edges?.[0]?.node?.total ??
+                live?.audienceCount ??
                 live?.stats?.views?.total ??
                 0;
     }
     else {
         const video = sourceVideo;
+        // TODO: both fields are deprecated.
+        // video?.stats?.views?.total replaced video?.viewCount
+        // now video?.viewCount is deprecated too but there replacement is not accessible yet
         viewCount = video?.viewCount ?? video?.stats?.views?.total ?? 0;
     }
     return viewCount;
@@ -1412,8 +1417,8 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, player_meta
             new Thumbnail(sourceVideo?.thumbnail?.url ?? '', 0),
         ]),
         author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceVideo?.creator),
-        uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
-        datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+        uploadDate: Math.floor(new Date(sourceVideo?.createDate).getTime() / 1000),
+        datetime: Math.floor(new Date(sourceVideo?.createDate).getTime() / 1000),
         duration,
         viewCount,
         url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : '',
@@ -2022,12 +2027,12 @@ function getHomePager(params, page) {
     catch (error) {
         return new VideoPager([], false, { params });
     }
-    const results = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.edges
+    const results = obj?.data?.home?.neon?.sections?.edges?.[0]?.node?.components?.edges
         ?.filter((edge) => edge?.node?.id)
         ?.map((edge) => {
         return SourceVideoToGrayjayVideo(config.id, edge.node);
     });
-    const hasMore = obj?.data?.home?.neon?.sections?.edges[0]?.node?.components?.pageInfo
+    const hasMore = obj?.data?.home?.neon?.sections?.edges?.[0]?.node?.components?.pageInfo
         ?.hasNextPage ?? false;
     return new SearchPagerAll(results, hasMore, params, page, getHomePager);
 }
