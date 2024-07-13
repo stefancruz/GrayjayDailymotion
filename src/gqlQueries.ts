@@ -14,7 +14,7 @@ query AUTOCOMPLETE_QUERY($query: String!) {
 		}
 	}
 }
-`
+`;
 export const CHANNEL_QUERY_DESKTOP = `
 query CHANNEL_QUERY_DESKTOP(
 	$channel_name: String!
@@ -71,7 +71,7 @@ query CHANNEL_QUERY_DESKTOP(
 		}
 	}
 }
-`
+`;
 export const SEACH_DISCOVERY_QUERY = `	
 fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 	id
@@ -129,8 +129,7 @@ query SEACH_DISCOVERY_QUERY($avatar_size: AvatarHeight!, $thumbnail_resolution: 
 			}
 		}
 	}
-}`
-
+}`;
 
 export const CHANNEL_VIDEOS_QUERY = `
 query CHANNEL_VIDEOS_QUERY(
@@ -238,8 +237,7 @@ query CHANNEL_VIDEOS_QUERY(
       }
     }
   }
-}`
-
+}`;
 
 export const SEARCH_QUERY = ` 
 fragment VIDEO_BASE_FRAGMENT on Video {
@@ -456,7 +454,6 @@ query SEARCH_QUERY(
 	}
 }`;
 
-
 export const WATCHING_VIDEO = `
 fragment VIDEO_FRAGMENT on Video {
 	id
@@ -644,8 +641,7 @@ query WATCHING_VIDEO(
 			...LIVE_FRAGMENT
 		}
 	}
-}`
-
+}`;
 
 export const SEARCH_CHANNEL = `		
 query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: AvatarHeight!) {
@@ -685,8 +681,7 @@ query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: Avata
 			}
 		}
 	}
-}`
-
+}`;
 
 export const PLAYLIST_DETAILS_QUERY = `
 query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
@@ -767,7 +762,7 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 			}
 		}
 	}
-}`
+}`;
 
 export const GET_USER_SUBSCRIPTIONS = `
 query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
@@ -811,7 +806,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 					}
 				}
 			}
-}`
+}`;
 
 export const SUBSCRIPTIONS_QUERY = `
 query SUBSCRIPTIONS_QUERY {
@@ -823,7 +818,6 @@ query SUBSCRIPTIONS_QUERY {
 	}
 }
 `;
-
 
 export const CHANNEL_PLAYLISTS_QUERY = `
 query CHANNEL_PLAYLISTS_QUERY(
@@ -894,8 +888,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 	}
 }
 
-`
-
+`;
 
 export const USER_LIKED_VIDEOS_QUERY = `
 query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
@@ -952,7 +945,7 @@ query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeigh
 			}
 		}
 	}
-}`
+}`;
 
 export const USER_WATCH_LATER_VIDEOS_QUERY = `
 	query USER_WATCH_LATER_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
@@ -1008,8 +1001,7 @@ export const USER_WATCH_LATER_VIDEOS_QUERY = `
 			}
 		}
 	}
-}`
-
+}`;
 
 export const USER_WATCHED_VIDEOS_QUERY = `
 	query USER_WATCHED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
@@ -1040,4 +1032,4 @@ export const USER_WATCHED_VIDEOS_QUERY = `
 			}
 		}
 	}
-}`
+}`;
