@@ -9,6 +9,11 @@ const BASE_URL_API_AUTH = `${BASE_URL_API}/oauth/token`;
 const BASE_URL_VIDEO = `${BASE_URL}/video`;
 const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;
 const BASE_URL_METADATA = `${BASE_URL}/player/metadata/video`;
+const REGEX_VIDEO_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/video\/[a-zA-Z0-9]+$/i;
+const REGEX_VIDEO_URL_1 = /^https:\/\/dai\.ly\/[a-zA-Z0-9]+$/i;
+const REGEX_VIDEO_URL_EMBED = /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
+const REGEX_VIDEO_CHANNEL_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
+const REGEX_VIDEO_PLAYLIST_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
 const USER_AGENT = 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36';
 // Those are used even for not logged users to make requests on the graphql api.
 //TODO: check how to get them dynamically
@@ -32,6 +37,9 @@ DURATION_THRESHOLDS[ONE_TO_FIVE_MINUTES] = { min: 60, max: 300 };
 DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
+const LIKE_PLAYLIST_ID = 'LIKE_PLAYLIST';
+const FAVORITES_PLAYLIST_ID = 'FAVORITES_PLAYLIST';
+const RECENTLY_WATCHED_PLAYLIST_ID = 'RECENTLY_WATCHED_PLAYLIST';
 /** The possible values which liked media connections can be sorted by. */
 const LikedMediaSort = {
     /** Sort liked medias by most recent. */
@@ -983,10 +991,6 @@ function getChannelNameFromUrl(url) {
     const channel_name = url.split('/').pop();
     return channel_name;
 }
-function isUsernameUrl(url) {
-    const regex = new RegExp('^' + BASE_URL.replace(/\./g, '\\.') + '/[^/]+$');
-    return regex.test(url);
-}
 const parseUploadDateFilter = (filter) => {
     let createdAfterVideos = null;
     const now = new Date();
@@ -1351,9 +1355,6 @@ const state = {
     anonymousUserAuthorizationTokenExpirationDate: 0,
     messageServiceToken: '',
 };
-const LIKE_PLAYLIST_ID = 'LIKE_PLAYLIST';
-const FAVORITES_PLAYLIST_ID = 'FAVORITES_PLAYLIST';
-const RECENTLY_WATCHED_PLAYLIST_ID = 'RECENTLY_WATCHED_PLAYLIST';
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection = [];
 source.setSettings = function (settings) {
@@ -1513,7 +1514,7 @@ source.searchChannels = function (query) {
 };
 //Channel
 source.isChannelUrl = function (url) {
-    return isUsernameUrl(url);
+    return REGEX_VIDEO_CHANNEL_URL.test(url);
 };
 source.getChannel = function (url) {
     const channel_name = getChannelNameFromUrl(url);
@@ -1549,7 +1550,11 @@ source.getChannelCapabilities = () => {
 };
 //Video
 source.isContentDetailsUrl = function (url) {
-    return url.startsWith(BASE_URL_VIDEO);
+    return [
+        REGEX_VIDEO_URL,
+        REGEX_VIDEO_URL_1,
+        REGEX_VIDEO_URL_EMBED
+    ].some(r => r.test(url));
 };
 source.getContentDetails = function (url) {
     return getSavedVideo(url, false);
@@ -1636,7 +1641,7 @@ class PlatformCommentPager extends CommentPager {
 }
 //Playlist
 source.isPlaylistUrl = (url) => {
-    return (url.startsWith(BASE_URL_PLAYLIST) ||
+    return (REGEX_VIDEO_PLAYLIST_URL.test(url) ||
         url === LIKE_PLAYLIST_ID ||
         url === FAVORITES_PLAYLIST_ID ||
         url === RECENTLY_WATCHED_PLAYLIST_ID);

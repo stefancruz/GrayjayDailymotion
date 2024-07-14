@@ -19,6 +19,13 @@ export const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;
 
 export const BASE_URL_METADATA = `${BASE_URL}/player/metadata/video`;
 
+export const REGEX_VIDEO_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/video\/[a-zA-Z0-9]+$/i;
+export const REGEX_VIDEO_URL_1 = /^https:\/\/dai\.ly\/[a-zA-Z0-9]+$/i;
+export const REGEX_VIDEO_URL_EMBED = /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
+
+export const REGEX_VIDEO_CHANNEL_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
+export const REGEX_VIDEO_PLAYLIST_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
+
 export const USER_AGENT =
   'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36';
 
@@ -48,6 +55,10 @@ DURATION_THRESHOLDS[ONE_TO_FIVE_MINUTES] = { min: 60, max: 300 };
 DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
+
+export const LIKE_PLAYLIST_ID = 'LIKE_PLAYLIST';
+export const FAVORITES_PLAYLIST_ID = 'FAVORITES_PLAYLIST';
+export const RECENTLY_WATCHED_PLAYLIST_ID = 'RECENTLY_WATCHED_PLAYLIST';
 
 /** The possible values which liked media connections can be sorted by. */
 export const LikedMediaSort = {

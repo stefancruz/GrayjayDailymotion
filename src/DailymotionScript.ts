@@ -7,10 +7,6 @@ const state = {
   messageServiceToken: '',
 };
 
-const LIKE_PLAYLIST_ID = 'LIKE_PLAYLIST';
-const FAVORITES_PLAYLIST_ID = 'FAVORITES_PLAYLIST';
-const RECENTLY_WATCHED_PLAYLIST_ID = 'RECENTLY_WATCHED_PLAYLIST';
-
 import {
   BASE_URL,
   SEARCH_CAPABILITIES,
@@ -32,6 +28,14 @@ import {
   BASE_URL_COMMENTS,
   BASE_URL_COMMENTS_AUTH,
   BASE_URL_COMMENTS_THUMBNAILS,
+  FAVORITES_PLAYLIST_ID,
+  LIKE_PLAYLIST_ID,
+  RECENTLY_WATCHED_PLAYLIST_ID,
+  REGEX_VIDEO_CHANNEL_URL,
+  REGEX_VIDEO_PLAYLIST_URL,
+  REGEX_VIDEO_URL,
+  REGEX_VIDEO_URL_1,
+  REGEX_VIDEO_URL_EMBED,
 } from './constants';
 
 import {
@@ -54,7 +58,6 @@ import {
 
 import {
   getChannelNameFromUrl,
-  isUsernameUrl,
   getQuery,
   objectToUrlEncodedString,
   generateUUIDv4,
@@ -302,7 +305,7 @@ source.searchChannels = function (query) {
 
 //Channel
 source.isChannelUrl = function (url) {
-  return isUsernameUrl(url);
+  return REGEX_VIDEO_CHANNEL_URL.test(url);
 };
 
 source.getChannel = function (url) {
@@ -347,7 +350,11 @@ source.getChannelCapabilities = (): ResultCapabilities => {
 
 //Video
 source.isContentDetailsUrl = function (url) {
-  return url.startsWith(BASE_URL_VIDEO);
+  return [
+    REGEX_VIDEO_URL,
+    REGEX_VIDEO_URL_1,
+    REGEX_VIDEO_URL_EMBED
+  ].some(r => r.test(url))
 };
 
 source.getContentDetails = function (url) {
@@ -473,7 +480,7 @@ class PlatformCommentPager extends CommentPager {
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
   return (
-    url.startsWith(BASE_URL_PLAYLIST) ||
+    REGEX_VIDEO_PLAYLIST_URL.test(url) ||
     url === LIKE_PLAYLIST_ID ||
     url === FAVORITES_PLAYLIST_ID ||
     url === RECENTLY_WATCHED_PLAYLIST_ID

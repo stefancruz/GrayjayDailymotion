@@ -19,12 +19,6 @@ export function getChannelNameFromUrl(url) {
   return channel_name;
 }
 
-export function isUsernameUrl(url) {
-  const regex = new RegExp('^' + BASE_URL.replace(/\./g, '\\.') + '/[^/]+$');
-
-  return regex.test(url);
-}
-
 export const parseUploadDateFilter = (filter: string): string | null => {
   let createdAfterVideos: string | null = null;
   const now = new Date();
