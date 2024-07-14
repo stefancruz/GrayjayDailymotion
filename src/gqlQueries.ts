@@ -1,20 +1,19 @@
 export const AUTOCOMPLETE_QUERY = `
 query AUTOCOMPLETE_QUERY($query: String!) {
-	search {
-		id
-		suggestedVideos: autosuggestions(
-		query: {eq: $query}
-		filter: {story: {eq: VIDEO}}
-		) {
-		edges {
-			node {
-			name
-			}
-		}
-		}
-	}
-}
-`
+  search {
+    suggestedVideos: autosuggestions(
+      query: { eq: $query }
+      filter: { story: { eq: VIDEO } }
+    ) {
+      edges {
+        node {
+          name
+        }
+      }
+    }
+  }
+}`;
+
 export const CHANNEL_QUERY_DESKTOP = `
 query CHANNEL_QUERY_DESKTOP(
 	$channel_name: String!
@@ -52,13 +51,10 @@ query CHANNEL_QUERY_DESKTOP(
 			}
 		}
 		stats {
-			id
 			views {
-				id
 				total
 			}
 			videos {
-				id
 				total
 			}
 		}
@@ -70,14 +66,13 @@ query CHANNEL_QUERY_DESKTOP(
 			pinterestURL
 		}
 	}
-}
-`
+}`;
+
 export const SEACH_DISCOVERY_QUERY = `	
 fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 	id
 	xid
 	title
-	isPublished
 	thumbnail(height:$thumbnail_resolution) {
 		url
 	}
@@ -102,9 +97,7 @@ fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 
 query SEACH_DISCOVERY_QUERY($avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	home: views {
-		id
 		neon {
-			id
 			sections(space: "home") {
 				edges {
 					node {
@@ -129,8 +122,7 @@ query SEACH_DISCOVERY_QUERY($avatar_size: AvatarHeight!, $thumbnail_resolution: 
 			}
 		}
 	}
-}`
-
+}`;
 
 export const CHANNEL_VIDEOS_QUERY = `
 query CHANNEL_VIDEOS_QUERY(
@@ -210,7 +202,6 @@ query CHANNEL_VIDEOS_QUERY(
           thumbnail(height: $thumbnail_resolution) {
             url
           }
-          bestAvailableQuality
           duration
           createdAt
           creator {
@@ -238,8 +229,7 @@ query CHANNEL_VIDEOS_QUERY(
       }
     }
   }
-}`
-
+}`;
 
 export const SEARCH_QUERY = ` 
 fragment VIDEO_BASE_FRAGMENT on Video {
@@ -260,9 +250,7 @@ fragment VIDEO_BASE_FRAGMENT on Video {
 		}
 	}
 	stats {
-		id
 		views {
-			id
 			total
 		}
 	}
@@ -278,35 +266,6 @@ fragment VIDEO_BASE_FRAGMENT on Video {
 	}
 	duration
 	thumbnail(height:$thumbnail_resolution) {
-		url
-	}
-	
-}
-
-fragment VIDEO_FAVORITES_FRAGMENT on Media {
-	... on Video {
-		id
-		viewerEngagement {
-			id
-			favorited
-		}
-	}
-	... on Live {
-		id
-		viewerEngagement {
-			id
-			favorited
-		}
-	}
-}
-
-fragment CHANNEL_BASE_FRAG on Channel {
-	id
-	xid
-	name
-	displayName
-	description
-	avatar(height:$avatar_size) {
 		url
 	}
 }
@@ -330,9 +289,7 @@ fragment PLAYLIST_BASE_FRAG on Collection {
 	}
 	description
 	stats {
-		id
 		videos {
-			id
 			total
 		}
 	}
@@ -352,7 +309,6 @@ fragment PLAYLIST_BASE_FRAG on Collection {
 query SEARCH_QUERY(
 	$query: String!
 	$shouldIncludeVideos: Boolean!
-	$shouldIncludeChannels: Boolean!
 	$shouldIncludePlaylists: Boolean!
 	$shouldIncludeLives: Boolean!
 	$page: Int
@@ -365,7 +321,6 @@ query SEARCH_QUERY(
 	$thumbnail_resolution: ThumbnailHeight!
 ) {
 	search {
-		id
 		videos(
 			query: $query
 			first: $limit
@@ -384,7 +339,6 @@ query SEARCH_QUERY(
 				node {
 					id
 					...VIDEO_BASE_FRAGMENT
-					...VIDEO_FAVORITES_FRAGMENT
 				}
 			}
 		}
@@ -425,20 +379,6 @@ query SEARCH_QUERY(
 				}
 			}
 		}
-		channels(query: $query, first: $limit, page: $page)
-			@include(if: $shouldIncludeChannels) {
-			pageInfo {
-				hasNextPage
-				nextPage
-			}
-			totalCount
-			edges {
-				node {
-					id
-					...CHANNEL_BASE_FRAG
-				}
-			}
-		}
 		playlists: collections(query: $query, first: $limit, page: $page)
 			@include(if: $shouldIncludePlaylists) {
 			pageInfo {
@@ -456,26 +396,17 @@ query SEARCH_QUERY(
 	}
 }`;
 
-
 export const WATCHING_VIDEO = `
 fragment VIDEO_FRAGMENT on Video {
 	id
 	xid
-	isPublished
 	duration
 	title
 	description
 	thumbnail(height:$thumbnail_resolution) {
 		url
 	}
-	bestAvailableQuality
 	createdAt
-	isPrivate
-	isCreatedForKids
-	isExplicit
-	videoWidth: width
-	videoHeight: height
-	status
 	metrics {
 		engagement {
 			likes {
@@ -490,9 +421,7 @@ fragment VIDEO_FRAGMENT on Video {
 		}
 	}
 	stats {
-		id
 		views {
-			id
 			total
 		}
 	}
@@ -519,17 +448,13 @@ fragment VIDEO_FRAGMENT on Video {
 			}
 		}
 		stats {
-			id
 			views {
-				id
 				total
 			}
 			followers {
-				id
 				total
 			}
 			videos {
-				id
 				total
 			}
 		}
@@ -541,23 +466,14 @@ fragment LIVE_FRAGMENT on Live {
 	xid
 	startAt
 	endAt
-	isPublished
 	title
 	description
 	audienceCount
 	isOnAir
 	thumbnail(height:$thumbnail_resolution){
 		url
-		height
-		width
 	}
-	category
 	createdAt
-	isPrivate
-	isExplicit
-	isCreatedForKids
-	bestAvailableQuality
-	canDisplayAds
 	videoWidth: width
 	videoHeight: height
 	metrics {
@@ -573,9 +489,7 @@ fragment LIVE_FRAGMENT on Live {
 		}
 	}
 	stats {
-		id
 		views {
-			id
 			total
 		}
 	}
@@ -589,43 +503,17 @@ fragment LIVE_FRAGMENT on Live {
 			height
 			width
 		}
-		coverURLx375: coverURL(size: "x375")
 		stats {
-			id
 			views {
-				id
 				total
 			}
 			followers {
-				id
 				total
 			}
 			videos {
-				id
 				total
 			}
 		}
-		country {
-			id
-			codeAlpha2
-		}
-	}
-	language {
-		id
-		codeAlpha2
-	}
-	tags {
-		edges {
-			node {
-				id
-				label
-			}
-		}
-	}
-	geoblockedCountries {
-		id
-		allowed
-		denied
 	}
 }
 
@@ -644,13 +532,11 @@ query WATCHING_VIDEO(
 			...LIVE_FRAGMENT
 		}
 	}
-}`
-
+}`;
 
 export const SEARCH_CHANNEL = `		
 query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: AvatarHeight!) {
 	search {
-		id
 		channels(query: $query, first: $limit, page: $page) {
 			pageInfo {
 				hasNextPage
@@ -660,15 +546,12 @@ query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: Avata
 			edges {
 				node {
 					id
-					id
 					xid
 					name
 					displayName
 					description
 					avatar(height:$avatar_size) {
 						url
-						height
-						width
 					}
 					metrics {
 						engagement {
@@ -685,16 +568,13 @@ query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: Avata
 			}
 		}
 	}
-}`
-
+}`;
 
 export const PLAYLIST_DETAILS_QUERY = `
 query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	collection(xid: $xid) {
 		id
-		id
 		xid
-		updatedAt
 		name
 		thumbnail(height:$thumbnail_resolution) {
 			url
@@ -767,7 +647,7 @@ query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_si
 			}
 		}
 	}
-}`
+}`;
 
 export const GET_USER_SUBSCRIPTIONS = `
 query SUBSCRIPTIONS_QUERY($first: Int, $page: Int) {
@@ -811,7 +691,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 					}
 				}
 			}
-}`
+}`;
 
 export const SUBSCRIPTIONS_QUERY = `
 query SUBSCRIPTIONS_QUERY {
@@ -823,7 +703,6 @@ query SUBSCRIPTIONS_QUERY {
 	}
 }
 `;
-
 
 export const CHANNEL_PLAYLISTS_QUERY = `
 query CHANNEL_PLAYLISTS_QUERY(
@@ -846,7 +725,6 @@ query CHANNEL_PLAYLISTS_QUERY(
 				node {
 					id
 					xid
-					updatedAt
 					createdAt
 					name
 					description
@@ -866,9 +744,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 						url
 					}
 					stats {
-						id
 						videos {
-							id
 							total
 						}
 					}
@@ -894,13 +770,11 @@ query CHANNEL_PLAYLISTS_QUERY(
 	}
 }
 
-`
-
+`;
 
 export const USER_LIKED_VIDEOS_QUERY = `
 query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
 	me {
-		id
 		likedMedias(first: 100, page: $page) {
 			edges {
 				node {
@@ -912,16 +786,8 @@ query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeigh
 						thumbnail(height:$thumbnail_resolution) {
 							url
 						}
-						aspectRatio
-						viewerEngagement {
-							id
-							liked
-						}
 						channel {
-							id
-							logoURLx25: logoURL(size: "x25")
 							displayName
-							accountType	
 						}
 					}
 					... on Live {
@@ -933,15 +799,8 @@ query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeigh
 						thumbnail(height:$thumbnail_resolution) {
 							url
 						}
-						viewerEngagement {
-							id
-							liked
-						}
 						channel {
-							id
-							logoURLx25: logoURL(size: "x25")
 							displayName
-							accountType
 						}
 					}
 				}
@@ -952,7 +811,7 @@ query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeigh
 			}
 		}
 	}
-}`
+}`;
 
 export const USER_WATCH_LATER_VIDEOS_QUERY = `
 	query USER_WATCH_LATER_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
@@ -969,16 +828,8 @@ export const USER_WATCH_LATER_VIDEOS_QUERY = `
 						thumbnail(height:$thumbnail_resolution) {
 							url
 						}
-						aspectRatio
 						channel {
-							id
-							logoURLx25: logoURL(size: "x25")
 							displayName
-							accountType
-						}
-						viewerEngagement {
-							id
-							favorited
 						}
 					}
 					... on Live {
@@ -990,14 +841,7 @@ export const USER_WATCH_LATER_VIDEOS_QUERY = `
 							url
 						}
 						channel {
-							id
-							logoURLx25: logoURL(size: "x25")
 							displayName
-							accountType
-						}
-						viewerEngagement {
-							id
-							favorited
 						}
 					}
 				}
@@ -1008,8 +852,7 @@ export const USER_WATCH_LATER_VIDEOS_QUERY = `
 			}
 		}
 	}
-}`
-
+}`;
 
 export const USER_WATCHED_VIDEOS_QUERY = `
 	query USER_WATCHED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
@@ -1025,12 +868,8 @@ export const USER_WATCHED_VIDEOS_QUERY = `
 					thumbnail(height:$thumbnail_resolution) {
 						url
 					}
-					aspectRatio
 					channel {
-						id
-						logoURLx25: logoURL(size: "x25")
 						displayName
-						accountType
 					}
 				}
 			}
@@ -1040,4 +879,4 @@ export const USER_WATCHED_VIDEOS_QUERY = `
 			}
 		}
 	}
-}`
+}`;

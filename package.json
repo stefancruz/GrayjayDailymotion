@@ -5,7 +5,8 @@
   "scripts": {
     "build": "rollup -c",
     "start": "rollup -c -w",
-    "codegen": "graphql-codegen --config ./scripts/codegen.ts"
+    "codegen": "graphql-codegen --config ./scripts/codegen.ts",
+    "prettier": "npx prettier --write ./src/**/*.ts"
   },
   "engines": {
     "node": ">=14",
