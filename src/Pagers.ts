@@ -34,12 +34,11 @@ export class SearchChannelPager extends ChannelPager {
   }
 
   nextPage() {
-
-    const page = this.context.page += 1;
+    const page = (this.context.page += 1);
 
     const opts = {
       q: this.context.params.query,
-      page
+      page,
     };
     return this.cb(opts);
   }

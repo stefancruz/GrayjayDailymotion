@@ -30,3 +30,9 @@ interface IPlatformSystemPlaylist {
   usePlatformAuth: boolean;
   thumbnailResolutionIndex: number;
 }
+
+type AnonymousUserAuthorization = {
+  anonymousUserAuthorizationToken?: string,
+  anonymousUserAuthorizationTokenExpirationDate?: number,
+  isValid: boolean
+} 

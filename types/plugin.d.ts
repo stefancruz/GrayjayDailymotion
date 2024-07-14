@@ -1361,9 +1361,15 @@ let Language = {
 };
 
 interface HttpResponse {
-  isOk(): boolean;
+  isOk: boolean;
   body: string;
   code: number;
+}
+
+domParser.parseFromString(detailsRequestHtml.body, "text/html")
+
+let domParser = {
+  parseFromString: function (elementText: string, contentType: string): Unit {},
 }
 
 //Package Bridge (variable: bridge)

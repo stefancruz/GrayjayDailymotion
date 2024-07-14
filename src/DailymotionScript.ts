@@ -21,9 +21,6 @@ import {
   BASE_URL_METADATA,
   ERROR_TYPES,
   LikedMediaSort,
-  FALLBACK_CLIENT_ID,
-  FALLBACK_CLIENT_SECRET,
-  BASE_URL_API_AUTH,
   PLATFORM,
   BASE_URL_COMMENTS,
   BASE_URL_COMMENTS_AUTH,
@@ -36,7 +33,6 @@ import {
   REGEX_VIDEO_URL,
   REGEX_VIDEO_URL_1,
   REGEX_VIDEO_URL_EMBED,
-  REGEX_INITIAL_DATA_API_AUTH,
 } from './constants';
 
 import {
@@ -57,12 +53,7 @@ import {
   USER_WATCH_LATER_VIDEOS_QUERY,
 } from './gqlQueries';
 
-import {
-  getChannelNameFromUrl,
-  getQuery,
-  objectToUrlEncodedString,
-  generateUUIDv4,
-} from './util';
+import { getChannelNameFromUrl, getQuery, generateUUIDv4 } from './util';
 
 import {
   Channel,
@@ -95,7 +86,15 @@ import {
   SourceVideoToPlatformVideoDetailsDef,
 } from './Mappers';
 
-import { IDailymotionPluginSettings, IDictionary, IPlatformSystemPlaylist } from '../types/types';
+import {
+  IDailymotionPluginSettings,
+  IDictionary,
+  IPlatformSystemPlaylist,
+} from '../types/types';
+import {
+  extractClientCredentials,
+  getTokenFromClientCredentials,
+} from './extraction';
 
 // Will be used to store private playlists that require authentication
 const authenticatedPlaylistCollection: string[] = [];
@@ -183,54 +182,27 @@ source.enable = function (conf, settings, saveStateStr) {
   if (!didSaveState) {
     log('Getting a new tokens');
 
-    const detailsRequestHtml = http.GET(BASE_URL, {}, false);
+    const clientCredentials = extractClientCredentials(http);
 
-    if (!detailsRequestHtml.isOk) {
-      log("Failed to get page to extract auth details");
+    const {
+      anonymousUserAuthorizationToken,
+      anonymousUserAuthorizationTokenExpirationDate,
+      isValid,
+    } = getTokenFromClientCredentials(http, clientCredentials);
+
+    if (!isValid) {
+      console.error('Failed to get token');
+      throw new ScriptException('Failed to get authentication token');
     }
 
-    let clientId = FALLBACK_CLIENT_ID;
-    let secret = FALLBACK_CLIENT_SECRET;
-    
-    const match = detailsRequestHtml.body.match(REGEX_INITIAL_DATA_API_AUTH);
-
-    if(match?.length === 2 && match[0] && match[1]) {
-      clientId = match[0];
-      secret = match[1];
-      log('Successfully extracted API credentials from page.')
-    } else {
-      log('Failed to extract api credentials from page.')
-    }
-
-    const body = objectToUrlEncodedString({
-      client_id: clientId,
-      client_secret: secret,
-      grant_type: 'client_credentials',
-    });
-
-    let batchRequests = http.batch().POST(
-      BASE_URL_API_AUTH,
-      body,
-      {
-        'User-Agent': USER_AGENT,
-        'Content-Type': 'application/x-www-form-urlencoded',
-        Origin: BASE_URL,
-        DNT: '1',
-        'Sec-GPC': '1',
-        Connection: 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        Priority: 'u=4',
-        Pragma: 'no-cache',
-        'Cache-Control': 'no-cache',
-      },
-      false,
-    );
+    state.anonymousUserAuthorizationToken =
+      anonymousUserAuthorizationToken ?? '';
+    state.anonymousUserAuthorizationTokenExpirationDate =
+      anonymousUserAuthorizationTokenExpirationDate ?? 0;
 
     if (config.allowAllHttpHeaderAccess) {
       // get token for message service api-2-0.spot.im
-      batchRequests = batchRequests.POST(
+      const authenticateIm = http.POST(
         BASE_URL_COMMENTS_AUTH,
         '',
         {
@@ -251,33 +223,6 @@ source.enable = function (conf, settings, saveStateStr) {
         },
         false,
       );
-    }
-
-    const responses = batchRequests.execute();
-
-    const res = responses[0];
-
-    if (res.code !== 200) {
-      console.error('Failed to get token', res);
-      throw new ScriptException(
-        '',
-        'Failed to get token: ' + res.code + ' - ' + res.body,
-      );
-    }
-
-    const anonymousTokenResponse = JSON.parse(res.body);
-
-    if (!anonymousTokenResponse.token_type || !anonymousTokenResponse.access_token) {
-      console.error('Invalid token response', res);
-      throw new ScriptException('', 'Invalid token response: ' + res.body);
-    }
-
-    state.anonymousUserAuthorizationToken = `${anonymousTokenResponse.token_type} ${anonymousTokenResponse.access_token}`;
-    state.anonymousUserAuthorizationTokenExpirationDate =
-      Date.now() + anonymousTokenResponse.expires_in * 1000;
-
-    if (config.allowAllHttpHeaderAccess) {
-      const authenticateIm = responses[1];
 
       if (!authenticateIm.isOk) {
         log('Failed to authenticate to comments service');
@@ -370,11 +315,9 @@ source.getChannelCapabilities = (): ResultCapabilities => {
 
 //Video
 source.isContentDetailsUrl = function (url) {
-  return [
-    REGEX_VIDEO_URL,
-    REGEX_VIDEO_URL_1,
-    REGEX_VIDEO_URL_EMBED
-  ].some(r => r.test(url))
+  return [REGEX_VIDEO_URL, REGEX_VIDEO_URL_1, REGEX_VIDEO_URL_EMBED].some((r) =>
+    r.test(url),
+  );
 };
 
 source.getContentDetails = function (url) {
@@ -603,7 +546,7 @@ source.getUserSubscriptions = (): string[] => {
       operationName: 'SUBSCRIPTIONS_QUERY',
       variables: {
         first: first,
-        page: page
+        page: page,
       },
       headers,
       query: GET_USER_SUBSCRIPTIONS,
@@ -847,7 +790,7 @@ function getHomePager(params, page) {
   const hasMore =
     obj?.data?.home?.neon?.sections?.edges?.[0]?.node?.components?.pageInfo
       ?.hasNextPage ?? false;
-  
+
   return new SearchPagerAll(results, hasMore, params, page, getHomePager);
 }
 
@@ -1172,12 +1115,12 @@ function getChannelPlaylists(
   const channel = gqlResponse.data.channel as Channel;
 
   const content: PlatformPlaylist[] = (channel?.collections?.edges ?? [])
-  .filter(e => e?.node?.metrics?.engagement?.videos?.edges?.[0]?.node?.total)//exclude empty playlists. could be empty doe to geographic restrictions
-  .map(
-    (edge) => {
+    .filter(
+      (e) => e?.node?.metrics?.engagement?.videos?.edges?.[0]?.node?.total,
+    ) //exclude empty playlists. could be empty doe to geographic restrictions
+    .map((edge) => {
       return SourceCollectionToGrayjayPlaylist(config.id, edge?.node);
-    },
-  );
+    });
 
   if (content?.length === 0) {
     return new ChannelPlaylistPager([]);

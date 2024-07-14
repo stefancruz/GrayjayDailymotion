@@ -13,7 +13,8 @@
   "scriptSignature": "",
   "scriptPublicKey": "",
   "packages": [
-    "Http"
+    "Http",
+    "DOMParser"
   ],
   "allowEval": false,
   "allowAllHttpHeaderAccess": false,

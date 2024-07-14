@@ -14,7 +14,8 @@ const REGEX_VIDEO_URL_1 = /^https:\/\/dai\.ly\/[a-zA-Z0-9]+$/i;
 const REGEX_VIDEO_URL_EMBED = /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
 const REGEX_VIDEO_CHANNEL_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
 const REGEX_VIDEO_PLAYLIST_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
-const REGEX_INITIAL_DATA_API_AUTH = /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
+const REGEX_INITIAL_DATA_API_AUTH_1 = /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
+const createAuthRegexByTextLength = (length) => new RegExp(`\\b\\w+\\s*=\\s*"([a-zA-Z0-9]{${length}})"`);
 const USER_AGENT = 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36';
 // Those are used even for not logged users to make requests on the graphql api.
 const FALLBACK_CLIENT_ID = 'f1a362d288c1b98099c7';
@@ -1094,10 +1095,10 @@ class SearchChannelPager extends ChannelPager {
         this.cb = cb;
     }
     nextPage() {
-        const page = this.context.page += 1;
+        const page = (this.context.page += 1);
         const opts = {
             q: this.context.params.query,
-            page
+            page,
         };
         return this.cb(opts);
     }
@@ -1151,7 +1152,8 @@ const SourceChannelToGrayjayChannel = (pluginId, sourceChannel) => {
         return acc;
     }, {});
     let description = '';
-    if (sourceChannel?.tagline && sourceChannel?.tagline != sourceChannel?.description) {
+    if (sourceChannel?.tagline &&
+        sourceChannel?.tagline != sourceChannel?.description) {
         description = `${sourceChannel?.tagline}\n\n`;
     }
     description += `${sourceChannel?.description ?? ''}`;
@@ -1160,7 +1162,8 @@ const SourceChannelToGrayjayChannel = (pluginId, sourceChannel) => {
         name: sourceChannel?.displayName ?? '',
         thumbnail: sourceChannel?.avatar?.url ?? '',
         banner: sourceChannel.banner?.url ?? '',
-        subscribers: sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ?? 0,
+        subscribers: sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ??
+            0,
         description,
         url: `${BASE_URL}/${sourceChannel.name}`,
         links,
@@ -1257,7 +1260,7 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, player_meta
     }
     const isLive = getIsLive(sourceVideo);
     const viewCount = getViewCount(sourceVideo);
-    const duration = isLive ? 0 : sourceVideo?.duration ?? 0;
+    const duration = isLive ? 0 : (sourceVideo?.duration ?? 0);
     const source = new HLSSource({
         name: 'HLS',
         duration,
@@ -1348,6 +1351,120 @@ const convertSRTtoVTT = (srt) => {
     return vtt.join('');
 };
 
+function oauthClientCredentialsRequest(httpClient, url, clientId, secret, throwOnInvalid = false) {
+    if (!httpClient || !url || !clientId || !secret) {
+        throw new ScriptException('Invalid parameters provided to oauthClientCredentialsRequest');
+    }
+    const body = objectToUrlEncodedString({
+        client_id: clientId,
+        client_secret: secret,
+        grant_type: 'client_credentials',
+    });
+    try {
+        return httpClient.POST(url, body, {
+            'User-Agent': USER_AGENT,
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Origin: BASE_URL,
+            DNT: '1',
+            'Sec-GPC': '1',
+            Connection: 'keep-alive',
+            'Sec-Fetch-Dest': 'empty',
+            'Sec-Fetch-Mode': 'cors',
+            'Sec-Fetch-Site': 'same-site',
+            Priority: 'u=4',
+            Pragma: 'no-cache',
+            'Cache-Control': 'no-cache',
+        }, false);
+    }
+    catch (error) {
+        console.error('Error making OAuth client credentials request:', error);
+        if (throwOnInvalid) {
+            throw new ScriptException('Failed to obtain OAuth client credentials');
+        }
+        return null;
+    }
+}
+function extractClientCredentials(httpClient) {
+    const detailsRequestHtml = httpClient.GET(BASE_URL, {}, false);
+    if (!detailsRequestHtml.isOk) {
+        throw new ScriptException('Failed to fetch page to extract auth details');
+    }
+    const result = [
+        {
+            clientId: FALLBACK_CLIENT_ID,
+            secret: FALLBACK_CLIENT_SECRET,
+        },
+    ];
+    const match = detailsRequestHtml.body.match(REGEX_INITIAL_DATA_API_AUTH_1);
+    if (match?.length === 2 && match[0] && match[1]) {
+        result.unshift({
+            clientId: match[0],
+            secret: match[1],
+        });
+        console.log('Successfully extracted API credentials from page:', match[1]);
+    }
+    else {
+        console.log('Failed to extract API credentials from page using regex. Using DOM parsing.');
+        const htmlElement = domParser.parseFromString(detailsRequestHtml.body, 'text/html');
+        const extractedId = getScriptVariableByTextLength(htmlElement, 20);
+        const extractedSecret = getScriptVariableByTextLength(htmlElement, 40);
+        if (extractedId && extractedSecret) {
+            result.unshift({
+                clientId: extractedId,
+                secret: extractedSecret,
+            });
+            console.log('Successfully extracted API credentials from page using DOM parsing:', extractedId);
+        }
+        else {
+            console.log('Failed to extract API credentials using DOM parsing with exact text length.');
+        }
+    }
+    return result;
+}
+function getScriptVariableByTextLength(htmlElement, length) {
+    const scriptTags = htmlElement.querySelectorAll('script[type="text/javascript"]');
+    if (!scriptTags.length) {
+        console.error('No script tags found.');
+        return null; // or throw an error, depending on your use case
+    }
+    let pageContent = '';
+    scriptTags.forEach((tag) => {
+        pageContent += tag.outerHTML;
+    });
+    let matches = createAuthRegexByTextLength(length).exec(pageContent);
+    if (matches?.length == 2) {
+        return matches[1];
+    }
+}
+function getTokenFromClientCredentials(httpClient, credentials, throwOnInvalid = false) {
+    let result = {
+        isValid: false,
+    };
+    for (const credential of credentials) {
+        const res = oauthClientCredentialsRequest(httpClient, BASE_URL_API_AUTH, credential.clientId, credential.secret);
+        if (res?.isOk) {
+            const anonymousTokenResponse = JSON.parse(res.body);
+            if (!anonymousTokenResponse.token_type ||
+                !anonymousTokenResponse.access_token) {
+                console.error('Invalid token response', res);
+                if (throwOnInvalid) {
+                    throw new ScriptException('', 'Invalid token response: ' + res.body);
+                }
+            }
+            result = {
+                anonymousUserAuthorizationToken: `${anonymousTokenResponse.token_type} ${anonymousTokenResponse.access_token}`,
+                anonymousUserAuthorizationTokenExpirationDate: Date.now() + anonymousTokenResponse.expires_in * 1000,
+                isValid: true,
+            };
+            break;
+        }
+        else {
+            console.error('Failed to get token', res);
+        }
+    }
+    return result;
+}
+
 let config;
 let _settings;
 const state = {
@@ -1425,43 +1542,19 @@ source.enable = function (conf, settings, saveStateStr) {
     }
     if (!didSaveState) {
         log('Getting a new tokens');
-        const detailsRequestHtml = http.GET(BASE_URL, {}, false);
-        if (!detailsRequestHtml.isOk) {
-            log("Failed to get page to extract auth details");
+        const clientCredentials = extractClientCredentials(http);
+        const { anonymousUserAuthorizationToken, anonymousUserAuthorizationTokenExpirationDate, isValid, } = getTokenFromClientCredentials(http, clientCredentials);
+        if (!isValid) {
+            console.error('Failed to get token');
+            throw new ScriptException('Failed to get authentication token');
         }
-        let clientId = FALLBACK_CLIENT_ID;
-        let secret = FALLBACK_CLIENT_SECRET;
-        const match = detailsRequestHtml.body.match(REGEX_INITIAL_DATA_API_AUTH);
-        if (match?.length === 2 && match[0] && match[1]) {
-            clientId = match[0];
-            secret = match[1];
-            log('Successfully extracted API credentials from page.');
-        }
-        else {
-            log('Failed to extract api credentials from page.');
-        }
-        const body = objectToUrlEncodedString({
-            client_id: clientId,
-            client_secret: secret,
-            grant_type: 'client_credentials',
-        });
-        let batchRequests = http.batch().POST(BASE_URL_API_AUTH, body, {
-            'User-Agent': USER_AGENT,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            Origin: BASE_URL,
-            DNT: '1',
-            'Sec-GPC': '1',
-            Connection: 'keep-alive',
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'same-site',
-            Priority: 'u=4',
-            Pragma: 'no-cache',
-            'Cache-Control': 'no-cache',
-        }, false);
+        state.anonymousUserAuthorizationToken =
+            anonymousUserAuthorizationToken ?? '';
+        state.anonymousUserAuthorizationTokenExpirationDate =
+            anonymousUserAuthorizationTokenExpirationDate ?? 0;
         if (config.allowAllHttpHeaderAccess) {
             // get token for message service api-2-0.spot.im
-            batchRequests = batchRequests.POST(BASE_URL_COMMENTS_AUTH, '', {
+            const authenticateIm = http.POST(BASE_URL_COMMENTS_AUTH, '', {
                 'User-Agent': USER_AGENT,
                 Accept: '*/*',
                 'Accept-Language': 'en-US,en;q=0.5',
@@ -1477,23 +1570,6 @@ source.enable = function (conf, settings, saveStateStr) {
                 Priority: 'u=6',
                 'Content-Length': '0',
             }, false);
-        }
-        const responses = batchRequests.execute();
-        const res = responses[0];
-        if (res.code !== 200) {
-            console.error('Failed to get token', res);
-            throw new ScriptException('', 'Failed to get token: ' + res.code + ' - ' + res.body);
-        }
-        const anonymousTokenResponse = JSON.parse(res.body);
-        if (!anonymousTokenResponse.token_type || !anonymousTokenResponse.access_token) {
-            console.error('Invalid token response', res);
-            throw new ScriptException('', 'Invalid token response: ' + res.body);
-        }
-        state.anonymousUserAuthorizationToken = `${anonymousTokenResponse.token_type} ${anonymousTokenResponse.access_token}`;
-        state.anonymousUserAuthorizationTokenExpirationDate =
-            Date.now() + anonymousTokenResponse.expires_in * 1000;
-        if (config.allowAllHttpHeaderAccess) {
-            const authenticateIm = responses[1];
             if (!authenticateIm.isOk) {
                 log('Failed to authenticate to comments service');
             }
@@ -1565,11 +1641,7 @@ source.getChannelCapabilities = () => {
 };
 //Video
 source.isContentDetailsUrl = function (url) {
-    return [
-        REGEX_VIDEO_URL,
-        REGEX_VIDEO_URL_1,
-        REGEX_VIDEO_URL_EMBED
-    ].some(r => r.test(url));
+    return [REGEX_VIDEO_URL, REGEX_VIDEO_URL_1, REGEX_VIDEO_URL_EMBED].some((r) => r.test(url));
 };
 source.getContentDetails = function (url) {
     return getSavedVideo(url, false);
@@ -1721,7 +1793,7 @@ source.getUserSubscriptions = () => {
             operationName: 'SUBSCRIPTIONS_QUERY',
             variables: {
                 first: first,
-                page: page
+                page: page,
             },
             headers,
             query: GET_USER_SUBSCRIPTIONS,
@@ -2139,7 +2211,7 @@ function getChannelPlaylists(url, page = 1) {
     });
     const channel = gqlResponse.data.channel;
     const content = (channel?.collections?.edges ?? [])
-        .filter(e => e?.node?.metrics?.engagement?.videos?.edges?.[0]?.node?.total) //exclude empty playlists. could be empty doe to geographic restrictions
+        .filter((e) => e?.node?.metrics?.engagement?.videos?.edges?.[0]?.node?.total) //exclude empty playlists. could be empty doe to geographic restrictions
         .map((edge) => {
         return SourceCollectionToGrayjayPlaylist(config.id, edge?.node);
     });

@@ -6,7 +6,10 @@ import {
   Video,
 } from '../types/CodeGenDailymotion';
 
-import { DailymotionStreamingContent, IDailymotionSubtitle } from '../types/types';
+import {
+  DailymotionStreamingContent,
+  IDailymotionSubtitle,
+} from '../types/types';
 
 import {
   BASE_URL,
@@ -34,13 +37,16 @@ export const SourceChannelToGrayjayChannel = (
     {} as Record<string, string>,
   );
 
-  let description = ''
+  let description = '';
 
-  if(sourceChannel?.tagline && sourceChannel?.tagline != sourceChannel?.description){
+  if (
+    sourceChannel?.tagline &&
+    sourceChannel?.tagline != sourceChannel?.description
+  ) {
     description = `${sourceChannel?.tagline}\n\n`;
   }
 
-  description += `${sourceChannel?.description ?? ''}`
+  description += `${sourceChannel?.description ?? ''}`;
 
   return new PlatformChannel({
     id: new PlatformID(
@@ -53,7 +59,8 @@ export const SourceChannelToGrayjayChannel = (
     thumbnail: sourceChannel?.avatar?.url ?? '',
     banner: sourceChannel.banner?.url ?? '',
     subscribers:
-      sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ?? 0,
+      sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ??
+      0,
     description,
     url: `${BASE_URL}/${sourceChannel.name}`,
     links,
@@ -70,8 +77,8 @@ export const SourceAuthorToGrayjayPlatformAuthorLink = (
     creator?.name ? `${BASE_URL}/${creator?.name}` : '',
     creator?.avatar?.url ?? '',
     creator?.followers?.totalCount ??
-    creator?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ??
-    0,
+      creator?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ??
+      0,
   );
 };
 
@@ -171,20 +178,18 @@ const getViewCount = (sourceVideo?: DailymotionStreamingContent): number => {
   let viewCount = 0;
 
   if (getIsLive(sourceVideo)) {
-
     const live = sourceVideo as Live;
 
     //TODO: live?.audienceCount and live.stats.views.total are deprecated
     //live?.metrics?.engagement?.audience?.edges?.[0]?.node?.total is still empty
-    viewCount = 
-    live?.metrics?.engagement?.audience?.edges?.[0]?.node?.total ??
-    live?.audienceCount ??
-    live?.stats?.views?.total ??
-    0
+    viewCount =
+      live?.metrics?.engagement?.audience?.edges?.[0]?.node?.total ??
+      live?.audienceCount ??
+      live?.stats?.views?.total ??
+      0;
   } else {
-
     const video = sourceVideo as Video;
-    
+
     // TODO: both fields are deprecated.
     // video?.stats?.views?.total replaced video?.viewCount
     // now video?.viewCount is deprecated too but there replacement is not accessible yet
@@ -218,7 +223,7 @@ export const SourceVideoToPlatformVideoDetailsDef = (
 
   const isLive = getIsLive(sourceVideo);
   const viewCount = getViewCount(sourceVideo);
-  const duration = isLive ? 0 : (sourceVideo as Video)?.duration ?? 0;
+  const duration = isLive ? 0 : ((sourceVideo as Video)?.duration ?? 0);
 
   const source = new HLSSource({
     name: 'HLS',

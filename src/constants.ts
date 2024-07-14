@@ -19,21 +19,33 @@ export const BASE_URL_PLAYLIST = `${BASE_URL}/playlist`;
 
 export const BASE_URL_METADATA = `${BASE_URL}/player/metadata/video`;
 
-export const REGEX_VIDEO_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/video\/[a-zA-Z0-9]+$/i;
+export const REGEX_VIDEO_URL =
+  /^https:\/\/(?:www\.)?dailymotion\.com\/video\/[a-zA-Z0-9]+$/i;
+
 export const REGEX_VIDEO_URL_1 = /^https:\/\/dai\.ly\/[a-zA-Z0-9]+$/i;
-export const REGEX_VIDEO_URL_EMBED = /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
 
-export const REGEX_VIDEO_CHANNEL_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
-export const REGEX_VIDEO_PLAYLIST_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
+export const REGEX_VIDEO_URL_EMBED =
+  /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
 
-export const REGEX_INITIAL_DATA_API_AUTH = /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
+export const REGEX_VIDEO_CHANNEL_URL =
+  /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
+  
+export const REGEX_VIDEO_PLAYLIST_URL =
+  /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
+
+export const REGEX_INITIAL_DATA_API_AUTH_1 =
+  /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
+
+export const createAuthRegexByTextLength = (length: number) =>
+  new RegExp(`\\b\\w+\\s*=\\s*"([a-zA-Z0-9]{${length}})"`);
 
 export const USER_AGENT =
   'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36';
 
 // Those are used even for not logged users to make requests on the graphql api.
 export const FALLBACK_CLIENT_ID = 'f1a362d288c1b98099c7';
-export const FALLBACK_CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
+export const FALLBACK_CLIENT_SECRET =
+  'eea605b96e01c796ff369935357eca920c5da4c5';
 
 export const X_DM_AppInfo_Id = 'com.dailymotion.neon';
 export const X_DM_AppInfo_Type = 'website';
