@@ -27,14 +27,6 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 
 - [ ] - Harbor account verification
 
-## Internals
-
-- [x] - Save state between clients;
-- [x] - Batch http requests when possible;
-- [ ] - Clean up request Headers;
-
-## Todo 
-- [ ] - Search creator's content;
 
 ## Grayjay
 - [ ] - Live filter in Subscriptions tab
