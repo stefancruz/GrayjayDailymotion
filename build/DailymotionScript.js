@@ -101,21 +101,19 @@ const SEARCH_CAPABILITIES = {
 
 const AUTOCOMPLETE_QUERY = `
 query AUTOCOMPLETE_QUERY($query: String!) {
-	search {
-		id
-		suggestedVideos: autosuggestions(
-		query: {eq: $query}
-		filter: {story: {eq: VIDEO}}
-		) {
-		edges {
-			node {
-			name
-			}
-		}
-		}
-	}
-}
-`;
+  search {
+    suggestedVideos: autosuggestions(
+      query: { eq: $query }
+      filter: { story: { eq: VIDEO } }
+    ) {
+      edges {
+        node {
+          name
+        }
+      }
+    }
+  }
+}`;
 const CHANNEL_QUERY_DESKTOP = `
 query CHANNEL_QUERY_DESKTOP(
 	$channel_name: String!
@@ -153,13 +151,10 @@ query CHANNEL_QUERY_DESKTOP(
 			}
 		}
 		stats {
-			id
 			views {
-				id
 				total
 			}
 			videos {
-				id
 				total
 			}
 		}
@@ -171,14 +166,12 @@ query CHANNEL_QUERY_DESKTOP(
 			pinterestURL
 		}
 	}
-}
-`;
+}`;
 const SEACH_DISCOVERY_QUERY = `	
 fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 	id
 	xid
 	title
-	isPublished
 	thumbnail(height:$thumbnail_resolution) {
 		url
 	}
@@ -203,9 +196,7 @@ fragment SEARCH_DISCOVERY_VIDEO_FRAGMENT on Video {
 
 query SEACH_DISCOVERY_QUERY($avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	home: views {
-		id
 		neon {
-			id
 			sections(space: "home") {
 				edges {
 					node {
@@ -309,7 +300,6 @@ query CHANNEL_VIDEOS_QUERY(
           thumbnail(height: $thumbnail_resolution) {
             url
           }
-          bestAvailableQuality
           duration
           createdAt
           creator {
@@ -357,9 +347,7 @@ fragment VIDEO_BASE_FRAGMENT on Video {
 		}
 	}
 	stats {
-		id
 		views {
-			id
 			total
 		}
 	}
@@ -375,35 +363,6 @@ fragment VIDEO_BASE_FRAGMENT on Video {
 	}
 	duration
 	thumbnail(height:$thumbnail_resolution) {
-		url
-	}
-	
-}
-
-fragment VIDEO_FAVORITES_FRAGMENT on Media {
-	... on Video {
-		id
-		viewerEngagement {
-			id
-			favorited
-		}
-	}
-	... on Live {
-		id
-		viewerEngagement {
-			id
-			favorited
-		}
-	}
-}
-
-fragment CHANNEL_BASE_FRAG on Channel {
-	id
-	xid
-	name
-	displayName
-	description
-	avatar(height:$avatar_size) {
 		url
 	}
 }
@@ -427,9 +386,7 @@ fragment PLAYLIST_BASE_FRAG on Collection {
 	}
 	description
 	stats {
-		id
 		videos {
-			id
 			total
 		}
 	}
@@ -449,7 +406,6 @@ fragment PLAYLIST_BASE_FRAG on Collection {
 query SEARCH_QUERY(
 	$query: String!
 	$shouldIncludeVideos: Boolean!
-	$shouldIncludeChannels: Boolean!
 	$shouldIncludePlaylists: Boolean!
 	$shouldIncludeLives: Boolean!
 	$page: Int
@@ -462,7 +418,6 @@ query SEARCH_QUERY(
 	$thumbnail_resolution: ThumbnailHeight!
 ) {
 	search {
-		id
 		videos(
 			query: $query
 			first: $limit
@@ -481,7 +436,6 @@ query SEARCH_QUERY(
 				node {
 					id
 					...VIDEO_BASE_FRAGMENT
-					...VIDEO_FAVORITES_FRAGMENT
 				}
 			}
 		}
@@ -522,20 +476,6 @@ query SEARCH_QUERY(
 				}
 			}
 		}
-		channels(query: $query, first: $limit, page: $page)
-			@include(if: $shouldIncludeChannels) {
-			pageInfo {
-				hasNextPage
-				nextPage
-			}
-			totalCount
-			edges {
-				node {
-					id
-					...CHANNEL_BASE_FRAG
-				}
-			}
-		}
 		playlists: collections(query: $query, first: $limit, page: $page)
 			@include(if: $shouldIncludePlaylists) {
 			pageInfo {
@@ -556,21 +496,13 @@ const WATCHING_VIDEO = `
 fragment VIDEO_FRAGMENT on Video {
 	id
 	xid
-	isPublished
 	duration
 	title
 	description
 	thumbnail(height:$thumbnail_resolution) {
 		url
 	}
-	bestAvailableQuality
 	createdAt
-	isPrivate
-	isCreatedForKids
-	isExplicit
-	videoWidth: width
-	videoHeight: height
-	status
 	metrics {
 		engagement {
 			likes {
@@ -585,9 +517,7 @@ fragment VIDEO_FRAGMENT on Video {
 		}
 	}
 	stats {
-		id
 		views {
-			id
 			total
 		}
 	}
@@ -614,17 +544,13 @@ fragment VIDEO_FRAGMENT on Video {
 			}
 		}
 		stats {
-			id
 			views {
-				id
 				total
 			}
 			followers {
-				id
 				total
 			}
 			videos {
-				id
 				total
 			}
 		}
@@ -636,23 +562,14 @@ fragment LIVE_FRAGMENT on Live {
 	xid
 	startAt
 	endAt
-	isPublished
 	title
 	description
 	audienceCount
 	isOnAir
 	thumbnail(height:$thumbnail_resolution){
 		url
-		height
-		width
 	}
-	category
 	createdAt
-	isPrivate
-	isExplicit
-	isCreatedForKids
-	bestAvailableQuality
-	canDisplayAds
 	videoWidth: width
 	videoHeight: height
 	metrics {
@@ -668,9 +585,7 @@ fragment LIVE_FRAGMENT on Live {
 		}
 	}
 	stats {
-		id
 		views {
-			id
 			total
 		}
 	}
@@ -684,43 +599,17 @@ fragment LIVE_FRAGMENT on Live {
 			height
 			width
 		}
-		coverURLx375: coverURL(size: "x375")
 		stats {
-			id
 			views {
-				id
 				total
 			}
 			followers {
-				id
 				total
 			}
 			videos {
-				id
 				total
 			}
 		}
-		country {
-			id
-			codeAlpha2
-		}
-	}
-	language {
-		id
-		codeAlpha2
-	}
-	tags {
-		edges {
-			node {
-				id
-				label
-			}
-		}
-	}
-	geoblockedCountries {
-		id
-		allowed
-		denied
 	}
 }
 
@@ -743,7 +632,6 @@ query WATCHING_VIDEO(
 const SEARCH_CHANNEL = `		
 query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: AvatarHeight!) {
 	search {
-		id
 		channels(query: $query, first: $limit, page: $page) {
 			pageInfo {
 				hasNextPage
@@ -753,15 +641,12 @@ query SEARCH_QUERY($query: String!, $page: Int, $limit: Int, $avatar_size: Avata
 			edges {
 				node {
 					id
-					id
 					xid
 					name
 					displayName
 					description
 					avatar(height:$avatar_size) {
 						url
-						height
-						width
 					}
 					metrics {
 						engagement {
@@ -783,9 +668,7 @@ const PLAYLIST_DETAILS_QUERY = `
 query PLAYLIST_VIDEO_QUERY($xid: String!, $numberOfVideos: Int = 100, $avatar_size: AvatarHeight!, $thumbnail_resolution: ThumbnailHeight!) {
 	collection(xid: $xid) {
 		id
-		id
 		xid
-		updatedAt
 		name
 		thumbnail(height:$thumbnail_resolution) {
 			url
@@ -932,7 +815,6 @@ query CHANNEL_PLAYLISTS_QUERY(
 				node {
 					id
 					xid
-					updatedAt
 					createdAt
 					name
 					description
@@ -952,9 +834,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 						url
 					}
 					stats {
-						id
 						videos {
-							id
 							total
 						}
 					}
@@ -984,7 +864,6 @@ query CHANNEL_PLAYLISTS_QUERY(
 const USER_LIKED_VIDEOS_QUERY = `
 query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeight!) {
 	me {
-		id
 		likedMedias(first: 100, page: $page) {
 			edges {
 				node {
@@ -996,16 +875,8 @@ query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeigh
 						thumbnail(height:$thumbnail_resolution) {
 							url
 						}
-						aspectRatio
-						viewerEngagement {
-							id
-							liked
-						}
 						channel {
-							id
-							logoURLx25: logoURL(size: "x25")
 							displayName
-							accountType	
 						}
 					}
 					... on Live {
@@ -1017,15 +888,8 @@ query USER_LIKED_VIDEOS_QUERY($page: Int!, $thumbnail_resolution: ThumbnailHeigh
 						thumbnail(height:$thumbnail_resolution) {
 							url
 						}
-						viewerEngagement {
-							id
-							liked
-						}
 						channel {
-							id
-							logoURLx25: logoURL(size: "x25")
 							displayName
-							accountType
 						}
 					}
 				}
@@ -1052,16 +916,8 @@ const USER_WATCH_LATER_VIDEOS_QUERY = `
 						thumbnail(height:$thumbnail_resolution) {
 							url
 						}
-						aspectRatio
 						channel {
-							id
-							logoURLx25: logoURL(size: "x25")
 							displayName
-							accountType
-						}
-						viewerEngagement {
-							id
-							favorited
 						}
 					}
 					... on Live {
@@ -1073,14 +929,7 @@ const USER_WATCH_LATER_VIDEOS_QUERY = `
 							url
 						}
 						channel {
-							id
-							logoURLx25: logoURL(size: "x25")
 							displayName
-							accountType
-						}
-						viewerEngagement {
-							id
-							favorited
 						}
 					}
 				}
@@ -1106,12 +955,8 @@ const USER_WATCHED_VIDEOS_QUERY = `
 					thumbnail(height:$thumbnail_resolution) {
 						url
 					}
-					aspectRatio
 					channel {
-						id
-						logoURLx25: logoURL(size: "x25")
 						displayName
-						accountType
 					}
 				}
 			}
@@ -1301,13 +1146,18 @@ const SourceChannelToGrayjayChannel = (pluginId, sourceChannel) => {
         }
         return acc;
     }, {});
+    let description = '';
+    if (sourceChannel?.tagline && sourceChannel?.tagline != sourceChannel?.description) {
+        description = `${sourceChannel?.tagline}\n\n`;
+    }
+    description += `${sourceChannel?.description ?? ''}`;
     return new PlatformChannel({
         id: new PlatformID(PLATFORM, sourceChannel?.id ?? '', pluginId, PLATFORM_CLAIMTYPE),
         name: sourceChannel?.displayName ?? '',
         thumbnail: sourceChannel?.avatar?.url ?? '',
         banner: sourceChannel.banner?.url ?? '',
         subscribers: sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ?? 0,
-        description: sourceChannel?.description ?? '',
+        description,
         url: `${BASE_URL}/${sourceChannel.name}`,
         links,
     });
@@ -1417,8 +1267,9 @@ const SourceVideoToPlatformVideoDetailsDef = (pluginId, sourceVideo, player_meta
             new Thumbnail(sourceVideo?.thumbnail?.url ?? '', 0),
         ]),
         author: SourceAuthorToGrayjayPlatformAuthorLink(pluginId, sourceVideo?.creator),
-        uploadDate: Math.floor(new Date(sourceVideo?.createDate).getTime() / 1000),
-        datetime: Math.floor(new Date(sourceVideo?.createDate).getTime() / 1000),
+        //TODO: sourceVideo?.createdAt is deprecated but sourceVideo?.createDate requires authentication
+        uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+        datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
         duration,
         viewCount,
         url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : '',
@@ -1850,8 +1701,7 @@ source.getUserSubscriptions = () => {
             operationName: 'SUBSCRIPTIONS_QUERY',
             variables: {
                 first: first,
-                page: page,
-                avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+                page: page
             },
             headers,
             query: GET_USER_SUBSCRIPTIONS,
@@ -1958,7 +1808,6 @@ function searchPlaylists(contextQuery) {
         durationMaxVideos: context.filters?.durationMaxVideos,
         durationMinVideos: context.filters?.durationMinVideos,
         createdAfterVideos: context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
-        shouldIncludeChannels: false,
         shouldIncludePlaylists: true,
         shouldIncludeVideos: false,
         shouldIncludeLives: false,
@@ -2102,7 +1951,6 @@ function getSearchPagerAll(contextQuery) {
         durationMaxVideos: context.filters?.durationMaxVideos,
         durationMinVideos: context.filters?.durationMinVideos,
         createdAfterVideos: context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
-        shouldIncludeChannels: false,
         shouldIncludePlaylists: false,
         shouldIncludeVideos: true,
         shouldIncludeLives: true,
@@ -2270,7 +2118,9 @@ function getChannelPlaylists(url, page = 1) {
         usePlatformAuth,
     });
     const channel = gqlResponse.data.channel;
-    const content = (channel?.collections?.edges ?? []).map((edge) => {
+    const content = (channel?.collections?.edges ?? [])
+        .filter(e => e?.node?.metrics?.engagement?.videos?.edges?.[0]?.node?.total) //exclude empty playlists. could be empty doe to geographic restrictions
+        .map((edge) => {
         return SourceCollectionToGrayjayPlaylist(config.id, edge?.node);
     });
     if (content?.length === 0) {
@@ -2317,9 +2167,9 @@ function executeGqlQuery(httpClient, requestOptions) {
     }
     const res = httpClient.POST(BASE_URL_API, gql, headersToAdd, usePlatformAuth);
     if (!res.isOk) {
-        console.error('Failed to get token', res);
+        console.error('Failed to execute request', res);
         if (throwOnError) {
-            throw new ScriptException('Failed to get token', res);
+            throw new ScriptException('Failed to execute request', res);
         }
     }
     const body = JSON.parse(res.body);

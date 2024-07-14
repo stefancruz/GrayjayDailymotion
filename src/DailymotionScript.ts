@@ -576,8 +576,7 @@ source.getUserSubscriptions = (): string[] => {
       operationName: 'SUBSCRIPTIONS_QUERY',
       variables: {
         first: first,
-        page: page,
-        avatar_size: CREATOR_AVATAR_HEIGHT[_settings?.avatarSizeOptionIndex],
+        page: page
       },
       headers,
       query: GET_USER_SUBSCRIPTIONS,
@@ -719,7 +718,6 @@ function searchPlaylists(contextQuery) {
     durationMaxVideos: context.filters?.durationMaxVideos,
     durationMinVideos: context.filters?.durationMinVideos,
     createdAfterVideos: context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
-    shouldIncludeChannels: false,
     shouldIncludePlaylists: true,
     shouldIncludeVideos: false,
     shouldIncludeLives: false,
@@ -914,7 +912,6 @@ function getSearchPagerAll(contextQuery): VideoPager {
     durationMaxVideos: context.filters?.durationMaxVideos,
     durationMinVideos: context.filters?.durationMinVideos,
     createdAfterVideos: context.filters?.createdAfterVideos, //Represents a DateTime value as specified by iso8601
-    shouldIncludeChannels: false,
     shouldIncludePlaylists: false,
     shouldIncludeVideos: true,
     shouldIncludeLives: true,
@@ -949,6 +946,7 @@ function getSearchPagerAll(contextQuery): VideoPager {
     sort: context.sort,
     filters: context.filters,
   };
+
   return new SearchPagerAll(
     results,
     videoConnection?.pageInfo?.hasNextPage,
@@ -1146,7 +1144,9 @@ function getChannelPlaylists(
 
   const channel = gqlResponse.data.channel as Channel;
 
-  const content: PlatformPlaylist[] = (channel?.collections?.edges ?? []).map(
+  const content: PlatformPlaylist[] = (channel?.collections?.edges ?? [])
+  .filter(e => e?.node?.metrics?.engagement?.videos?.edges?.[0]?.node?.total)//exclude empty playlists. could be empty doe to geographic restrictions
+  .map(
     (edge) => {
       return SourceCollectionToGrayjayPlaylist(config.id, edge?.node);
     },
@@ -1215,9 +1215,9 @@ function executeGqlQuery(httpClient, requestOptions) {
   const res = httpClient.POST(BASE_URL_API, gql, headersToAdd, usePlatformAuth);
 
   if (!res.isOk) {
-    console.error('Failed to get token', res);
+    console.error('Failed to execute request', res);
     if (throwOnError) {
-      throw new ScriptException('Failed to get token', res);
+      throw new ScriptException('Failed to execute request', res);
     }
   }
 

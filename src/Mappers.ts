@@ -34,6 +34,14 @@ export const SourceChannelToGrayjayChannel = (
     {} as Record<string, string>,
   );
 
+  let description = ''
+
+  if(sourceChannel?.tagline && sourceChannel?.tagline != sourceChannel?.description){
+    description = `${sourceChannel?.tagline}\n\n`;
+  }
+
+  description += `${sourceChannel?.description ?? ''}`
+
   return new PlatformChannel({
     id: new PlatformID(
       PLATFORM,
@@ -46,7 +54,7 @@ export const SourceChannelToGrayjayChannel = (
     banner: sourceChannel.banner?.url ?? '',
     subscribers:
       sourceChannel?.metrics?.engagement?.followers?.edges?.[0]?.node?.total ?? 0,
-    description: sourceChannel?.description ?? '',
+    description,
     url: `${BASE_URL}/${sourceChannel.name}`,
     links,
   });
@@ -235,8 +243,9 @@ export const SourceVideoToPlatformVideoDetailsDef = (
       pluginId,
       sourceVideo?.creator,
     ),
-    uploadDate: Math.floor(new Date(sourceVideo?.createDate).getTime() / 1000),
-    datetime: Math.floor(new Date(sourceVideo?.createDate).getTime() / 1000),
+    //TODO: sourceVideo?.createdAt is deprecated but sourceVideo?.createDate requires authentication
+    uploadDate: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
+    datetime: Math.floor(new Date(sourceVideo?.createdAt).getTime() / 1000),
     duration,
     viewCount,
     url: sourceVideo?.xid ? `${BASE_URL_VIDEO}/${sourceVideo.xid}` : '',

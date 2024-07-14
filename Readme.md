@@ -31,13 +31,7 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 
 - [x] - Save state between clients;
 - [x] - Batch http requests when possible;
-- [ ] - Optimize GraphQL queries;
 - [ ] - Clean up request Headers;
-- [ ] - Stop using configuration option allowAllHttpHeaderAccess;
-- [ ] - Unit tests - (WIP);
-- [ ] - Dev submit;
-- [ ] - API fields deprecated with replacement not available yet (video?.viewCount, video?.stats?.views?.total);
-
 
 ## Todo 
 - [ ] - Search creator's content;
@@ -46,6 +40,9 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 - [ ] - Live filter in Subscriptions tab
 - [ ] - Thumbnails for vertical videos
 
+## Dailymotion
+- [ ] - API fields deprecated with replacement not available yet (createdAt - createDate requires authentication, video?.viewCount, video?.stats?.views?.total);
+- [ ] - Platform comments
 
 ## Install
 npm install
@@ -62,5 +59,4 @@ npm start - will build and watch for changes
 
 ## Notes
 - Content of the 'build' folder should not be manually changed since it's recreated for each build. 
-- Used [rollup](https://rollupjs.org/) to bundle all the scripts into one.
-- Used npm shrinkwrap to lock the dependency versions of the project. This should avoid new bugs, vulnerabilities and breaking changes (in minor and patches), introduced when the dependencies are automatically updated by npm.
+- Used [rollup](https://rollupjs.org/) to bundle the scripts.
