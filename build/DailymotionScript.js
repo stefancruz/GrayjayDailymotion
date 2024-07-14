@@ -14,11 +14,11 @@ const REGEX_VIDEO_URL_1 = /^https:\/\/dai\.ly\/[a-zA-Z0-9]+$/i;
 const REGEX_VIDEO_URL_EMBED = /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
 const REGEX_VIDEO_CHANNEL_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
 const REGEX_VIDEO_PLAYLIST_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
+const REGEX_INITIAL_DATA_API_AUTH = /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
 const USER_AGENT = 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36';
 // Those are used even for not logged users to make requests on the graphql api.
-//TODO: check how to get them dynamically
-const CLIENT_ID = 'f1a362d288c1b98099c7';
-const CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
+const FALLBACK_CLIENT_ID = 'f1a362d288c1b98099c7';
+const FALLBACK_CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
 const X_DM_AppInfo_Id = 'com.dailymotion.neon';
 const X_DM_AppInfo_Type = 'website';
 const X_DM_AppInfo_Version = 'v2024-07-02T13:55:47.186Z'; //TODO check how to get this dynamically
@@ -1425,9 +1425,24 @@ source.enable = function (conf, settings, saveStateStr) {
     }
     if (!didSaveState) {
         log('Getting a new tokens');
+        const detailsRequestHtml = http.GET(BASE_URL, {}, false);
+        if (!detailsRequestHtml.isOk) {
+            log("Failed to get page to extract auth details");
+        }
+        let clientId = FALLBACK_CLIENT_ID;
+        let secret = FALLBACK_CLIENT_SECRET;
+        const match = detailsRequestHtml.body.match(REGEX_INITIAL_DATA_API_AUTH);
+        if (match?.length === 2 && match[0] && match[1]) {
+            clientId = match[0];
+            secret = match[1];
+            log('Successfully extracted API credentials from page.');
+        }
+        else {
+            log('Failed to extract api credentials from page.');
+        }
         const body = objectToUrlEncodedString({
-            client_id: CLIENT_ID,
-            client_secret: CLIENT_SECRET,
+            client_id: clientId,
+            client_secret: secret,
             grant_type: 'client_credentials',
         });
         let batchRequests = http.batch().POST(BASE_URL_API_AUTH, body, {

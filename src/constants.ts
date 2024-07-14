@@ -26,13 +26,14 @@ export const REGEX_VIDEO_URL_EMBED = /^https:\/\/(?:www\.)?dailymotion\.com\/emb
 export const REGEX_VIDEO_CHANNEL_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
 export const REGEX_VIDEO_PLAYLIST_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
 
+export const REGEX_INITIAL_DATA_API_AUTH = /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
+
 export const USER_AGENT =
   'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36';
 
 // Those are used even for not logged users to make requests on the graphql api.
-//TODO: check how to get them dynamically
-export const CLIENT_ID = 'f1a362d288c1b98099c7';
-export const CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
+export const FALLBACK_CLIENT_ID = 'f1a362d288c1b98099c7';
+export const FALLBACK_CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
 
 export const X_DM_AppInfo_Id = 'com.dailymotion.neon';
 export const X_DM_AppInfo_Type = 'website';

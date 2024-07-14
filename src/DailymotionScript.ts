@@ -21,8 +21,8 @@ import {
   BASE_URL_METADATA,
   ERROR_TYPES,
   LikedMediaSort,
-  CLIENT_ID,
-  CLIENT_SECRET,
+  FALLBACK_CLIENT_ID,
+  FALLBACK_CLIENT_SECRET,
   BASE_URL_API_AUTH,
   PLATFORM,
   BASE_URL_COMMENTS,
@@ -36,6 +36,7 @@ import {
   REGEX_VIDEO_URL,
   REGEX_VIDEO_URL_1,
   REGEX_VIDEO_URL_EMBED,
+  REGEX_INITIAL_DATA_API_AUTH,
 } from './constants';
 
 import {
@@ -182,9 +183,28 @@ source.enable = function (conf, settings, saveStateStr) {
   if (!didSaveState) {
     log('Getting a new tokens');
 
+    const detailsRequestHtml = http.GET(BASE_URL, {}, false);
+
+    if (!detailsRequestHtml.isOk) {
+      log("Failed to get page to extract auth details");
+    }
+
+    let clientId = FALLBACK_CLIENT_ID;
+    let secret = FALLBACK_CLIENT_SECRET;
+    
+    const match = detailsRequestHtml.body.match(REGEX_INITIAL_DATA_API_AUTH);
+
+    if(match?.length === 2 && match[0] && match[1]) {
+      clientId = match[0];
+      secret = match[1];
+      log('Successfully extracted API credentials from page.')
+    } else {
+      log('Failed to extract api credentials from page.')
+    }
+
     const body = objectToUrlEncodedString({
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
+      client_id: clientId,
+      client_secret: secret,
       grant_type: 'client_credentials',
     });
 
