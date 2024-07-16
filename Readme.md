@@ -39,10 +39,6 @@ Click [here](https://stefancruz.github.io/GrayjayDailymotion/index.html) to inst
 ## Install
 npm install
 
-## Update graphql types (optional)
-
-npm run codegen
-
 ## Build
 
 npm run build
