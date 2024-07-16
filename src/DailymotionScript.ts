@@ -25,14 +25,15 @@ import {
   BASE_URL_COMMENTS,
   BASE_URL_COMMENTS_AUTH,
   BASE_URL_COMMENTS_THUMBNAILS,
-  FAVORITES_PLAYLIST_ID,
-  LIKE_PLAYLIST_ID,
-  RECENTLY_WATCHED_PLAYLIST_ID,
+  FAVORITE_VIDEOS_PLAYLIST_ID,
+  LIKED_VIDEOS_PLAYLIST_ID,
+  RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID,
   REGEX_VIDEO_CHANNEL_URL,
   REGEX_VIDEO_PLAYLIST_URL,
   REGEX_VIDEO_URL,
   REGEX_VIDEO_URL_1,
   REGEX_VIDEO_URL_EMBED,
+  PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER,
 } from './constants';
 
 import {
@@ -95,9 +96,6 @@ import {
   extractClientCredentials,
   getTokenFromClientCredentials,
 } from './extraction';
-
-// Will be used to store private playlists that require authentication
-const authenticatedPlaylistCollection: string[] = [];
 
 source.setSettings = function (settings) {
   _settings = settings;
@@ -443,10 +441,11 @@ class PlatformCommentPager extends CommentPager {
 //Playlist
 source.isPlaylistUrl = (url): boolean => {
   return (
-    REGEX_VIDEO_PLAYLIST_URL.test(url) ||
-    url === LIKE_PLAYLIST_ID ||
-    url === FAVORITES_PLAYLIST_ID ||
-    url === RECENTLY_WATCHED_PLAYLIST_ID
+    REGEX_VIDEO_PLAYLIST_URL.test(url) || [
+      LIKED_VIDEOS_PLAYLIST_ID, 
+      FAVORITE_VIDEOS_PLAYLIST_ID, 
+      RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID
+    ].includes(url)
   );
 };
 
@@ -455,35 +454,40 @@ source.searchPlaylists = (query, type, order, filters) => {
 };
 
 source.getPlaylist = (url: string): PlatformPlaylistDetails => {
-  const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
 
   const thumbnailResolutionIndex = _settings.thumbnailResolutionOptionIndex;
 
-  if (url === LIKE_PLAYLIST_ID) {
+  if (url === LIKED_VIDEOS_PLAYLIST_ID) {
     return getLikePlaylist(
       config.id,
       http,
-      usePlatformAuth,
+      true, //usePlatformAuth,
       thumbnailResolutionIndex,
     );
   }
 
-  if (url === FAVORITES_PLAYLIST_ID) {
+  if (url === FAVORITE_VIDEOS_PLAYLIST_ID) {
     return getFavoritesPlaylist(
       config.id,
       http,
-      usePlatformAuth,
+      true, //usePlatformAuth,
       thumbnailResolutionIndex,
     );
   }
 
-  if (url === RECENTLY_WATCHED_PLAYLIST_ID) {
+  if (url === RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID) {
     return getRecentlyWatchedPlaylist(
       config.id,
       http,
-      usePlatformAuth,
+      true, //usePlatformAuth,
       thumbnailResolutionIndex,
     );
+  }
+
+  const isPrivatePlaylist = url.includes(PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER);
+
+  if(isPrivatePlaylist){
+    url = url.replace(PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER, '');  //remove the private flag
   }
 
   const xid = url.split('/').pop();
@@ -498,7 +502,7 @@ source.getPlaylist = (url: string): PlatformPlaylistDetails => {
     operationName: 'PLAYLIST_VIDEO_QUERY',
     variables,
     query: PLAYLIST_DETAILS_QUERY,
-    usePlatformAuth,
+    usePlatformAuth: isPrivatePlaylist,
   });
 
   const videos: PlatformVideo[] =
@@ -619,15 +623,13 @@ source.getUserPlaylists = (): string[] => {
 
   const playlists = getPlaylistsByUsername(userName, headers, true);
 
+  // Used to trick migration "Import Playlists" to import "Favorites", "Recently Watched" and "Liked Videos"
   [
-    LIKE_PLAYLIST_ID,
-    FAVORITES_PLAYLIST_ID,
-    RECENTLY_WATCHED_PLAYLIST_ID,
-  ].forEach((playlistId) => {
-    if (!authenticatedPlaylistCollection.includes(playlistId)) {
-      authenticatedPlaylistCollection.push(playlistId);
-    }
-
+    LIKED_VIDEOS_PLAYLIST_ID,
+    FAVORITE_VIDEOS_PLAYLIST_ID,
+    RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID,
+  ]
+  .forEach((playlistId) => {
     if (!playlists.includes(playlistId)) {
       playlists.push(playlistId);
     }
@@ -666,15 +668,20 @@ function getPlaylistsByUsername(
     usePlatformAuth,
   });
 
-  const playlists: string[] = collections.data.channel.collections.edges.map(
+  const playlists: string[] = (collections.data.channel as Maybe<Channel>)?.collections?.edges?.map(
     (edge) => {
-      const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
-      if (!authenticatedPlaylistCollection.includes(playlistUrl)) {
-        authenticatedPlaylistCollection.push(playlistUrl);
+      
+      let playlistUrl = `${BASE_URL_PLAYLIST}/${edge?.node?.xid}`;
+      
+      const isPrivatePlaylist = edge?.node?.isPrivate ?? false;
+
+      if(isPrivatePlaylist){
+        playlistUrl += PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER;
       }
+
       return playlistUrl;
     },
-  );
+  ) || [];
 
   return playlists;
 }
