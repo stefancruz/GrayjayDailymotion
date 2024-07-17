@@ -27,11 +27,12 @@ export const REGEX_VIDEO_URL_1 = /^https:\/\/dai\.ly\/[a-zA-Z0-9]+$/i;
 export const REGEX_VIDEO_URL_EMBED =
   /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
 
+
 export const REGEX_VIDEO_CHANNEL_URL =
-  /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
+ /^https:\/\/(?:www\.)?dailymotion\.com\/[a-z0-9][a-z0-9._-]{2,26}(?:\?[a-zA-Z0-9=&._-]*)?$/i;
   
 export const REGEX_VIDEO_PLAYLIST_URL =
-  /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+(?:\?[a-zA-Z0-9_\-=&%]*)?$/i;
+  /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+(?:[?&][a-zA-Z0-9_\-=&%]*)?$/i;
 
 export const REGEX_INITIAL_DATA_API_AUTH_1 =
   /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
