@@ -4,7 +4,7 @@ let _settings: IDailymotionPluginSettings;
 const state = {
   anonymousUserAuthorizationToken: '',
   anonymousUserAuthorizationTokenExpirationDate: 0,
-  messageServiceToken: '',
+  commentWebServiceToken: '',
 };
 
 import {
@@ -28,6 +28,7 @@ import {
   REGEX_VIDEO_URL_1,
   REGEX_VIDEO_URL_EMBED,
   PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER,
+  FALLBACK_SPOT_ID,
 } from './constants';
 
 import {
@@ -149,13 +150,12 @@ source.enable = function (conf, settings, saveStateStr) {
     if (saveStateStr) {
       const saveState = JSON.parse(saveStateStr);
       if (saveState) {
-        state.anonymousUserAuthorizationToken =
-          saveState.anonymousUserAuthorizationToken;
 
-        state.anonymousUserAuthorizationTokenExpirationDate =
-          saveState.anonymousUserAuthorizationTokenExpirationDate;
-
-        state.messageServiceToken = saveState.messageServiceToken;
+        Object
+        .keys(state)
+        .forEach((key) => {
+          state[key] = saveState[key];
+        });
 
         if (!isTokenValid()) {
           log('Token expired. Fetching a new one.');
@@ -171,7 +171,9 @@ source.enable = function (conf, settings, saveStateStr) {
   }
 
   if (!didSaveState) {
-    log('Getting a new tokens');
+    if(IS_TESTING){
+      log('Getting a new tokens');
+    }
 
     const clientCredentials = extractClientCredentials(http);
 
@@ -193,21 +195,25 @@ source.enable = function (conf, settings, saveStateStr) {
 
     if (config.allowAllHttpHeaderAccess) {
       // get token for message service api-2-0.spot.im
-      const authenticateIm = http.POST(
-        BASE_URL_COMMENTS_AUTH,
-        '',
-        applyCommonHeaders({
-          'x-spot-id': 'sp_vWPN1lBu',
-          'x-post-id': 'no$post',
-        }),
-        false,
-      );
-
-      if (!authenticateIm.isOk) {
-        log('Failed to authenticate to comments service');
+      try {
+        const authenticateIm = http.POST(
+          BASE_URL_COMMENTS_AUTH,
+          '',
+          applyCommonHeaders({
+            'x-spot-id': FALLBACK_SPOT_ID,//
+            'x-post-id': 'no$post',
+          }),
+          false,
+        );
+  
+        if (!authenticateIm.isOk) {
+          log('Failed to authenticate to comments service');
+        }
+  
+        state.commentWebServiceToken = authenticateIm?.headers?.['x-access-token']?.[0];
+      } catch (error) {
+        log('Failed to authenticate to comments service:' + error);
       }
-
-      state.messageServiceToken = authenticateIm.headers['x-access-token'][0];
     }
   }
 };
@@ -339,8 +345,8 @@ function getCommentPager(url, params, page) {
     const xid = url.split('/').pop();
 
     const commentsHeaders = applyCommonHeaders({
-      'x-access-token': state.messageServiceToken,
-      'x-spot-id': 'sp_vWPN1lBu',
+      'x-access-token': state.commentWebServiceToken,
+      'x-spot-id': FALLBACK_SPOT_ID,
       'x-post-id': xid,
     });
 

@@ -79,11 +79,9 @@ export function extractClientCredentials(httpClient: IHttp) {
       clientId: match[0],
       secret: match[1],
     });
-    console.log('Successfully extracted API credentials from page:', match[1]);
+    log('Successfully extracted API credentials from page');
   } else {
-    console.log(
-      'Failed to extract API credentials from page using regex. Using DOM parsing.',
-    );
+    log('Failed to extract API credentials from page using regex. Using DOM parsing.');
 
     const htmlElement = domParser.parseFromString(
       detailsRequestHtml.body,
@@ -98,12 +96,9 @@ export function extractClientCredentials(httpClient: IHttp) {
         secret: extractedSecret,
       });
 
-      console.log(
-        'Successfully extracted API credentials from page using DOM parsing:',
-        extractedId,
-      );
+      log(`Successfully extracted API credentials from page using DOM parsing: ${extractedSecret}`,);
     } else {
-      console.log(
+      log(
         'Failed to extract API credentials using DOM parsing with exact text length.',
       );
     }

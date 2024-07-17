@@ -46,7 +46,7 @@ export const USER_AGENT =
 // Those are used even for not logged users to make requests on the graphql api.
 export const FALLBACK_CLIENT_ID = 'f1a362d288c1b98099c7';
 export const FALLBACK_CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
-
+export const FALLBACK_SPOT_ID = 'sp_vWPN1lBu';
 
 export const PLATFORM = 'Dailymotion';
 export const PLATFORM_CLAIMTYPE = 27;
