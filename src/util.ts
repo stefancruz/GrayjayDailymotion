@@ -1,4 +1,4 @@
-import { BASE_URL, DURATION_THRESHOLDS } from './constants';
+import { DEFAULT_HEADERS, DURATION_THRESHOLDS } from './constants';
 
 export const objectToUrlEncodedString = (obj) => {
   const encodedParams: string[] = [];
@@ -115,4 +115,8 @@ export function generateUUIDv4() {
     const v = c === 'x' ? r : (r & 0x3) | 0x8;
     return v.toString(16);
   });
+}
+
+export function applyCommonHeaders(headers: Record<string, string>={}) : Record<string, string>{
+  return { ...DEFAULT_HEADERS, ...headers };
 }

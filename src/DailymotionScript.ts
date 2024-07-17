@@ -10,13 +10,7 @@ const state = {
 import {
   BASE_URL,
   SEARCH_CAPABILITIES,
-  BASE_URL_VIDEO,
   BASE_URL_PLAYLIST,
-  USER_AGENT,
-  X_DM_AppInfo_Id,
-  X_DM_AppInfo_Type,
-  X_DM_AppInfo_Version,
-  X_DM_Neon_SSR,
   BASE_URL_API,
   BASE_URL_METADATA,
   ERROR_TYPES,
@@ -54,7 +48,7 @@ import {
   USER_WATCH_LATER_VIDEOS_QUERY,
 } from './gqlQueries';
 
-import { getChannelNameFromUrl, getQuery, generateUUIDv4 } from './util';
+import { getChannelNameFromUrl, getQuery, generateUUIDv4, applyCommonHeaders } from './util';
 
 import {
   Channel,
@@ -89,7 +83,6 @@ import {
 
 import {
   IDailymotionPluginSettings,
-  IDictionary,
   IPlatformSystemPlaylist,
 } from '../types/types';
 import {
@@ -203,22 +196,10 @@ source.enable = function (conf, settings, saveStateStr) {
       const authenticateIm = http.POST(
         BASE_URL_COMMENTS_AUTH,
         '',
-        {
-          'User-Agent': USER_AGENT,
-          Accept: '*/*',
-          'Accept-Language': 'en-US,en;q=0.5',
+        applyCommonHeaders({
           'x-spot-id': 'sp_vWPN1lBu',
           'x-post-id': 'no$post',
-          'Content-Type': 'application/json',
-          Origin: BASE_URL,
-          Connection: 'keep-alive',
-          Referer: BASE_URL,
-          'Sec-Fetch-Dest': 'empty',
-          'Sec-Fetch-Mode': 'cors',
-          'Sec-Fetch-Site': 'cross-site',
-          Priority: 'u=6',
-          'Content-Length': '0',
-        },
+        }),
         false,
       );
 
@@ -357,23 +338,11 @@ function getCommentPager(url, params, page) {
   try {
     const xid = url.split('/').pop();
 
-    const commentsHeaders = {
-      'User-Agent': USER_AGENT,
-      Accept: 'application/json',
-      'Accept-Language': 'en-US,en;q=0.5',
+    const commentsHeaders = applyCommonHeaders({
       'x-access-token': state.messageServiceToken,
-      'Content-Type': 'application/json',
       'x-spot-id': 'sp_vWPN1lBu',
       'x-post-id': xid,
-      Origin: BASE_URL,
-      Connection: 'keep-alive',
-      Referer: BASE_URL,
-      'Sec-Fetch-Dest': 'empty',
-      'Sec-Fetch-Mode': 'cors',
-      'Sec-Fetch-Site': 'cross-site',
-      Priority: 'u=6',
-      TE: 'trailers',
-    };
+    });
 
     const commentRequest = http.POST(
       BASE_URL_COMMENTS,
@@ -523,26 +492,6 @@ source.getUserSubscriptions = (): string[] => {
     throw new ScriptException('Not logged in');
   }
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'User-Agent': USER_AGENT,
-    // Accept: '*/*, */*',
-    'Accept-Language': 'en-GB',
-    Referer: `${BASE_URL}/library/subscriptions`,
-    'X-DM-Preferred-Country': getPreferredCountry(
-      _settings?.preferredCountryOptionIndex,
-    ),
-    Origin: BASE_URL,
-    DNT: '1',
-    Connection: 'keep-alive',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    Priority: 'u=4',
-    Pragma: 'no-cache',
-    'Cache-Control': 'no-cache',
-  };
-
   const usePlatformAuth = true;
 
   const fetchSubscriptions = (page, first): string[] => {
@@ -552,7 +501,7 @@ source.getUserSubscriptions = (): string[] => {
         first: first,
         page: page,
       },
-      headers,
+      headers: applyCommonHeaders(),
       query: GET_USER_SUBSCRIPTIONS,
       usePlatformAuth,
     });
@@ -592,25 +541,7 @@ source.getUserPlaylists = (): string[] => {
     throw new ScriptException('Not logged in');
   }
 
-  const headers = {
-    'Content-Type': 'application/json',
-    'User-Agent': USER_AGENT,
-    'Accept-Language': 'en-GB',
-    Referer: 'https://www.dailymotion.com/',
-    'Sec-GPC': '1',
-    'X-DM-Preferred-Country': getPreferredCountry(
-      _settings?.preferredCountryOptionIndex,
-    ),
-    Origin: BASE_URL,
-    DNT: '1',
-    Connection: 'keep-alive',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    Priority: 'u=1',
-    Pragma: 'no-cache',
-    'Cache-Control': 'no-cache',
-  };
+  const headers = applyCommonHeaders();
 
   const gqlResponse = executeGqlQuery(http, {
     operationName: 'SUBSCRIPTIONS_QUERY',
@@ -751,24 +682,9 @@ function getHomePager(params, page) {
 
   params = { ...params, count };
 
-  const headersToAdd = {
-    'User-Agent': USER_AGENT,
-    Referer: BASE_URL,
-    'Content-Type': 'application/json',
-    'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-    'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-    'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-    'X-DM-Neon-SSR': X_DM_Neon_SSR,
-    'X-DM-Preferred-Country': getPreferredCountry(
-      _settings?.preferredCountryOptionIndex,
-    ),
-    Origin: BASE_URL,
-    DNT: '1',
-    'Sec-Fetch-Site': 'same-site',
-    Priority: 'u=4',
-    Pragma: 'no-cache',
-    'Cache-Control': 'no-cache',
-  };
+  const headersToAdd = applyCommonHeaders({
+    'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
+  });
 
   let obj;
 
@@ -938,19 +854,7 @@ function getSavedVideo(url, usePlatformAuth = false) {
 
   const player_metadata_url = `${BASE_URL_METADATA}/${id}?embedder=https%3A%2F%2Fwww.dailymotion.com%2Fvideo%2Fx8yb2e8&geo=1&player-id=xjnde&locale=en-GB&dmV1st=ce2035cd-bdca-4d7b-baa4-127a17490ca5&dmTs=747022&is_native_app=0&app=com.dailymotion.neon&client_type=webapp&section_type=player&component_style=_`;
 
-  const headers1 = {
-    'User-Agent': USER_AGENT,
-    Accept: '*/*',
-    Referer: 'https://geo.dailymotion.com/',
-    Origin: 'https://geo.dailymotion.com',
-    DNT: '1',
-    Connection: 'keep-alive',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    Pragma: 'no-cache',
-    'Cache-Control': 'no-cache',
-  };
+  const headers1 = applyCommonHeaders();
 
   if (_settings.hideSensitiveContent) {
     headers1['Cookie'] = 'ff=on';
@@ -969,32 +873,10 @@ function getSavedVideo(url, usePlatformAuth = false) {
     query: WATCHING_VIDEO,
   });
 
-  const videoDetailsRequestHeaders: IDictionary<string> = {
-    'Content-Type': 'application/json',
-    'User-Agent': USER_AGENT,
-    Accept: '*/*, */*',
-    Referer: `${BASE_URL_VIDEO}/${id}`,
-    'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-    'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-    'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-    'X-DM-Neon-SSR': X_DM_Neon_SSR,
-    'X-DM-Preferred-Country': getPreferredCountry(
-      _settings?.preferredCountryOptionIndex,
-    ),
-    Origin: BASE_URL,
-    DNT: '1',
-    Connection: 'keep-alive',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    Priority: 'u=4',
-    Pragma: 'no-cache',
-    'Cache-Control': 'no-cache',
-  };
+  const videoDetailsRequestHeaders: Record<string, string> = applyCommonHeaders();
 
   if (!usePlatformAuth) {
-    videoDetailsRequestHeaders.Authorization =
-      state.anonymousUserAuthorizationToken;
+    videoDetailsRequestHeaders.Authorization = state.anonymousUserAuthorizationToken;
   }
 
   const responses = http
@@ -1077,28 +959,8 @@ function getChannelPlaylists(
   url: string,
   page: number = 1,
 ): SearchPlaylistPager {
-  const headers = {
-    'Content-Type': 'application/json',
-    'User-Agent': USER_AGENT,
-    'Accept-Language': 'en-GB',
-    Referer: `${BASE_URL}/library/subscriptions`,
-    'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-    'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-    'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-    'X-DM-Neon-SSR': '0',
-    'X-DM-Preferred-Country': getPreferredCountry(
-      _settings?.preferredCountryOptionIndex,
-    ),
-    Origin: BASE_URL,
-    DNT: '1',
-    Connection: 'keep-alive',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    Priority: 'u=4',
-    Pragma: 'no-cache',
-    'Cache-Control': 'no-cache',
-  };
+
+  const headers = applyCommonHeaders();
 
   const usePlatformAuth = false;
   const channel_name = getChannelNameFromUrl(url);
@@ -1154,20 +1016,7 @@ function isTokenValid() {
 }
 
 function executeGqlQuery(httpClient, requestOptions) {
-  const headersToAdd = requestOptions.headers || {
-    'User-Agent': USER_AGENT,
-    Accept: '*/*',
-    // "Accept-Language": Accept_Language,
-    Referer: BASE_URL,
-    Origin: BASE_URL,
-    DNT: '1',
-    Connection: 'keep-alive',
-    'Sec-Fetch-Dest': 'empty',
-    'Sec-Fetch-Mode': 'cors',
-    'Sec-Fetch-Site': 'same-site',
-    Pragma: 'no-cache',
-    'Cache-Control': 'no-cache',
-  };
+  const headersToAdd = requestOptions.headers || applyCommonHeaders();
 
   const gql = JSON.stringify({
     operationName: requestOptions.operationName,

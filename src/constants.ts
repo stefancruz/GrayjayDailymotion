@@ -44,13 +44,8 @@ export const USER_AGENT =
 
 // Those are used even for not logged users to make requests on the graphql api.
 export const FALLBACK_CLIENT_ID = 'f1a362d288c1b98099c7';
-export const FALLBACK_CLIENT_SECRET =
-  'eea605b96e01c796ff369935357eca920c5da4c5';
+export const FALLBACK_CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
 
-export const X_DM_AppInfo_Id = 'com.dailymotion.neon';
-export const X_DM_AppInfo_Type = 'website';
-export const X_DM_AppInfo_Version = 'v2024-07-02T13:55:47.186Z'; //TODO check how to get this dynamically
-export const X_DM_Neon_SSR = '0';
 
 export const PLATFORM = 'Dailymotion';
 export const PLATFORM_CLAIMTYPE = 27;
@@ -150,3 +145,8 @@ export const SEARCH_CAPABILITIES = {
 
 // Used to on source.getUserPlaylists to specify if the playlist is private or not. This is read by source.getPlaylist to enable the authentication context.
 export const PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER = '&private=1';
+
+export const DEFAULT_HEADERS:Record<string, string> = {
+  'User-Agent': USER_AGENT,
+  Origin: BASE_URL,
+};
