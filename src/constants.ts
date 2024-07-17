@@ -27,11 +27,12 @@ export const REGEX_VIDEO_URL_1 = /^https:\/\/dai\.ly\/[a-zA-Z0-9]+$/i;
 export const REGEX_VIDEO_URL_EMBED =
   /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
 
+
 export const REGEX_VIDEO_CHANNEL_URL =
-  /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
+ /^https:\/\/(?:www\.)?dailymotion\.com\/[a-z0-9][a-z0-9._-]{2,26}(?:\?[a-zA-Z0-9=&._-]*)?$/i;
   
 export const REGEX_VIDEO_PLAYLIST_URL =
-  /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
+  /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+(?:[?&][a-zA-Z0-9_\-=&%]*)?$/i;
 
 export const REGEX_INITIAL_DATA_API_AUTH_1 =
   /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
@@ -44,13 +45,8 @@ export const USER_AGENT =
 
 // Those are used even for not logged users to make requests on the graphql api.
 export const FALLBACK_CLIENT_ID = 'f1a362d288c1b98099c7';
-export const FALLBACK_CLIENT_SECRET =
-  'eea605b96e01c796ff369935357eca920c5da4c5';
-
-export const X_DM_AppInfo_Id = 'com.dailymotion.neon';
-export const X_DM_AppInfo_Type = 'website';
-export const X_DM_AppInfo_Version = 'v2024-07-02T13:55:47.186Z'; //TODO check how to get this dynamically
-export const X_DM_Neon_SSR = '0';
+export const FALLBACK_CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
+export const FALLBACK_SPOT_ID = 'sp_vWPN1lBu';
 
 export const PLATFORM = 'Dailymotion';
 export const PLATFORM_CLAIMTYPE = 27;
@@ -69,9 +65,9 @@ DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
 
-export const LIKE_PLAYLIST_ID = 'LIKE_PLAYLIST';
-export const FAVORITES_PLAYLIST_ID = 'FAVORITES_PLAYLIST';
-export const RECENTLY_WATCHED_PLAYLIST_ID = 'RECENTLY_WATCHED_PLAYLIST';
+export const LIKED_VIDEOS_PLAYLIST_ID = 'LIKE_PLAYLIST';
+export const FAVORITE_VIDEOS_PLAYLIST_ID = 'FAVORITES_PLAYLIST';
+export const RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID = 'RECENTLY_WATCHED_PLAYLIST';
 
 /** The possible values which liked media connections can be sorted by. */
 export const LikedMediaSort = {
@@ -146,4 +142,12 @@ export const SEARCH_CAPABILITIES = {
       ],
     },
   ],
+};
+
+// Used to on source.getUserPlaylists to specify if the playlist is private or not. This is read by source.getPlaylist to enable the authentication context.
+export const PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER = '&private=1';
+
+export const DEFAULT_HEADERS:Record<string, string> = {
+  'User-Agent': USER_AGENT,
+  Origin: BASE_URL,
 };

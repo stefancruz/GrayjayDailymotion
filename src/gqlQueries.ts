@@ -687,6 +687,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 			edges {
 				node {
 					xid
+					isPrivate
 						}
 					}
 				}
