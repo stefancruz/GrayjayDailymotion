@@ -5,6 +5,7 @@ const state = {
   anonymousUserAuthorizationToken: '',
   anonymousUserAuthorizationTokenExpirationDate: 0,
   commentWebServiceToken: '',
+  channelsCache: {} as Record<string, PlatformChannel>
 };
 
 import {
@@ -188,6 +189,8 @@ source.enable = function (conf, settings, saveStateStr) {
       throw new ScriptException('Failed to get authentication token');
     }
 
+    state.channelsCache = {};
+
     state.anonymousUserAuthorizationToken =
       anonymousUserAuthorizationToken ?? '';
     state.anonymousUserAuthorizationTokenExpirationDate =
@@ -259,6 +262,15 @@ source.isChannelUrl = function (url) {
 };
 
 source.getChannel = function (url) {
+
+  if(!state?.channelsCache){
+    state.channelsCache = {};
+  }
+
+  if(state.channelsCache[url]){
+    return state.channelsCache[url];
+  }
+
   const channel_name = getChannelNameFromUrl(url);
 
   const channelDetails = executeGqlQuery(http, {
@@ -270,10 +282,12 @@ source.getChannel = function (url) {
     query: CHANNEL_QUERY_DESKTOP,
   });
 
-  return SourceChannelToGrayjayChannel(
+  state.channelsCache[url] = SourceChannelToGrayjayChannel(
     config.id,
     channelDetails.data.channel as Channel,
   );
+
+  return state.channelsCache[url];
 };
 
 source.getChannelContents = function (url, type, order, filters) {
