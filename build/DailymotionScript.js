@@ -12,18 +12,15 @@ const BASE_URL_METADATA = `${BASE_URL}/player/metadata/video`;
 const REGEX_VIDEO_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/video\/[a-zA-Z0-9]+$/i;
 const REGEX_VIDEO_URL_1 = /^https:\/\/dai\.ly\/[a-zA-Z0-9]+$/i;
 const REGEX_VIDEO_URL_EMBED = /^https:\/\/(?:www\.)?dailymotion\.com\/embed\/video\/[a-zA-Z0-9]+(\?.*)?$/i;
-const REGEX_VIDEO_CHANNEL_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/[a-zA-Z0-9-]+$/i;
-const REGEX_VIDEO_PLAYLIST_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+$/i;
+const REGEX_VIDEO_CHANNEL_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/[a-z0-9][a-z0-9._-]{2,26}(?:\?[a-zA-Z0-9=&._-]*)?$/i;
+const REGEX_VIDEO_PLAYLIST_URL = /^https:\/\/(?:www\.)?dailymotion\.com\/playlist\/[a-zA-Z0-9]+(?:[?&][a-zA-Z0-9_\-=&%]*)?$/i;
 const REGEX_INITIAL_DATA_API_AUTH_1 = /(?<=window\.__LOADABLE_LOADED_CHUNKS__=.*)\b[a-f0-9]{20}\b|\b[a-f0-9]{40}\b/g;
 const createAuthRegexByTextLength = (length) => new RegExp(`\\b\\w+\\s*=\\s*"([a-zA-Z0-9]{${length}})"`);
 const USER_AGENT = 'Mozilla/5.0 (Linux; Android 12) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.6099.230 Mobile Safari/537.36';
 // Those are used even for not logged users to make requests on the graphql api.
 const FALLBACK_CLIENT_ID = 'f1a362d288c1b98099c7';
 const FALLBACK_CLIENT_SECRET = 'eea605b96e01c796ff369935357eca920c5da4c5';
-const X_DM_AppInfo_Id = 'com.dailymotion.neon';
-const X_DM_AppInfo_Type = 'website';
-const X_DM_AppInfo_Version = 'v2024-07-02T13:55:47.186Z'; //TODO check how to get this dynamically
-const X_DM_Neon_SSR = '0';
+const FALLBACK_SPOT_ID = 'sp_vWPN1lBu';
 const PLATFORM = 'Dailymotion';
 const PLATFORM_CLAIMTYPE = 27;
 // search capabilities - upload date
@@ -38,9 +35,9 @@ DURATION_THRESHOLDS[ONE_TO_FIVE_MINUTES] = { min: 60, max: 300 };
 DURATION_THRESHOLDS[FIVE_TO_THIRTY_MINUTES] = { min: 300, max: 1800 };
 DURATION_THRESHOLDS[THIRTY_TO_ONE_HOUR] = { min: 1800, max: 3600 };
 DURATION_THRESHOLDS[MORE_THAN_ONE_HOUR] = { min: 3600, max: null };
-const LIKE_PLAYLIST_ID = 'LIKE_PLAYLIST';
-const FAVORITES_PLAYLIST_ID = 'FAVORITES_PLAYLIST';
-const RECENTLY_WATCHED_PLAYLIST_ID = 'RECENTLY_WATCHED_PLAYLIST';
+const LIKED_VIDEOS_PLAYLIST_ID = 'LIKE_PLAYLIST';
+const FAVORITE_VIDEOS_PLAYLIST_ID = 'FAVORITES_PLAYLIST';
+const RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID = 'RECENTLY_WATCHED_PLAYLIST';
 /** The possible values which liked media connections can be sorted by. */
 const LikedMediaSort = {
     /** Sort liked medias by most recent. */
@@ -106,6 +103,12 @@ const SEARCH_CAPABILITIES = {
             ],
         },
     ],
+};
+// Used to on source.getUserPlaylists to specify if the playlist is private or not. This is read by source.getPlaylist to enable the authentication context.
+const PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER = '&private=1';
+const DEFAULT_HEADERS = {
+    'User-Agent': USER_AGENT,
+    Origin: BASE_URL,
 };
 
 const AUTOCOMPLETE_QUERY = `
@@ -788,6 +791,7 @@ query CHANNEL_PLAYLISTS_QUERY(
 			edges {
 				node {
 					xid
+					isPrivate
 						}
 					}
 				}
@@ -1069,6 +1073,9 @@ function generateUUIDv4() {
         const v = c === 'x' ? r : (r & 0x3) | 0x8;
         return v.toString(16);
     });
+}
+function applyCommonHeaders(headers = {}) {
+    return { ...DEFAULT_HEADERS, ...headers };
 }
 
 class SearchPagerAll extends VideoPager {
@@ -1401,10 +1408,10 @@ function extractClientCredentials(httpClient) {
             clientId: match[0],
             secret: match[1],
         });
-        console.log('Successfully extracted API credentials from page:', match[1]);
+        log('Successfully extracted API credentials from page');
     }
     else {
-        console.log('Failed to extract API credentials from page using regex. Using DOM parsing.');
+        log('Failed to extract API credentials from page using regex. Using DOM parsing.');
         const htmlElement = domParser.parseFromString(detailsRequestHtml.body, 'text/html');
         const extractedId = getScriptVariableByTextLength(htmlElement, 20);
         const extractedSecret = getScriptVariableByTextLength(htmlElement, 40);
@@ -1413,10 +1420,10 @@ function extractClientCredentials(httpClient) {
                 clientId: extractedId,
                 secret: extractedSecret,
             });
-            console.log('Successfully extracted API credentials from page using DOM parsing:', extractedId);
+            log(`Successfully extracted API credentials from page using DOM parsing: ${extractedSecret}`);
         }
         else {
-            console.log('Failed to extract API credentials using DOM parsing with exact text length.');
+            log('Failed to extract API credentials using DOM parsing with exact text length.');
         }
     }
     return result;
@@ -1470,10 +1477,9 @@ let _settings;
 const state = {
     anonymousUserAuthorizationToken: '',
     anonymousUserAuthorizationTokenExpirationDate: 0,
-    messageServiceToken: '',
+    commentWebServiceToken: '',
+    channelsCache: {}
 };
-// Will be used to store private playlists that require authentication
-const authenticatedPlaylistCollection = [];
 source.setSettings = function (settings) {
     _settings = settings;
 };
@@ -1521,11 +1527,11 @@ source.enable = function (conf, settings, saveStateStr) {
         if (saveStateStr) {
             const saveState = JSON.parse(saveStateStr);
             if (saveState) {
-                state.anonymousUserAuthorizationToken =
-                    saveState.anonymousUserAuthorizationToken;
-                state.anonymousUserAuthorizationTokenExpirationDate =
-                    saveState.anonymousUserAuthorizationTokenExpirationDate;
-                state.messageServiceToken = saveState.messageServiceToken;
+                Object
+                    .keys(state)
+                    .forEach((key) => {
+                    state[key] = saveState[key];
+                });
                 if (!isTokenValid()) {
                     log('Token expired. Fetching a new one.');
                 }
@@ -1541,39 +1547,35 @@ source.enable = function (conf, settings, saveStateStr) {
         didSaveState = false;
     }
     if (!didSaveState) {
-        log('Getting a new tokens');
+        if (IS_TESTING) {
+            log('Getting a new tokens');
+        }
         const clientCredentials = extractClientCredentials(http);
         const { anonymousUserAuthorizationToken, anonymousUserAuthorizationTokenExpirationDate, isValid, } = getTokenFromClientCredentials(http, clientCredentials);
         if (!isValid) {
             console.error('Failed to get token');
             throw new ScriptException('Failed to get authentication token');
         }
+        state.channelsCache = {};
         state.anonymousUserAuthorizationToken =
             anonymousUserAuthorizationToken ?? '';
         state.anonymousUserAuthorizationTokenExpirationDate =
             anonymousUserAuthorizationTokenExpirationDate ?? 0;
         if (config.allowAllHttpHeaderAccess) {
             // get token for message service api-2-0.spot.im
-            const authenticateIm = http.POST(BASE_URL_COMMENTS_AUTH, '', {
-                'User-Agent': USER_AGENT,
-                Accept: '*/*',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'x-spot-id': 'sp_vWPN1lBu',
-                'x-post-id': 'no$post',
-                'Content-Type': 'application/json',
-                Origin: BASE_URL,
-                Connection: 'keep-alive',
-                Referer: BASE_URL,
-                'Sec-Fetch-Dest': 'empty',
-                'Sec-Fetch-Mode': 'cors',
-                'Sec-Fetch-Site': 'cross-site',
-                Priority: 'u=6',
-                'Content-Length': '0',
-            }, false);
-            if (!authenticateIm.isOk) {
-                log('Failed to authenticate to comments service');
+            try {
+                const authenticateIm = http.POST(BASE_URL_COMMENTS_AUTH, '', applyCommonHeaders({
+                    'x-spot-id': FALLBACK_SPOT_ID, //
+                    'x-post-id': 'no$post',
+                }), false);
+                if (!authenticateIm.isOk) {
+                    log('Failed to authenticate to comments service');
+                }
+                state.commentWebServiceToken = authenticateIm?.headers?.['x-access-token']?.[0];
             }
-            state.messageServiceToken = authenticateIm.headers['x-access-token'][0];
+            catch (error) {
+                log('Failed to authenticate to comments service:' + error);
+            }
         }
     }
 };
@@ -1608,6 +1610,12 @@ source.isChannelUrl = function (url) {
     return REGEX_VIDEO_CHANNEL_URL.test(url);
 };
 source.getChannel = function (url) {
+    if (!state?.channelsCache) {
+        state.channelsCache = {};
+    }
+    if (state.channelsCache[url]) {
+        return state.channelsCache[url];
+    }
     const channel_name = getChannelNameFromUrl(url);
     const channelDetails = executeGqlQuery(http, {
         operationName: 'CHANNEL_QUERY_DESKTOP',
@@ -1617,7 +1625,8 @@ source.getChannel = function (url) {
         },
         query: CHANNEL_QUERY_DESKTOP,
     });
-    return SourceChannelToGrayjayChannel(config.id, channelDetails.data.channel);
+    state.channelsCache[url] = SourceChannelToGrayjayChannel(config.id, channelDetails.data.channel);
+    return state.channelsCache[url];
 };
 source.getChannelContents = function (url, type, order, filters) {
     const page = 1;
@@ -1676,23 +1685,11 @@ source.getComments = (url) => {
 function getCommentPager(url, params, page) {
     try {
         const xid = url.split('/').pop();
-        const commentsHeaders = {
-            'User-Agent': USER_AGENT,
-            Accept: 'application/json',
-            'Accept-Language': 'en-US,en;q=0.5',
-            'x-access-token': state.messageServiceToken,
-            'Content-Type': 'application/json',
-            'x-spot-id': 'sp_vWPN1lBu',
+        const commentsHeaders = applyCommonHeaders({
+            'x-access-token': state.commentWebServiceToken,
+            'x-spot-id': FALLBACK_SPOT_ID,
             'x-post-id': xid,
-            Origin: BASE_URL,
-            Connection: 'keep-alive',
-            Referer: BASE_URL,
-            'Sec-Fetch-Dest': 'empty',
-            'Sec-Fetch-Mode': 'cors',
-            'Sec-Fetch-Site': 'cross-site',
-            Priority: 'u=6',
-            TE: 'trailers',
-        };
+        });
         const commentRequest = http.POST(BASE_URL_COMMENTS, JSON.stringify(params), commentsHeaders, false);
         if (!commentRequest.isOk) {
             throw new UnavailableException('Failed to authenticate to comments service');
@@ -1728,25 +1725,32 @@ class PlatformCommentPager extends CommentPager {
 }
 //Playlist
 source.isPlaylistUrl = (url) => {
-    return (REGEX_VIDEO_PLAYLIST_URL.test(url) ||
-        url === LIKE_PLAYLIST_ID ||
-        url === FAVORITES_PLAYLIST_ID ||
-        url === RECENTLY_WATCHED_PLAYLIST_ID);
+    return (REGEX_VIDEO_PLAYLIST_URL.test(url) || [
+        LIKED_VIDEOS_PLAYLIST_ID,
+        FAVORITE_VIDEOS_PLAYLIST_ID,
+        RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID
+    ].includes(url));
 };
 source.searchPlaylists = (query, type, order, filters) => {
     return searchPlaylists({ q: query, type, order, filters });
 };
 source.getPlaylist = (url) => {
-    const usePlatformAuth = authenticatedPlaylistCollection.includes(url);
     const thumbnailResolutionIndex = _settings.thumbnailResolutionOptionIndex;
-    if (url === LIKE_PLAYLIST_ID) {
-        return getLikePlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
+    if (url === LIKED_VIDEOS_PLAYLIST_ID) {
+        return getLikePlaylist(config.id, http, true, //usePlatformAuth,
+        thumbnailResolutionIndex);
     }
-    if (url === FAVORITES_PLAYLIST_ID) {
-        return getFavoritesPlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
+    if (url === FAVORITE_VIDEOS_PLAYLIST_ID) {
+        return getFavoritesPlaylist(config.id, http, true, //usePlatformAuth,
+        thumbnailResolutionIndex);
     }
-    if (url === RECENTLY_WATCHED_PLAYLIST_ID) {
-        return getRecentlyWatchedPlaylist(config.id, http, usePlatformAuth, thumbnailResolutionIndex);
+    if (url === RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID) {
+        return getRecentlyWatchedPlaylist(config.id, http, true, //usePlatformAuth,
+        thumbnailResolutionIndex);
+    }
+    const isPrivatePlaylist = url.includes(PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER);
+    if (isPrivatePlaylist) {
+        url = url.replace(PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER, ''); //remove the private flag
     }
     const xid = url.split('/').pop();
     const variables = {
@@ -1758,7 +1762,7 @@ source.getPlaylist = (url) => {
         operationName: 'PLAYLIST_VIDEO_QUERY',
         variables,
         query: PLAYLIST_DETAILS_QUERY,
-        usePlatformAuth,
+        usePlatformAuth: isPrivatePlaylist,
     });
     const videos = gqlResponse?.data?.collection?.videos?.edges.map((edge) => {
         return SourceVideoToGrayjayVideo(config.id, edge.node);
@@ -1770,23 +1774,6 @@ source.getUserSubscriptions = () => {
         log('Failed to retrieve subscriptions page because not logged in.');
         throw new ScriptException('Not logged in');
     }
-    const headers = {
-        'Content-Type': 'application/json',
-        'User-Agent': USER_AGENT,
-        // Accept: '*/*, */*',
-        'Accept-Language': 'en-GB',
-        Referer: `${BASE_URL}/library/subscriptions`,
-        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
-        Origin: BASE_URL,
-        DNT: '1',
-        Connection: 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        Priority: 'u=4',
-        Pragma: 'no-cache',
-        'Cache-Control': 'no-cache',
-    };
     const usePlatformAuth = true;
     const fetchSubscriptions = (page, first) => {
         const gqlResponse = executeGqlQuery(http, {
@@ -1795,7 +1782,7 @@ source.getUserSubscriptions = () => {
                 first: first,
                 page: page,
             },
-            headers,
+            headers: applyCommonHeaders(),
             query: GET_USER_SUBSCRIPTIONS,
             usePlatformAuth,
         });
@@ -1821,23 +1808,7 @@ source.getUserPlaylists = () => {
         log('Failed to retrieve subscriptions page because not logged in.');
         throw new ScriptException('Not logged in');
     }
-    const headers = {
-        'Content-Type': 'application/json',
-        'User-Agent': USER_AGENT,
-        'Accept-Language': 'en-GB',
-        Referer: 'https://www.dailymotion.com/',
-        'Sec-GPC': '1',
-        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
-        Origin: BASE_URL,
-        DNT: '1',
-        Connection: 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        Priority: 'u=1',
-        Pragma: 'no-cache',
-        'Cache-Control': 'no-cache',
-    };
+    const headers = applyCommonHeaders();
     const gqlResponse = executeGqlQuery(http, {
         operationName: 'SUBSCRIPTIONS_QUERY',
         headers,
@@ -1846,14 +1817,13 @@ source.getUserPlaylists = () => {
     });
     const userName = gqlResponse?.data?.me?.channel?.name;
     const playlists = getPlaylistsByUsername(userName, headers, true);
+    // Used to trick migration "Import Playlists" to import "Favorites", "Recently Watched" and "Liked Videos"
     [
-        LIKE_PLAYLIST_ID,
-        FAVORITES_PLAYLIST_ID,
-        RECENTLY_WATCHED_PLAYLIST_ID,
-    ].forEach((playlistId) => {
-        if (!authenticatedPlaylistCollection.includes(playlistId)) {
-            authenticatedPlaylistCollection.push(playlistId);
-        }
+        LIKED_VIDEOS_PLAYLIST_ID,
+        FAVORITE_VIDEOS_PLAYLIST_ID,
+        RECENTLY_WATCHED_VIDEOS_PLAYLIST_ID,
+    ]
+        .forEach((playlistId) => {
         if (!playlists.includes(playlistId)) {
             playlists.push(playlistId);
         }
@@ -1883,13 +1853,14 @@ function getPlaylistsByUsername(userName, headers, usePlatformAuth = false) {
         query: GET_CHANNEL_PLAYLISTS_XID,
         usePlatformAuth,
     });
-    const playlists = collections.data.channel.collections.edges.map((edge) => {
-        const playlistUrl = `${BASE_URL_PLAYLIST}/${edge.node.xid}`;
-        if (!authenticatedPlaylistCollection.includes(playlistUrl)) {
-            authenticatedPlaylistCollection.push(playlistUrl);
+    const playlists = collections.data.channel?.collections?.edges?.map((edge) => {
+        let playlistUrl = `${BASE_URL_PLAYLIST}/${edge?.node?.xid}`;
+        const isPrivatePlaylist = edge?.node?.isPrivate ?? false;
+        if (isPrivatePlaylist) {
+            playlistUrl += PRIVATE_PLAYLIST_QUERY_PARAM_FLAGGER;
         }
         return playlistUrl;
-    });
+    }) || [];
     return playlists;
 }
 function searchPlaylists(contextQuery) {
@@ -1937,22 +1908,9 @@ function getHomePager(params, page) {
         params = {};
     }
     params = { ...params, count };
-    const headersToAdd = {
-        'User-Agent': USER_AGENT,
-        Referer: BASE_URL,
-        'Content-Type': 'application/json',
-        'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-        'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-        'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-        'X-DM-Neon-SSR': X_DM_Neon_SSR,
+    const headersToAdd = applyCommonHeaders({
         'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
-        Origin: BASE_URL,
-        DNT: '1',
-        'Sec-Fetch-Site': 'same-site',
-        Priority: 'u=4',
-        Pragma: 'no-cache',
-        'Cache-Control': 'no-cache',
-    };
+    });
     let obj;
     try {
         obj = executeGqlQuery(http, {
@@ -2074,19 +2032,7 @@ function getSearchPagerAll(contextQuery) {
 function getSavedVideo(url, usePlatformAuth = false) {
     const id = url.split('/').pop();
     const player_metadata_url = `${BASE_URL_METADATA}/${id}?embedder=https%3A%2F%2Fwww.dailymotion.com%2Fvideo%2Fx8yb2e8&geo=1&player-id=xjnde&locale=en-GB&dmV1st=ce2035cd-bdca-4d7b-baa4-127a17490ca5&dmTs=747022&is_native_app=0&app=com.dailymotion.neon&client_type=webapp&section_type=player&component_style=_`;
-    const headers1 = {
-        'User-Agent': USER_AGENT,
-        Accept: '*/*',
-        Referer: 'https://geo.dailymotion.com/',
-        Origin: 'https://geo.dailymotion.com',
-        DNT: '1',
-        Connection: 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        Pragma: 'no-cache',
-        'Cache-Control': 'no-cache',
-    };
+    const headers1 = applyCommonHeaders();
     if (_settings.hideSensitiveContent) {
         headers1['Cookie'] = 'ff=on';
     }
@@ -2102,29 +2048,9 @@ function getSavedVideo(url, usePlatformAuth = false) {
         },
         query: WATCHING_VIDEO,
     });
-    const videoDetailsRequestHeaders = {
-        'Content-Type': 'application/json',
-        'User-Agent': USER_AGENT,
-        Accept: '*/*, */*',
-        Referer: `${BASE_URL_VIDEO}/${id}`,
-        'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-        'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-        'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-        'X-DM-Neon-SSR': X_DM_Neon_SSR,
-        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
-        Origin: BASE_URL,
-        DNT: '1',
-        Connection: 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        Priority: 'u=4',
-        Pragma: 'no-cache',
-        'Cache-Control': 'no-cache',
-    };
+    const videoDetailsRequestHeaders = applyCommonHeaders();
     if (!usePlatformAuth) {
-        videoDetailsRequestHeaders.Authorization =
-            state.anonymousUserAuthorizationToken;
+        videoDetailsRequestHeaders.Authorization = state.anonymousUserAuthorizationToken;
     }
     const responses = http
         .batch()
@@ -2173,26 +2099,7 @@ function getSearchChannelPager(context) {
     return new SearchChannelPager(results, searchResponse?.data?.search?.channels?.pageInfo?.hasNextPage, params, context.page, getSearchChannelPager);
 }
 function getChannelPlaylists(url, page = 1) {
-    const headers = {
-        'Content-Type': 'application/json',
-        'User-Agent': USER_AGENT,
-        'Accept-Language': 'en-GB',
-        Referer: `${BASE_URL}/library/subscriptions`,
-        'X-DM-AppInfo-Id': X_DM_AppInfo_Id,
-        'X-DM-AppInfo-Type': X_DM_AppInfo_Type,
-        'X-DM-AppInfo-Version': X_DM_AppInfo_Version,
-        'X-DM-Neon-SSR': '0',
-        'X-DM-Preferred-Country': getPreferredCountry(_settings?.preferredCountryOptionIndex),
-        Origin: BASE_URL,
-        DNT: '1',
-        Connection: 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        Priority: 'u=4',
-        Pragma: 'no-cache',
-        'Cache-Control': 'no-cache',
-    };
+    const headers = applyCommonHeaders();
     const usePlatformAuth = false;
     const channel_name = getChannelNameFromUrl(url);
     const gqlResponse = executeGqlQuery(http, {
@@ -2229,20 +2136,7 @@ function isTokenValid() {
     return state.anonymousUserAuthorizationTokenExpirationDate > currentTime;
 }
 function executeGqlQuery(httpClient, requestOptions) {
-    const headersToAdd = requestOptions.headers || {
-        'User-Agent': USER_AGENT,
-        Accept: '*/*',
-        // "Accept-Language": Accept_Language,
-        Referer: BASE_URL,
-        Origin: BASE_URL,
-        DNT: '1',
-        Connection: 'keep-alive',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-site',
-        Pragma: 'no-cache',
-        'Cache-Control': 'no-cache',
-    };
+    const headersToAdd = requestOptions.headers || applyCommonHeaders();
     const gql = JSON.stringify({
         operationName: requestOptions.operationName,
         variables: requestOptions.variables,

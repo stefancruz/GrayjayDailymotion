@@ -16,10 +16,6 @@ interface IDailymotionSubtitle {
   enable: boolean;
 }
 
-interface IDictionary<T> {
-  [key: string]: T;
-}
-
 interface IPlatformSystemPlaylist {
   pluginId: string;
   httpClient: IHttp;

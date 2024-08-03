@@ -1,11 +1,9 @@
 {
   "name": "grayjay-dailymotion-plugin",
   "version": "1.0.0",
-  "main": "index.js",
   "scripts": {
     "build": "rollup -c",
     "start": "rollup -c -w",
-    "codegen": "graphql-codegen --config ./scripts/codegen.ts",
     "prettier": "npx prettier --write ./src/**/*.ts"
   },
   "engines": {
@@ -17,22 +15,12 @@
   "license": "ISC",
   "description": "",
   "devDependencies": {
-    "@graphql-codegen/cli": "5.0.2",
-    "@graphql-codegen/introspection": "4.0.3",
-    "@graphql-codegen/typescript": "4.0.7",
-    "@graphql-codegen/typescript-document-nodes": "4.0.7",
-    "@graphql-codegen/typescript-operations": "4.2.1",
-    "@graphql-codegen/typescript-resolvers": "4.1.0",
     "@rollup/plugin-commonjs": "25.0.8",
     "@rollup/plugin-node-resolve": "15.2.3",
     "@rollup/plugin-typescript": "11.1.6",
-    "graphql": "16.8.1",
     "rollup": "4.18.0",
     "rollup-plugin-copy": "3.5.0",
     "rollup-plugin-delete": "2.0.0",
     "typescript": "5.4.5"
-  },
-  "dependencies": {
-    "axios": "1.7.2"
   }
 }
